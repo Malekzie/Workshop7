@@ -21,7 +21,7 @@ RUN npm prune --production
 FROM node:22-alpine AS runtime
 
 # Create a non-root user for security
-RUN groupadd --system appgroup && useradd --system --gid appgroup appuser
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /app
 
