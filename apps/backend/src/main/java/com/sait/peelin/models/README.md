@@ -29,8 +29,6 @@ This directory contains JPA entity classes representing database tables and doma
 - **BakeryHour** - Operating hours for bakeries
 - **Supplier** - Vendor/supplier information for inventory replenishment
 
-you reading?
-
 ### Customer Relationships
 - **CustomerPreference** - Customer preferences for products (many-to-many with composite key)
 - **Reward** - Loyalty reward programs
