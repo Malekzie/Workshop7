@@ -40,7 +40,7 @@ public class Customer {
     private String customerFirstName;
 
     @Size(max = 2)
-    @Column(name = "customer_middle_initial", length = 2)
+    @Column(name = "customer_middle_initial", columnDefinition = "CHAR(2")
     private String customerMiddleInitial;
 
     @Size(max = 50)
