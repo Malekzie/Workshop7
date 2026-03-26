@@ -3,7 +3,7 @@ package com.sait.peelin.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "batch", indexes = {
@@ -34,10 +34,10 @@ public class Batch {
 
     @NotNull
     @Column(name = "batch_production_date", nullable = false)
-    private LocalDate batchProductionDate;
+    private OffsetDateTime batchProductionDate;
 
     @Column(name = "batch_expiry_date")
-    private LocalDate batchExpiryDate;
+    private OffsetDateTime batchExpiryDate;
 
     @NotNull
     @Column(name = "batch_quantity_produced", nullable = false)
@@ -75,19 +75,19 @@ public class Batch {
         this.employee = employee;
     }
 
-    public LocalDate getBatchProductionDate() {
+    public OffsetDateTime getBatchProductionDate() {
         return batchProductionDate;
     }
 
-    public void setBatchProductionDate(LocalDate batchProductionDate) {
+    public void setBatchProductionDate(OffsetDateTime batchProductionDate) {
         this.batchProductionDate = batchProductionDate;
     }
 
-    public LocalDate getBatchExpiryDate() {
+    public OffsetDateTime getBatchExpiryDate() {
         return batchExpiryDate;
     }
 
-    public void setBatchExpiryDate(LocalDate batchExpiryDate) {
+    public void setBatchExpiryDate(OffsetDateTime batchExpiryDate) {
         this.batchExpiryDate = batchExpiryDate;
     }
 

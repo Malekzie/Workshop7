@@ -16,9 +16,13 @@ import java.util.UUID;
                 columnList = "guest_expiry_date")})
 public class Customer {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "customer_id", nullable = false)
-    private UUID id;
+    private Integer id;
+
+    @NotNull
+    @Column(name = "uuid", nullable = false, unique = true, insertable = false, updatable = false)
+    private UUID uuid;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -73,12 +77,29 @@ public class Customer {
     @Column(name = "guest_expiry_date")
     private LocalDate guestExpiryDate;
 
-    public UUID getId() {
+    @Size(max = 500)
+    @Column(name = "profile_photo_path", length = 500)
+    private String profilePhotoPath;
+
+    @NotNull
+    @ColumnDefault("false")
+    @Column(name = "photo_approval_pending", nullable = false)
+    private Boolean photoApprovalPending;
+
+    public Integer getId() {
         return id;
     }
 
-    public void setId(UUID id) {
+    public void setId(Integer id) {
         this.id = id;
+    }
+
+    public UUID getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
     }
 
     public User getUser() {
@@ -175,6 +196,22 @@ public class Customer {
 
     public void setGuestExpiryDate(LocalDate guestExpiryDate) {
         this.guestExpiryDate = guestExpiryDate;
+    }
+
+    public String getProfilePhotoPath() {
+        return profilePhotoPath;
+    }
+
+    public void setProfilePhotoPath(String profilePhotoPath) {
+        this.profilePhotoPath = profilePhotoPath;
+    }
+
+    public Boolean getPhotoApprovalPending() {
+        return photoApprovalPending;
+    }
+
+    public void setPhotoApprovalPending(Boolean photoApprovalPending) {
+        this.photoApprovalPending = photoApprovalPending;
     }
 
 }

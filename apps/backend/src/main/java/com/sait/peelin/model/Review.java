@@ -11,13 +11,18 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "review", indexes = {@Index(name = "idx_review_product",
-        columnList = "product_id")})
+@Table(name = "review", indexes = {
+        @Index(name = "idx_review_product", columnList = "product_id"),
+        @Index(name = "idx_review_customer", columnList = "customer_id")})
 public class Review {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "review_id", nullable = false)
-    private UUID id;
+    private Integer id;
+
+    @NotNull
+    @Column(name = "uuid", nullable = false, unique = true, insertable = false, updatable = false)
+    private UUID uuid;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -56,12 +61,20 @@ public class Review {
     @Column(name = "review_approval_date")
     private OffsetDateTime reviewApprovalDate;
 
-    public UUID getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(UUID id) {
+    public void setId(Integer id) {
         this.id = id;
+    }
+
+    public UUID getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
     }
 
     public Customer getCustomer() {

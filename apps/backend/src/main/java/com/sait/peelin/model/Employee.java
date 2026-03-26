@@ -3,6 +3,7 @@ package com.sait.peelin.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.util.UUID;
 
@@ -10,9 +11,13 @@ import java.util.UUID;
 @Table(name = "employee")
 public class Employee {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "employee_id", nullable = false)
-    private UUID id;
+    private Integer id;
+
+    @NotNull
+    @Column(name = "uuid", nullable = false, unique = true, insertable = false, updatable = false)
+    private UUID uuid;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -62,12 +67,29 @@ public class Employee {
     @Column(name = "employee_work_email", nullable = false, length = 254)
     private String employeeWorkEmail;
 
-    public UUID getId() {
+    @Size(max = 500)
+    @Column(name = "profile_photo_path", length = 500)
+    private String profilePhotoPath;
+
+    @NotNull
+    @ColumnDefault("false")
+    @Column(name = "photo_approval_pending", nullable = false)
+    private Boolean photoApprovalPending;
+
+    public Integer getId() {
         return id;
     }
 
-    public void setId(UUID id) {
+    public void setId(Integer id) {
         this.id = id;
+    }
+
+    public UUID getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
     }
 
     public User getUser() {
@@ -148,6 +170,22 @@ public class Employee {
 
     public void setEmployeeWorkEmail(String employeeWorkEmail) {
         this.employeeWorkEmail = employeeWorkEmail;
+    }
+
+    public String getProfilePhotoPath() {
+        return profilePhotoPath;
+    }
+
+    public void setProfilePhotoPath(String profilePhotoPath) {
+        this.profilePhotoPath = profilePhotoPath;
+    }
+
+    public Boolean getPhotoApprovalPending() {
+        return photoApprovalPending;
+    }
+
+    public void setPhotoApprovalPending(Boolean photoApprovalPending) {
+        this.photoApprovalPending = photoApprovalPending;
     }
 
 }
