@@ -1,0 +1,110 @@
+{
+  "info": {
+    "_postman_id": "9f8f1e2a-74fd-4ddf-9ca1-2f8f7784b5be",
+    "name": "Peelin' Good - Current State API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Current backend collection based on implemented endpoints in the codebase. No business REST controllers are implemented yet."
+  },
+  "item": [
+    {
+      "name": "Health - Actuator",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/actuator/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "actuator",
+            "health"
+          ]
+        },
+        "description": "Checks Spring Boot liveness/health endpoint."
+      },
+      "response": []
+    },
+    {
+      "name": "Info - Actuator",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/actuator/info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "actuator",
+            "info"
+          ]
+        },
+        "description": "Optional info endpoint. May return empty or 404 depending config."
+      },
+      "response": []
+    },
+    {
+      "name": "Default Login Page (Spring Security)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "login"
+          ]
+        },
+        "description": "Default Spring Security form login endpoint."
+      },
+      "response": []
+    },
+    {
+      "name": "Default Login Submit (Spring Security)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "username",
+              "value": "alicia.nguyen",
+              "type": "text"
+            },
+            {
+              "key": "password",
+              "value": "Admin123!",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "login"
+          ]
+        },
+        "description": "Attempts form login using seeded credentials."
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    }
+  ]
+}
