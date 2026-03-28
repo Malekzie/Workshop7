@@ -32,7 +32,10 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/v1/auth/**",
                                 "/api/v1/products/**",
-                                "/api/v1/bakeries/**"
+                                "/api/v1/bakeries/**",
+                                "/actuator/health",
+                                "/actuator/health/**",
+                                "/actuator/info"
                         ).permitAll()
                                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                                 .requestMatchers("/api/v1/employee/**").hasAnyRole("EMPLOYEE", "ADMIN")
