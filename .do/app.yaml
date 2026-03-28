@@ -37,7 +37,7 @@ services:
         value: ${dev-db-430284.DATABASE_URL}
     github:
       branch: main
-      deploy_on_push: true
+      deploy_on_push: false
       repo: Malekzie/Workshop7
     http_port: 3000
     instance_count: 1
@@ -82,7 +82,7 @@ services:
         value: EV[1:RjkTXpeJjYsM+G54BNPgBh6OdeqxnmRy:8DQTmCTjBNtEPi/sQcFnkh6lGgk8ztzMQlxMrYkLSWhh1lfVwg4w1Q==]
     github:
       branch: main
-      deploy_on_push: true
+      deploy_on_push: false
       repo: Malekzie/Workshop7
     health_check:
       failure_threshold: 24
