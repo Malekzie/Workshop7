@@ -22,6 +22,7 @@
 		}
 	}
 
+	// handles where to direct user when clicking profile based on if they are logged in or not
 	function handleProfileClick() {
 		const loggedIn = !!Cookies.get('loggedIn');
 
