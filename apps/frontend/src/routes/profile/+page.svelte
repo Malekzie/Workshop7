@@ -167,7 +167,9 @@
 						<div class="rounded-xl p-4">Chocolate Tart</div>
 					</div>
 
-					<button class="mt-6 w-full rounded-full border py-3.5 text-xs font-bold uppercase">
+					<button
+						class="mt-6 w-full rounded-full border py-3.5 text-xs font-bold uppercase hover:cursor-pointer hover:bg-primary/10"
+					>
 						View All Products
 					</button>
 				</div>
