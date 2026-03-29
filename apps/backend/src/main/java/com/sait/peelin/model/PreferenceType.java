@@ -1,5 +1,8 @@
 package com.sait.peelin.model;
 
 public enum PreferenceType {
-    like, dislike, avoid, allergy
+    like,
+    dislike,
+    avoid,
+    allergic
 }

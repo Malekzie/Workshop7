@@ -404,6 +404,7 @@ git push
 - Make sure you're using the correct versions: **Java 21** and **Node.js 22**.
 - CI runs `npm ci` (clean install), not `npm install`. Delete `node_modules` and run `npm ci` locally to reproduce.
 - CI runs on **Ubuntu Linux**. File path casing matters — `MyComponent.svelte` and `mycomponent.svelte` are different files.
+- If `./mvnw` fails in CI with `bad interpreter` or similar, the wrapper may have Windows (CRLF) line endings. The repo’s `.gitattributes` forces LF for `mvnw`; re-normalize with `git add --renormalize apps/backend/mvnw` and commit.
 
 ### My PR shows conflicts but I didn't change those files
 

@@ -15,9 +15,13 @@ import java.util.UUID;
 @Table(name = "payment")
 public class Payment {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "payment_id", nullable = false)
-    private UUID id;
+    private Integer id;
+
+    @NotNull
+    @Column(name = "uuid", nullable = false, unique = true, insertable = false, updatable = false)
+    private UUID uuid;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -30,7 +34,7 @@ public class Payment {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(name = "payment_method", nullable = false)
     private PaymentMethod paymentMethod;
 
@@ -41,19 +45,27 @@ public class Payment {
     @NotNull
     @ColumnDefault("'pending'")
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(name = "payment_status", nullable = false)
     private PaymentStatus paymentStatus;
 
     @Column(name = "payment_paid_at")
     private OffsetDateTime paymentPaidAt;
 
-    public UUID getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(UUID id) {
+    public void setId(Integer id) {
         this.id = id;
+    }
+
+    public UUID getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
     }
 
     public Order getOrder() {

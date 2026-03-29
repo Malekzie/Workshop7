@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -18,9 +16,9 @@ import java.util.UUID;
                 columnNames = {"user_email"})})
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "user_id", nullable = false)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "user_id", nullable = false, updatable = false)
+    private UUID userId;
 
     @Size(max = 50)
     @NotNull
@@ -39,7 +37,6 @@ public class User {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "user_role", nullable = false)
     private UserRole userRole;
 
@@ -48,12 +45,12 @@ public class User {
     @Column(name = "user_created_at", nullable = false)
     private OffsetDateTime userCreatedAt;
 
-    public UUID getId() {
-        return id;
+    public UUID getUserId() {
+        return userId;
     }
 
-    public void setId(UUID id) {
-        this.id = id;
+    public void setUserId(UUID userId) {
+        this.userId = userId;
     }
 
     public String getUsername() {
@@ -95,5 +92,4 @@ public class User {
     public void setUserCreatedAt(OffsetDateTime userCreatedAt) {
         this.userCreatedAt = userCreatedAt;
     }
-
 }

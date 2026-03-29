@@ -3,6 +3,11 @@ package com.sait.peelin.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "bakery")
@@ -31,6 +36,19 @@ public class Bakery {
     @NotNull
     @Column(name = "bakery_email", nullable = false, length = 254)
     private String bakeryEmail;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @ColumnDefault("'open'")
+    @Column(name = "status", nullable = false)
+    private BakeryStatus status;
+
+    @Column(name = "latitude", precision = 9, scale = 6)
+    private BigDecimal latitude;
+
+    @Column(name = "longitude", precision = 9, scale = 6)
+    private BigDecimal longitude;
 
     public Integer getId() {
         return id;
@@ -70,6 +88,30 @@ public class Bakery {
 
     public void setBakeryEmail(String bakeryEmail) {
         this.bakeryEmail = bakeryEmail;
+    }
+
+    public BakeryStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(BakeryStatus status) {
+        this.status = status;
+    }
+
+    public BigDecimal getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(BigDecimal latitude) {
+        this.latitude = latitude;
+    }
+
+    public BigDecimal getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(BigDecimal longitude) {
+        this.longitude = longitude;
     }
 
 }

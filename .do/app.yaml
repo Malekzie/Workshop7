@@ -37,7 +37,7 @@ services:
         value: ${dev-db-430284.DATABASE_URL}
     github:
       branch: main
-      deploy_on_push: true
+      deploy_on_push: false
       repo: Malekzie/Workshop7
     http_port: 3000
     instance_count: 1
@@ -82,20 +82,24 @@ services:
         value: EV[1:RjkTXpeJjYsM+G54BNPgBh6OdeqxnmRy:8DQTmCTjBNtEPi/sQcFnkh6lGgk8ztzMQlxMrYkLSWhh1lfVwg4w1Q==]
     github:
       branch: main
+      deploy_on_push: false
       repo: Malekzie/Workshop7
     health_check:
-      failure_threshold: 9
+      failure_threshold: 24
+      http_path: /actuator/health/liveness
+      initial_delay_seconds: 120
       period_seconds: 10
       success_threshold: 1
-      timeout_seconds: 1
+      timeout_seconds: 5
     http_port: 8080
     instance_count: 1
     instance_size_slug: apps-s-1vcpu-1gb
     liveness_health_check:
-      failure_threshold: 9
-      initial_delay_seconds: 30
+      failure_threshold: 24
+      http_path: /actuator/health/liveness
+      initial_delay_seconds: 120
       period_seconds: 10
       success_threshold: 1
-      timeout_seconds: 1
+      timeout_seconds: 5
     name: workshop7-apps-backend
     source_dir: apps/backend

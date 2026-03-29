@@ -7,7 +7,8 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "reward_tier")
+@Table(name = "reward_tier",
+        uniqueConstraints = @UniqueConstraint(name = "reward_tier_reward_tier_name_key", columnNames = "reward_tier_name"))
 public class RewardTier {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

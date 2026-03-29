@@ -12,15 +12,21 @@ RUN chmod +x mvnw && ./mvnw dependency:resolve --no-transfer-progress
 
 # Copy source code and build the application (skip tests for faster builds)
 COPY src ./src
-RUN ./mvnw package -DskipTests --no-transfer-progress
+RUN ./mvnw package -DskipTests --no-transfer-progress \
+    && jar="" \
+    && for j in target/*.jar; do \
+         [ ! -f "$j" ] && continue; \
+         case "$j" in *-plain.jar) continue;; *) jar="$j";; esac; \
+       done \
+    && test -n "$jar" \
+    && cp "$jar" /app/app.jar
 
 # ---- Stage 2: Runtime ----
 FROM gcr.io/distroless/java21-debian12 AS runtime
 
 WORKDIR /app
 
-# Copy the built JAR from the build stage
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/app.jar app.jar
 
 # Run as the built-in non-root user (uid 65532)
 USER nonroot

@@ -24,9 +24,13 @@ import java.util.UUID;
         columnNames = {"order_number"})})
 public class Order {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_id", nullable = false)
-    private UUID id;
+    private Integer id;
+
+    @NotNull
+    @Column(name = "uuid", nullable = false, unique = true, insertable = false, updatable = false)
+    private UUID uuid;
 
     @Size(max = 20)
     @NotNull
@@ -71,7 +75,7 @@ public class Order {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(name = "order_method", nullable = false)
     private OrderMethod orderMethod;
 
@@ -89,18 +93,26 @@ public class Order {
     private BigDecimal orderDiscount;
 
     @NotNull
-    @ColumnDefault("'pending_payment'")
+    @ColumnDefault("'placed'")
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(name = "order_status", nullable = false)
     private OrderStatus orderStatus;
 
-    public UUID getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(UUID id) {
+    public void setId(Integer id) {
         this.id = id;
+    }
+
+    public UUID getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
     }
 
     public String getOrderNumber() {
