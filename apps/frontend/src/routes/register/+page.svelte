@@ -1,4 +1,6 @@
 <script>
+	import { registerUser } from '$lib/services/auth.js';
+
 	let fields = {
 		firstName: '',
 		lastName: '',
@@ -26,7 +28,6 @@
 		phone: false
 	};
 
-	// validation rules for each field
 	function validateField(name, value) {
 		switch (name) {
 			case 'firstName':
@@ -34,18 +35,15 @@
 				if (!value.trim()) return 'This field is required.';
 				if (value.trim().length < 2) return 'Must be at least 2 characters.';
 				return '';
-
 			case 'email':
 				if (!value.trim()) return 'Email is required.';
-				if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Enter a valid email address.';
+				if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) return 'Enter a valid email address.';
 				return '';
-
 			case 'username':
 				if (!value.trim()) return 'Username is required.';
 				if (value.trim().length < 3) return 'Must be at least 3 characters.';
 				if (!/^[a-zA-Z0-9_]+$/.test(value)) return 'Only letters, numbers, and underscores.';
 				return '';
-
 			case 'password':
 				if (!value) return 'Password is required.';
 				if (value.length < 8) return 'Must be at least 8 characters.';
@@ -53,31 +51,26 @@
 				if (!/[0-9]/.test(value)) return 'Must include a number.';
 				if (!/[^a-zA-Z0-9]/.test(value)) return 'Must include a special character.';
 				return '';
-
 			case 'phone':
 				if (!value.trim()) return 'Phone number is required.';
 				if (!/^\+?[\d\s\-().]{7,15}$/.test(value)) return 'Enter a valid phone number.';
 				return '';
-
 			default:
 				return '';
 		}
 	}
 
-	// validate each field on blur and input
 	function handleBlur(name) {
 		touched[name] = true;
 		errors[name] = validateField(name, fields[name]);
 	}
 
-	// only validate on input if the field has been touched
 	function handleInput(name) {
 		if (touched[name]) {
 			errors[name] = validateField(name, fields[name]);
 		}
 	}
 
-	// format phone number as (123) 456-7890 while typing
 	function formatPhone(value) {
 		const digits = value.replace(/\D/g, '').substring(0, 10);
 		const parts = [];
@@ -87,11 +80,9 @@
 		return parts.join('');
 	}
 
-	// on submit, check all fields for errors and alert if valid
-	function handleRegister(event) {
+	async function handleRegister(event) {
 		event.preventDefault();
 
-		// Touch all fields and validate
 		Object.keys(fields).forEach((name) => {
 			touched[name] = true;
 			errors[name] = validateField(name, fields[name]);
@@ -100,7 +91,14 @@
 		const hasErrors = Object.values(errors).some((e) => e !== '');
 		if (hasErrors) return;
 
-		alert('Created');
+		const { ok, data } = await registerUser(fields);
+
+		if (!ok) {
+			if (data.field) errors[data.field] = data.message;
+			return;
+		}
+
+		window.location.href = '/login';
 	}
 </script>
 
@@ -128,13 +126,12 @@
 							on:blur={() => handleBlur('firstName')}
 							on:input={() => handleInput('firstName')}
 							class="bg-surface-container-highest w-full rounded-xl px-6 py-4 font-medium transition
-                {errors.firstName && touched.firstName ? 'ring-2 ring-red-400' : ''}"
+								{errors.firstName && touched.firstName ? 'ring-2 ring-red-400' : ''}"
 						/>
 						{#if errors.firstName && touched.firstName}
 							<p class="px-1 text-xs text-red-500">{errors.firstName}</p>
 						{/if}
 					</div>
-
 					<div class="space-y-1.5">
 						<label class="text-on-surface-variant px-1 text-sm font-bold">Last Name</label>
 						<input
@@ -144,7 +141,7 @@
 							on:blur={() => handleBlur('lastName')}
 							on:input={() => handleInput('lastName')}
 							class="bg-surface-container-highest w-full rounded-xl px-6 py-4 font-medium transition
-                {errors.lastName && touched.lastName ? 'ring-2 ring-red-400' : ''}"
+								{errors.lastName && touched.lastName ? 'ring-2 ring-red-400' : ''}"
 						/>
 						{#if errors.lastName && touched.lastName}
 							<p class="px-1 text-xs text-red-500">{errors.lastName}</p>
@@ -162,7 +159,7 @@
 						on:blur={() => handleBlur('email')}
 						on:input={() => handleInput('email')}
 						class="bg-surface-container-highest w-full rounded-xl px-6 py-4 font-medium transition
-              {errors.email && touched.email ? 'ring-2 ring-red-400' : ''}"
+							{errors.email && touched.email ? 'ring-2 ring-red-400' : ''}"
 					/>
 					{#if errors.email && touched.email}
 						<p class="px-1 text-xs text-red-500">{errors.email}</p>
@@ -179,7 +176,7 @@
 						on:blur={() => handleBlur('username')}
 						on:input={() => handleInput('username')}
 						class="bg-surface-container-highest w-full rounded-xl px-6 py-4 font-medium transition
-              {errors.username && touched.username ? 'ring-2 ring-red-400' : ''}"
+							{errors.username && touched.username ? 'ring-2 ring-red-400' : ''}"
 					/>
 					{#if errors.username && touched.username}
 						<p class="px-1 text-xs text-red-500">{errors.username}</p>
@@ -196,7 +193,7 @@
 						on:blur={() => handleBlur('password')}
 						on:input={() => handleInput('password')}
 						class="bg-surface-container-highest w-full rounded-xl px-6 py-4 font-medium transition
-              {errors.password && touched.password ? 'ring-2 ring-red-400' : ''}"
+							{errors.password && touched.password ? 'ring-2 ring-red-400' : ''}"
 					/>
 					{#if errors.password && touched.password}
 						<p class="px-1 text-xs text-red-500">{errors.password}</p>
@@ -215,9 +212,8 @@
 							handleInput('phone');
 						}}
 						on:blur={() => handleBlur('phone')}
-						on:input={() => handleInput('phone')}
 						class="bg-surface-container-highest w-full rounded-xl px-6 py-4 font-medium transition
-              {errors.phone && touched.phone ? 'ring-2 ring-red-400' : ''}"
+							{errors.phone && touched.phone ? 'ring-2 ring-red-400' : ''}"
 					/>
 					{#if errors.phone && touched.phone}
 						<p class="px-1 text-xs text-red-500">{errors.phone}</p>
