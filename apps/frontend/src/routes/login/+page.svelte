@@ -52,7 +52,7 @@
 		<img
 			alt="Fresh Bread Background"
 			class="absolute inset-0 h-full w-full object-cover"
-			src="https://lh3.googleusercontent.com/aida-public/AB6AXuAp7DoGW1kgz-fo9vtN4Ruqxt4xlOaXS5mk-dSqcj0pi1Y_OQKr9CSZ7eddRTWiUnddslHrN2WrGUqxHXAvRUtXzUuLJZ5lxe0RFXrSfkJcTKc1CQEs9YcXQdL1-QWC8ZtCrvQQTQyQnDoyw-C4FefIsUEIyWDV1HboUpypXwSoEqRHif4fd8hnqRPxhi0jen_JY37Wb9_7yVaQHwULQuLXfO20DF3oTGx-wvZYeMmim9_oDJKuEz_bAI2mZ2MFWvP6Bqd_YwmLqRDR"
+			src="/images/bread_background.png"
 		/>
 		<div class="absolute inset-0 bg-gradient-to-r from-black/40 via-black/5 to-transparent"></div>
 		<div class="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-primary/20 blur-3xl"></div>
