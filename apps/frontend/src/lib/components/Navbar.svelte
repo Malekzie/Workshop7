@@ -141,8 +141,10 @@
 			<!-- <a href="/about" class="text-sm text-foreground hover:text-primary">About</a> -->
 			<!-- <a href="/order" class="text-sm text-foreground hover:text-primary">Order</a> -->
 			<div class="flex gap-4 pt-2">
-				<button aria-label="Account" class="text-foreground hover:text-primary"
-					><User size={20} /></button
+				<button
+					onclick={handleProfileClick}
+					aria-label="Account"
+					class="text-foreground hover:text-primary"><User size={20} /></button
 				>
 				<button
 					aria-label="Cart ({cartCount} items)"
