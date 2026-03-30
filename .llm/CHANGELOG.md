@@ -30,7 +30,8 @@ This file is maintained by AI agents. Every agent that makes changes to this cod
 - `apps/backend/src/main/java/com/sait/peelin/controller/v1/AuthController.java` — Added `POST /register` (201 Created) and `POST /oauth2/callback` (501 stub) endpoints.
 - `apps/backend/src/main/java/com/sait/peelin/model/Customer.java` — Removed `@NotNull`, `optional = false`, `nullable = false` from `address` field so the entity accepts null address (aligned with V4 migration).
 - `apps/backend/pom.xml` — Added `spring-boot-starter-oauth2-client` dependency for OAuth2 skeleton.
-- `apps/backend/src/main/resources/application.yaml` — Added commented-out OAuth2 configuration stub (Google + Microsoft).
+- `apps/backend/src/main/resources/application.yaml` — Added commented-out OAuth2 configuration stub (Google + Microsoft). Added default fallback for `JWT_SECRET` (`dev-secret-key-for-local-development-only-32b`) so the app starts locally without the env var set.
+- `apps/backend/src/main/resources/application-dev.yaml` — Added default fallbacks for `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD` so the dev profile connects to `localhost:5432/peelin` without requiring env vars to be set manually.
 - `apps/frontend/src/app.d.ts` — Uncommented and typed `Locals` interface with `user: { username, role } | null`.
 
 ### Migrations
