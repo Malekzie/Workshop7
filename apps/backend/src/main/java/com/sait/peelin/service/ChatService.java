@@ -6,10 +6,12 @@ import com.sait.peelin.dto.v1.PostChatMessageRequest;
 import com.sait.peelin.exception.ResourceNotFoundException;
 import com.sait.peelin.model.ChatMessage;
 import com.sait.peelin.model.ChatThread;
+import com.sait.peelin.model.Customer;
 import com.sait.peelin.model.User;
 import com.sait.peelin.model.UserRole;
 import com.sait.peelin.repository.ChatMessageRepository;
 import com.sait.peelin.repository.ChatThreadRepository;
+import com.sait.peelin.repository.CustomerRepository;
 import com.sait.peelin.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,6 +29,7 @@ public class ChatService {
 
     private final ChatThreadRepository chatThreadRepository;
     private final ChatMessageRepository chatMessageRepository;
+    private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
     private final CurrentUserService currentUserService;
 
@@ -134,14 +137,39 @@ public class ChatService {
     }
 
     private ChatThreadDto threadDto(ChatThread t) {
+        User customerUser = t.getCustomerUser();
+        Customer customer = customerRepository.findByUser_UserId(customerUser.getUserId()).orElse(null);
         return new ChatThreadDto(
                 t.getId(),
-                t.getCustomerUser().getUserId(),
+                customerUser.getUserId(),
+                resolveCustomerDisplayName(customer, customerUser),
+                customerUser.getUsername(),
+                resolveCustomerEmail(customer, customerUser),
                 t.getEmployeeUser() != null ? t.getEmployeeUser().getUserId() : null,
                 t.getStatus(),
                 t.getCreatedAt(),
                 t.getUpdatedAt()
         );
+    }
+
+    private String resolveCustomerDisplayName(Customer customer, User customerUser) {
+        if (customer != null) {
+            String first = customer.getCustomerFirstName() != null ? customer.getCustomerFirstName().trim() : "";
+            String last = customer.getCustomerLastName() != null ? customer.getCustomerLastName().trim() : "";
+            String full = (first + " " + last).trim();
+            if (!full.isEmpty()) {
+                return full;
+            }
+        }
+        String username = customerUser.getUsername();
+        return username != null && !username.trim().isEmpty() ? username : null;
+    }
+
+    private String resolveCustomerEmail(Customer customer, User customerUser) {
+        if (customer != null && customer.getCustomerEmail() != null && !customer.getCustomerEmail().trim().isEmpty()) {
+            return customer.getCustomerEmail();
+        }
+        return customerUser.getUserEmail();
     }
 
     private ChatMessageDto msgDto(ChatMessage m) {
