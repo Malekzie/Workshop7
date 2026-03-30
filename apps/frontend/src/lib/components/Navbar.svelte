@@ -1,12 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { ShoppingCart, User, ChevronDown, Menu, X } from '@lucide/svelte';
-
-	interface Props {
-		cartCount?: number;
-	}
-
-	let { cartCount = 0 }: Props = $props();
+	import { cartCount } from '$lib/stores/cart';
 
 	let menuOpen = $state(false);
 	let categoryOpen = $state(false);
@@ -81,19 +76,20 @@
 			<button aria-label="Account" class="text-foreground transition-colors hover:text-primary">
 				<User size={20} />
 			</button>
-			<button
-				aria-label="Cart ({cartCount} items)"
+			<a
+				href={resolve('/cart')}
+				aria-label="Cart ({$cartCount} items)"
 				class="relative text-foreground transition-colors hover:text-primary"
 			>
 				<ShoppingCart size={20} />
-				{#if cartCount > 0}
+				{#if $cartCount > 0}
 					<span
 						class="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground"
 					>
-						{cartCount}
+						{$cartCount}
 					</span>
 				{/if}
-			</button>
+			</a>
 		</div>
 
 		<!-- Mobile hamburger -->
@@ -127,19 +123,20 @@
 				<button aria-label="Account" class="text-foreground hover:text-primary"
 					><User size={20} /></button
 				>
-				<button
-					aria-label="Cart ({cartCount} items)"
+				<a
+					href={resolve('/cart')}
+					aria-label="Cart ({$cartCount} items)"
 					class="relative text-foreground hover:text-primary"
 				>
 					<ShoppingCart size={20} />
-					{#if cartCount > 0}
+					{#if $cartCount > 0}
 						<span
 							class="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground"
 						>
-							{cartCount}
+							{$cartCount}
 						</span>
 					{/if}
-				</button>
+				</a>
 			</div>
 		</div>
 	{/if}
