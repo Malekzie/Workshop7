@@ -29,17 +29,6 @@
               "path": ["actuator", "health"]
             }
           }
-        },
-        {
-          "name": "Info",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/actuator/info",
-              "host": ["{{baseUrl}}"],
-              "path": ["actuator", "info"]
-            }
-          }
         }
       ]
     },
