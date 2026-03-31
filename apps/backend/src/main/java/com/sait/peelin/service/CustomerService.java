@@ -11,11 +11,13 @@ import com.sait.peelin.model.User;
 import com.sait.peelin.repository.AddressRepository;
 import com.sait.peelin.repository.CustomerRepository;
 import com.sait.peelin.repository.RewardTierRepository;
+import com.sait.peelin.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -28,6 +30,8 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final RewardTierRepository rewardTierRepository;
     private final AddressRepository addressRepository;
+    private final UserRepository userRepository;
+    private final ProfilePhotoStorageService profilePhotoStorageService;
     private final CurrentUserService currentUserService;
 
     @Transactional(readOnly = true)
@@ -42,7 +46,7 @@ public class CustomerService {
 
     @Transactional(readOnly = true)
     public List<CustomerDto> pendingPhotos() {
-        return customerRepository.findByPhotoApprovalPendingTrue().stream().map(this::toDto).toList();
+        return customerRepository.findByUserPhotoApprovalPendingTrue().stream().map(this::toDto).toList();
     }
 
     @Transactional(readOnly = true)
@@ -77,16 +81,48 @@ public class CustomerService {
     @Transactional
     public void approvePhoto(UUID id) {
         Customer c = customerRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
-        c.setPhotoApprovalPending(false);
+        if (c.getUser() != null) {
+            c.getUser().setPhotoApprovalPending(false);
+            userRepository.save(c.getUser());
+        }
         customerRepository.save(c);
     }
 
     @Transactional
     public void rejectPhoto(UUID id) {
         Customer c = customerRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
-        c.setPhotoApprovalPending(false);
-        c.setProfilePhotoPath(null);
+        if (c.getUser() != null) {
+            c.getUser().setProfilePhotoPath(null);
+            c.getUser().setPhotoApprovalPending(false);
+            userRepository.save(c.getUser());
+        }
         customerRepository.save(c);
+    }
+
+    @Transactional
+    public CustomerDto uploadMyProfilePhoto(MultipartFile photo) {
+        User u = currentUserService.requireUser();
+        if (photo == null || photo.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Photo is required");
+        }
+        String contentType = photo.getContentType() != null ? photo.getContentType().toLowerCase() : "";
+        if (!contentType.equals("image/jpeg") && !contentType.equals("image/jpg") && !contentType.equals("image/png")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only JPG and PNG images are allowed");
+        }
+        if (photo.getSize() > 5L * 1024L * 1024L) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Photo exceeds 5MB limit");
+        }
+
+        Customer c = customerRepository.findByUser_UserId(u.getUserId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No customer profile"));
+
+        String uploadedUrl = profilePhotoStorageService.uploadCustomerProfilePhoto(u.getUserId(), photo);
+        u.setProfilePhotoPath(uploadedUrl);
+        u.setPhotoApprovalPending(true);
+
+        userRepository.save(u);
+        customerRepository.save(c);
+        return toDto(c);
     }
 
     private void applyPatch(Customer c, CustomerPatchRequest req) {
@@ -109,8 +145,10 @@ public class CustomerService {
                     .orElseThrow(() -> new ResourceNotFoundException("Reward tier not found"));
             c.setRewardTier(rt);
         }
-        if (req.getProfilePhotoPath() != null) c.setProfilePhotoPath(req.getProfilePhotoPath());
-        if (req.getPhotoApprovalPending() != null) c.setPhotoApprovalPending(req.getPhotoApprovalPending());
+        if (req.getPhotoApprovalPending() != null && c.getUser() != null) {
+            c.getUser().setPhotoApprovalPending(req.getPhotoApprovalPending());
+            userRepository.save(c.getUser());
+        }
     }
 
     private void upsertCustomerAddress(Customer c, AddressUpsertRequest req) {
@@ -140,8 +178,8 @@ public class CustomerService {
                 c.getCustomerRewardBalance(),
                 addr != null ? addr.getId() : null,
                 CatalogMapper.address(addr),
-                c.getProfilePhotoPath(),
-                Boolean.TRUE.equals(c.getPhotoApprovalPending())
+                c.getUser() != null ? c.getUser().getProfilePhotoPath() : null,
+                c.getUser() != null && Boolean.TRUE.equals(c.getUser().getPhotoApprovalPending())
         );
     }
 }

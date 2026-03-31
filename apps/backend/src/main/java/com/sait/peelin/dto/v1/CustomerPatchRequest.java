@@ -17,6 +17,5 @@ public class CustomerPatchRequest {
     @Valid
     private AddressUpsertRequest address;
     private Integer rewardTierId;
-    private String profilePhotoPath;
     private Boolean photoApprovalPending;
 }

@@ -72,14 +72,6 @@ public class Customer {
     @Column(name = "guest_expiry_date")
     private LocalDate guestExpiryDate;
 
-    @Size(max = 500)
-    @Column(name = "profile_photo_path", length = 500)
-    private String profilePhotoPath;
-
-    @NotNull
-    @ColumnDefault("false")
-    @Column(name = "photo_approval_pending", nullable = false)
-    private Boolean photoApprovalPending;
 
     public UUID getId() {
         return id;
@@ -183,22 +175,6 @@ public class Customer {
 
     public void setGuestExpiryDate(LocalDate guestExpiryDate) {
         this.guestExpiryDate = guestExpiryDate;
-    }
-
-    public String getProfilePhotoPath() {
-        return profilePhotoPath;
-    }
-
-    public void setProfilePhotoPath(String profilePhotoPath) {
-        this.profilePhotoPath = profilePhotoPath;
-    }
-
-    public Boolean getPhotoApprovalPending() {
-        return photoApprovalPending;
-    }
-
-    public void setPhotoApprovalPending(Boolean photoApprovalPending) {
-        this.photoApprovalPending = photoApprovalPending;
     }
 
 }

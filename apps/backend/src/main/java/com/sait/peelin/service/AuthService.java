@@ -82,6 +82,7 @@ public class AuthService {
         user.setUserPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setUserRole(UserRole.customer);
         user.setUserCreatedAt(OffsetDateTime.now());
+        user.setPhotoApprovalPending(false);
         userRepository.save(user);
 
         RewardTier lowestTier = rewardTierRepository.findFirstByOrderByRewardTierMinPointsAsc()
@@ -95,7 +96,6 @@ public class AuthService {
         customer.setCustomerPhone(request.getPhone());
         customer.setCustomerEmail(request.getEmail());
         customer.setCustomerRewardBalance(0);
-        customer.setPhotoApprovalPending(false);
         customerRepository.save(customer);
 
         UserDetails userDetails = org.springframework.security.core.userdetails.User

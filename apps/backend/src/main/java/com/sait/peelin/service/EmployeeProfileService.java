@@ -54,8 +54,8 @@ public class EmployeeProfileService {
                 e.getEmployeePhone(),
                 e.getEmployeeWorkEmail(),
                 e.getAddress().getId(),
-                e.getProfilePhotoPath(),
-                Boolean.TRUE.equals(e.getPhotoApprovalPending())
+                e.getUser() != null ? e.getUser().getProfilePhotoPath() : null,
+                e.getUser() != null && Boolean.TRUE.equals(e.getUser().getPhotoApprovalPending())
         );
     }
 }

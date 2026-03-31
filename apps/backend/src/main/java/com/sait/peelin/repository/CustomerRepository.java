@@ -13,7 +13,8 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
 
     Optional<Customer> findByUser_UserId(UUID userId);
 
-    List<Customer> findByPhotoApprovalPendingTrue();
+    @Query("SELECT c FROM Customer c WHERE c.user IS NOT NULL AND c.user.photoApprovalPending = true")
+    List<Customer> findByUserPhotoApprovalPendingTrue();
 
     @Query("SELECT c FROM Customer c WHERE "
             + "LOWER(c.customerFirstName) LIKE LOWER(CONCAT('%', :q, '%')) OR "

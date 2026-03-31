@@ -99,6 +99,23 @@
               "path": ["api", "v1", "account", "password"]
             }
           }
+        },
+        {
+          "name": "Upload Profile Photo",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "photo", "type": "file", "src": "" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/account/profile-photo",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "account", "profile-photo"]
+            }
+          }
         }
       ]
     },
