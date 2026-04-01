@@ -52,7 +52,7 @@
 			<!-- Menu dropdown -->
 			<div class="category-dropdown relative">
 				<button
-					class="flex items-center gap-1 text-sm font-medium text-foreground transition-colors hover:text-primary"
+					class="flex items-center gap-1 text-sm font-medium text-foreground transition-colors hover:cursor-pointer hover:text-primary"
 					aria-expanded={categoryOpen}
 					onclick={handleMenuClick}
 				>

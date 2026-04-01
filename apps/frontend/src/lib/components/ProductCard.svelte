@@ -5,7 +5,7 @@
 		price = 0,
 		imageUrl = '',
 		badge = '',
-		badgeColor = 'default', // 'default' | 'tertiary' | 'muted'
+		badgeColor = 'default',
 		onAddToCart = () => {}
 	} = $props();
 
