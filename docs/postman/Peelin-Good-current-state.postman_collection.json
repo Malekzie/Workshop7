@@ -115,6 +115,202 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "account", "profile-photo"]
             }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Upload status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "if (json && json.id) pm.collectionVariables.set('customerId', json.id);",
+                  "if (json && typeof json.photoApprovalPending !== 'undefined') pm.collectionVariables.set('photoApprovalPending', String(json.photoApprovalPending));",
+                  "if (json && json.profilePhotoPath) pm.collectionVariables.set('uploadedProfilePhotoPath', json.profilePhotoPath);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Profile Photo Flow",
+      "item": [
+        {
+          "name": "Customer Login (for upload)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"wyatt.martinez\",\n  \"password\": \"Cust123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Customer login is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json && json.token) pm.collectionVariables.set('token', json.token);",
+                  "if (json && json.userId) pm.collectionVariables.set('customerUserId', json.userId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload Profile Photo (Customer)",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "photo", "type": "file", "src": "" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/account/profile-photo",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "account", "profile-photo"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Upload returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json && json.id) pm.collectionVariables.set('customerId', json.id);",
+                  "if (json && json.profilePhotoPath) pm.collectionVariables.set('uploadedProfilePhotoPath', json.profilePhotoPath);",
+                  "if (json && typeof json.photoApprovalPending !== 'undefined') pm.collectionVariables.set('photoApprovalPending', String(json.photoApprovalPending));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get My Customer Profile (verify pending)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "me"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Me profile is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "pm.test('Profile has photo path', function () {",
+                  "  pm.expect(json.profilePhotoPath).to.be.a('string').and.not.empty;",
+                  "});",
+                  "pm.test('Photo is pending after upload', function () {",
+                  "  pm.expect(json.photoApprovalPending).to.eql(true);",
+                  "});",
+                  "if (json && json.id) pm.collectionVariables.set('customerId', json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin Login (for moderation)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"alicia.nguyen\",\n  \"password\": \"Admin123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Admin login is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json && json.token) pm.collectionVariables.set('token', json.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Pending Photo Customers (Admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/customers/pending-photos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "customers", "pending-photos"]
+            }
+          }
+        },
+        {
+          "name": "Approve Customer Photo (Admin)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/customers/{{customerId}}/approve-photo",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "customers", "{{customerId}}", "approve-photo"]
+            }
+          }
+        },
+        {
+          "name": "Reject Customer Photo (Admin)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/customers/{{customerId}}/reject-photo",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "customers", "{{customerId}}", "reject-photo"]
+            }
+          }
+        },
+        {
+          "name": "Get Customer By Id (verify moderation state)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "customers", "{{customerId}}"]
+            }
           }
         }
       ]
@@ -306,6 +502,9 @@
     { "key": "rewardTierId", "value": "1" },
     { "key": "tagId", "value": "1" },
     { "key": "reviewId", "value": "00000000-0000-4000-8000-000000000000" },
+    { "key": "uploadedProfilePhotoPath", "value": "" },
+    { "key": "photoApprovalPending", "value": "" },
+    { "key": "customerUserId", "value": "" },
     { "key": "startDate", "value": "2025-01-01" },
     { "key": "endDate", "value": "2025-12-31" }
   ]
