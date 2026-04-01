@@ -37,7 +37,7 @@
 			/>
 		{:else}
 			<div class="bg-surface-container flex h-full w-full items-center justify-center">
-				<span class="material-symbols-outlined text-outline text-4xl">bakery_dining</span>
+				image not found
 			</div>
 		{/if}
 

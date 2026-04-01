@@ -66,11 +66,11 @@
 					<div class="grid grid-cols-1 gap-x-12 gap-y-8 sm:grid-cols-2">
 						<div>
 							<label class="text-outline text-[11px] font-bold uppercase">Full Name</label>
-							<p class="text-on-surface text-lg font-semibold">Alexander James Thompson</p>
+							<p class="text-on-surface text-lg font-semibold">John Chungus</p>
 						</div>
 						<div>
 							<label class="text-outline text-[11px] font-bold uppercase">Country</label>
-							<p class="text-on-surface text-lg font-semibold">United Kingdom</p>
+							<p class="text-on-surface text-lg font-semibold">Canada</p>
 						</div>
 						<div>
 							<label class="text-outline text-[11px] font-bold uppercase">Joined</label>

@@ -64,10 +64,6 @@
 				href={resolve('/about')}
 				class="text-sm font-medium text-foreground transition-colors hover:text-primary">About</a
 			>
-			<a
-				href={resolve('/order')}
-				class="text-sm font-medium text-foreground transition-colors hover:text-primary">Order</a
-			>
 		</div>
 
 		<!-- Right icons -->
@@ -119,8 +115,7 @@
 				>
 			{/each}
 			<hr class="border-border" />
-			<!-- <a href="/about" class="text-sm text-foreground hover:text-primary">About</a> -->
-			<!-- <a href="/order" class="text-sm text-foreground hover:text-primary">Order</a> -->
+			<a href="/about" class="text-sm text-foreground hover:text-primary">About</a>
 			<div class="flex gap-4 pt-2">
 				<button
 					onclick={handleProfileClick}

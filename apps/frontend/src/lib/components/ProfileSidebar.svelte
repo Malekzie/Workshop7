@@ -21,13 +21,13 @@
 		</a>
 		<a
 			class="flex items-center gap-3 rounded-full px-4 py-2.5 text-stone-600 hover:bg-[#8e4e14]/10"
-			href="#"
+			href="/order/1" // TODO: Link to actual orders page
 		>
 			<span>Orders</span>
 		</a>
 		<a
 			class="flex items-center gap-3 rounded-full px-4 py-2.5 text-stone-600 hover:bg-[#8e4e14]/10"
-			href="#"
+			href="/profile/preferences"
 		>
 			<span>Preferences</span>
 		</a>
