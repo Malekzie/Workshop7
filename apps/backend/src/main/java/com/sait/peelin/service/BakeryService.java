@@ -25,14 +25,14 @@ public class BakeryService {
     private final BakeryRepository bakeryRepository;
     private final BakeryHourRepository bakeryHourRepository;
     private final AddressRepository addressRepository;
-
+    @Transactional(readOnly = true)
     public List<BakeryDto> list(String search) {
         List<Bakery> list = StringUtils.hasText(search)
                 ? bakeryRepository.findByBakeryNameContainingIgnoreCase(search.trim())
                 : bakeryRepository.findAll();
         return list.stream().map(CatalogMapper::bakery).toList();
     }
-
+    @Transactional(readOnly = true)
     public BakeryDto get(Integer id) {
         Bakery b = bakeryRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bakery not found"));
         return CatalogMapper.bakery(b);
