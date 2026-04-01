@@ -19,16 +19,8 @@ public class CustomerDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        // Login accepts username or email; principal may be either (case-insensitive).
-        User user = userRepository
-                .findByUsernameIgnoreCaseOrUserEmailIgnoreCase(username.trim(), username.trim())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+        User user = userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        return userDetailsFor(user);
-    }
-
-    /** Builds {@link UserDetails} from a persisted {@link User} (JWT filter / tests). */
-    public UserDetails userDetailsFor(User user) {
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getUserPasswordHash(),

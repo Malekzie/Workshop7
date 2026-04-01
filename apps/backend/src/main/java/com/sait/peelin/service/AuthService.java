@@ -37,15 +37,10 @@ public class AuthService {
     private final CurrentUserService currentUserService;
 
     public AuthResponse login(LoginRequest request) {
-        String email = Optional.ofNullable(request.getEmail())
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .orElse(null);
-
         String principal = Optional.ofNullable(request.getUsername())
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
-                .orElse(email);
+                .orElse(request.getEmail().trim());
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -54,8 +49,7 @@ public class AuthService {
                 )
         );
 
-        User user = userRepository.findByUsernameOrUserEmail(principal, principal)
-                .orElseGet(() -> userRepository.findByUsernameOrUserEmail(principal, email).orElseThrow());
+        User user = userRepository.findByUsernameOrUserEmail(principal, request.getEmail()).orElseThrow();
 
         UserDetails userDetails = org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername())

@@ -21,13 +21,13 @@ public class AdminUserController {
     private final AdminUserService adminUserService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
+    @PreAuthorize("hasRole('ADMIN')")
     public List<UserSummaryDto> list() {
         return adminUserService.list();
     }
 
     @PatchMapping("/{id}/active")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
+    @PreAuthorize("hasRole('ADMIN')")
     public UserSummaryDto setActive(@PathVariable UUID id, @Valid @RequestBody UserActivePatchRequest req) {
         return adminUserService.setActive(id, req.getActive());
     }
