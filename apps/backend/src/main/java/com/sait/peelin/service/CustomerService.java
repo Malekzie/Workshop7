@@ -82,21 +82,30 @@ public class CustomerService {
     public void approvePhoto(UUID id) {
         Customer c = customerRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
         if (c.getUser() != null) {
-            c.getUser().setPhotoApprovalPending(false);
-            userRepository.save(c.getUser());
+            User freshUser = userRepository.findById(c.getUser().getUserId()).orElse(c.getUser());
+            int updated = userRepository.updateProfilePhotoState(
+                    freshUser.getUserId(),
+                    freshUser.getProfilePhotoPath(),
+                    false
+            );
+            if (updated != 1) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to approve photo");
+            }
         }
-        customerRepository.save(c);
     }
 
     @Transactional
     public void rejectPhoto(UUID id) {
         Customer c = customerRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
         if (c.getUser() != null) {
-            c.getUser().setProfilePhotoPath(null);
-            c.getUser().setPhotoApprovalPending(false);
-            userRepository.save(c.getUser());
+            User freshUser = userRepository.findById(c.getUser().getUserId()).orElse(c.getUser());
+            String existingPhotoPath = freshUser.getProfilePhotoPath();
+            int updated = userRepository.updateProfilePhotoState(freshUser.getUserId(), null, false);
+            if (updated != 1) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to reject photo");
+            }
+            profilePhotoStorageService.deleteCustomerProfilePhoto(existingPhotoPath);
         }
-        customerRepository.save(c);
     }
 
     @Transactional
@@ -116,12 +125,18 @@ public class CustomerService {
         Customer c = customerRepository.findByUser_UserId(u.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No customer profile"));
 
+        String previousPhotoPath = u.getProfilePhotoPath();
         String uploadedUrl = profilePhotoStorageService.uploadCustomerProfilePhoto(u.getUserId(), photo);
+        int updated = userRepository.updateProfilePhotoState(u.getUserId(), uploadedUrl, true);
+        if (updated != 1) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to persist profile photo");
+        }
+        // Keep the current persistence-context object in sync for this request's DTO mapping.
         u.setProfilePhotoPath(uploadedUrl);
         u.setPhotoApprovalPending(true);
-
-        userRepository.save(u);
-        customerRepository.save(c);
+        if (previousPhotoPath != null && !previousPhotoPath.isBlank() && !previousPhotoPath.equals(uploadedUrl)) {
+            profilePhotoStorageService.deleteCustomerProfilePhoto(previousPhotoPath);
+        }
         return toDto(c);
     }
 
@@ -166,9 +181,13 @@ public class CustomerService {
 
     private CustomerDto toDto(Customer c) {
         Address addr = c.getAddress();
+        User dtoUser = null;
+        if (c.getUser() != null && c.getUser().getUserId() != null) {
+            dtoUser = userRepository.findById(c.getUser().getUserId()).orElse(c.getUser());
+        }
         return new CustomerDto(
                 c.getId(),
-                c.getUser() != null ? c.getUser().getUserId() : null,
+                dtoUser != null ? dtoUser.getUserId() : null,
                 c.getRewardTier().getId(),
                 c.getCustomerFirstName(),
                 c.getCustomerMiddleInitial(),
@@ -178,8 +197,8 @@ public class CustomerService {
                 c.getCustomerRewardBalance(),
                 addr != null ? addr.getId() : null,
                 CatalogMapper.address(addr),
-                c.getUser() != null ? c.getUser().getProfilePhotoPath() : null,
-                c.getUser() != null && Boolean.TRUE.equals(c.getUser().getPhotoApprovalPending())
+                dtoUser != null ? dtoUser.getProfilePhotoPath() : null,
+                dtoUser != null && Boolean.TRUE.equals(dtoUser.getPhotoApprovalPending())
         );
     }
 }
