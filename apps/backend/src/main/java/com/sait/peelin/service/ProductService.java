@@ -90,17 +90,9 @@ public class ProductService {
         Product p = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
-        String oldUrl = p.getProductImageUrl();
-        String url = profilePhotoStorageService.uploadToFolderFlat("bakery", image);
+        String url = profilePhotoStorageService.uploadProductImage(image, p.getProductImageUrl());
         p.setProductImageUrl(url);
-        productRepository.save(p);
-
-        // Delete the previous image from storage after the new one is persisted
-        if (oldUrl != null && !oldUrl.isBlank() && !oldUrl.equals(url)) {
-            profilePhotoStorageService.deleteByUrl(oldUrl);
-        }
-
-        return CatalogMapper.product(productRepository.findById(id).orElseThrow(), productTagRepository);
+        return CatalogMapper.product(productRepository.save(p), productTagRepository);
     }
 
     @Transactional
