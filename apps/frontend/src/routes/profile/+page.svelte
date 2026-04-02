@@ -39,12 +39,13 @@
 					<div class="flex items-center gap-8">
 						<div class="group relative">
 							<div
-								class="bg-primary-container h-32 w-32 overflow-hidden rounded-full shadow-xl ring-4 ring-white"
+								class="bg-primary-container h-32 w-32 overflow-hidden rounded-full shadow-xl ring-1 ring-white"
 							>
 								<img
 									class="h-full w-full object-cover"
 									alt="Customer profile picture"
-									src={profile.profilePhotoPath ?? 'placeholder-profile.png'}
+									src={profile.profilePhotoPath ??
+										'https://peelin-good-storage.tor1.cdn.digitaloceanspaces.com/bakery/default-profile.jpg'}
 								/>
 							</div>
 							<button
@@ -71,6 +72,14 @@
 								</span>
 							</div>
 						</div>
+					</div>
+
+					<div class="flex justify-end">
+						<button
+							class="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:cursor-pointer hover:bg-primary/90"
+						>
+							Edit Profile
+						</button>
 					</div>
 				</section>
 
