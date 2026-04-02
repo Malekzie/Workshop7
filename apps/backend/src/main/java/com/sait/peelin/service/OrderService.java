@@ -131,7 +131,7 @@ public class OrderService {
         order.setOrderPlacedDatetime(OffsetDateTime.now());
         order.setOrderTotal(total);
         order.setOrderDiscount(discount);
-        order.setOrderStatus(OrderStatus.completed);
+        order.setOrderStatus(OrderStatus.placed);
         order = orderRepository.save(order);
 
         for (CheckoutRequest.CheckoutLineRequest line : req.getItems()) {
@@ -162,7 +162,13 @@ public class OrderService {
         pay.setPaymentTransactionId("TXN-" + UUID.randomUUID().toString().substring(0, 12).toUpperCase());
         paymentRepository.save(pay);
 
-        int points = total.setScale(0, RoundingMode.DOWN).intValue();
+        // Loyalty points earned are intentionally scaled so that reward tier thresholds
+        // (100k+ points) can be reached after a realistic number of orders.
+        // Current UI expectation: ~$29 orders should yield ~29,000 points.
+        int points = total
+                .multiply(BigDecimal.valueOf(1000))
+                .setScale(0, RoundingMode.DOWN)
+                .intValue();
         Reward reward = new Reward();
         reward.setCustomer(customer);
         reward.setOrder(order);
@@ -212,6 +218,26 @@ public class OrderService {
         if (o.getOrderStatus() != OrderStatus.cancelled) {
             o.setOrderStatus(OrderStatus.completed);
         }
+        return toDto(orderRepository.save(o));
+    }
+
+    @Transactional
+    @CacheEvict(value = "orders", allEntries = true)
+    public OrderDto acceptDelivery(UUID orderId) {
+        User u = currentUserService.requireUser();
+        if (u.getUserRole() != UserRole.customer) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        Order o = orderRepository.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+        if (o.getCustomer() == null || o.getCustomer().getUser() == null
+                || !o.getCustomer().getUser().getUserId().equals(u.getUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        if (o.getOrderStatus() != OrderStatus.delivered && o.getOrderStatus() != OrderStatus.picked_up) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Only delivered or picked_up orders can be accepted");
+        }
+        o.setOrderStatus(OrderStatus.completed);
         return toDto(orderRepository.save(o));
     }
 

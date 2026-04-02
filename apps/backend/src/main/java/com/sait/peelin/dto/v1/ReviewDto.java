@@ -8,6 +8,9 @@ import java.util.UUID;
 public record ReviewDto(
         UUID id,
         UUID customerId,
+        UUID orderId,
+        Integer bakeryId,
+        String bakeryName,
         Integer productId,
         UUID employeeId,
         short rating,
