@@ -1,4 +1,7 @@
--- Add image URLs for remaining seeded products after Spaces rename.
+-- Product image URLs after Spaces rename / file cleanup.
+-- Assumes product images live at:
+--   https://peelin-good-storage.tor1.digitaloceanspaces.com/products/<filename>.jpg
+
 UPDATE product
 SET product_image_url = CASE product_name
     WHEN 'Blueberry Muffin' THEN 'https://peelin-good-storage.tor1.digitaloceanspaces.com/products/blueberry-muffin.jpg'
@@ -37,3 +40,4 @@ WHERE product_name IN (
     'Raspberry Danish',
     'Chocolate Eclair'
 );
+
