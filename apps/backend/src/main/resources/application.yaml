@@ -1,9 +1,16 @@
 spring:
+  data:
+    redis:
+      url: ${UPSTASH_REDIS_REST_URL}
+      password: ${UPSTASH_REDIS_REST_TOKEN}
+      ssl:
+        enabled: true
   application:
     name: Peelin' Good
+  config:
+    import: optional:file:.env.local[.properties]
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
-
   jpa:
     open-in-view: false
 
@@ -14,6 +21,12 @@ app:
     issuer: ${JWT_ISSUER:peelin-good}
   cors:
     allowed-origins: ${APP_CORS_ORIGINS:http://localhost:3000,http://localhost:8080,http://10.0.2.2:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
 
 # OAuth2 skeleton — uncomment and supply credentials to enable
 # spring:

@@ -36,13 +36,14 @@ public class SecurityConfig {
                                 "/api/v1/auth/**",
                                 "/actuator/health",
                                 "/actuator/health/**",
-                                "/actuator/info",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/v3/api-docs",
                                 "/v3/api-docs/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/product-specials", "/api/v1/product-specials/**")
+                        .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/bakeries/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/tags/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reward-tiers", "/api/v1/reward-tiers/**").permitAll()

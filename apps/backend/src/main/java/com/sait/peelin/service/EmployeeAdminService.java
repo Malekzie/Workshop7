@@ -52,7 +52,8 @@ public class EmployeeAdminService {
         e.setEmployeePhone(req.phone());
         e.setEmployeeBusinessPhone(req.businessPhone());
         e.setEmployeeWorkEmail(req.workEmail());
-        e.setPhotoApprovalPending(false);
+        user.setPhotoApprovalPending(false);
+        userRepository.save(user);
         employeeRepository.save(e);
         return employeeProfileService.get(e.getId());
     }

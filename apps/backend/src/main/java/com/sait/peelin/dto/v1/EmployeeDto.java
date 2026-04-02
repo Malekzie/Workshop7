@@ -6,13 +6,16 @@ public record EmployeeDto(
         UUID id,
         UUID userId,
         Integer bakeryId,
+        String username,
         String firstName,
         String middleInitial,
         String lastName,
         String position,
         String phone,
+        String businessPhone,
         String workEmail,
         Integer addressId,
+        AddressDto address,
         String profilePhotoPath,
         boolean photoApprovalPending
 ) {}

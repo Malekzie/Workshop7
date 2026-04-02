@@ -63,14 +63,6 @@ public class Employee {
     @Column(name = "employee_work_email", nullable = false, length = 254)
     private String employeeWorkEmail;
 
-    @Size(max = 500)
-    @Column(name = "profile_photo_path", length = 500)
-    private String profilePhotoPath;
-
-    @NotNull
-    @ColumnDefault("false")
-    @Column(name = "photo_approval_pending", nullable = false)
-    private Boolean photoApprovalPending;
 
     public UUID getId() {
         return id;
@@ -158,22 +150,6 @@ public class Employee {
 
     public void setEmployeeWorkEmail(String employeeWorkEmail) {
         this.employeeWorkEmail = employeeWorkEmail;
-    }
-
-    public String getProfilePhotoPath() {
-        return profilePhotoPath;
-    }
-
-    public void setProfilePhotoPath(String profilePhotoPath) {
-        this.profilePhotoPath = profilePhotoPath;
-    }
-
-    public Boolean getPhotoApprovalPending() {
-        return photoApprovalPending;
-    }
-
-    public void setPhotoApprovalPending(Boolean photoApprovalPending) {
-        this.photoApprovalPending = photoApprovalPending;
     }
 
 }

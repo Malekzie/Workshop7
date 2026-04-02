@@ -11,6 +11,8 @@ import com.sait.peelin.repository.ProductRepository;
 import com.sait.peelin.repository.ProductTagRepository;
 import com.sait.peelin.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -25,6 +27,7 @@ public class ProductService {
     private final ProductTagRepository productTagRepository;
     private final TagRepository tagRepository;
 
+    @Cacheable(value = "products", key = "'all:' + #search + ':' + #tagId")
     public List<ProductDto> list(String search, Integer tagId) {
         List<Product> products;
         if (tagId != null) {
@@ -34,15 +37,32 @@ public class ProductService {
         } else {
             products = productRepository.findAll();
         }
-        return products.stream().map(p -> CatalogMapper.product(p, productTagRepository)).toList();
+
+        if (products.isEmpty()) {
+            return List.of();
+        }
+
+        java.util.Map<Integer, List<Integer>> tagsByProduct = productTagRepository
+                .findByProduct_IdIn(products.stream().map(com.sait.peelin.model.Product::getId).toList())
+                .stream()
+                .collect(java.util.stream.Collectors.groupingBy(
+                        pt -> pt.getProduct().getId(),
+                        java.util.stream.Collectors.mapping(pt -> pt.getTag().getId(), java.util.stream.Collectors.toList())
+                ));
+
+        return products.stream()
+                .map(p -> CatalogMapper.product(p, tagsByProduct.getOrDefault(p.getId(), List.of())))
+                .toList();
     }
 
+    @Cacheable(value = "products", key = "#id")
     public ProductDto get(Integer id) {
         Product p = productRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Product not found"));
         return CatalogMapper.product(p, productTagRepository);
     }
 
     @Transactional
+    @CacheEvict(value = "products", allEntries = true)
     public ProductDto create(ProductUpsertRequest req) {
         Product p = new Product();
         apply(req, p);
@@ -53,6 +73,7 @@ public class ProductService {
     }
 
     @Transactional
+    @CacheEvict(value = "products", allEntries = true)
     public ProductDto update(Integer id, ProductUpsertRequest req) {
         Product p = productRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Product not found"));
         apply(req, p);
@@ -63,6 +84,7 @@ public class ProductService {
     }
 
     @Transactional
+    @CacheEvict(value = "products", allEntries = true)
     public void delete(Integer id) {
         if (!productRepository.existsById(id)) {
             throw new ResourceNotFoundException("Product not found");

@@ -37,10 +37,15 @@ public class AuthService {
     private final CurrentUserService currentUserService;
 
     public AuthResponse login(LoginRequest request) {
+        String email = Optional.ofNullable(request.getEmail())
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .orElse(null);
+
         String principal = Optional.ofNullable(request.getUsername())
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
-                .orElse(request.getEmail().trim());
+                .orElse(email);
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -49,7 +54,8 @@ public class AuthService {
                 )
         );
 
-        User user = userRepository.findByUsernameOrUserEmail(principal, request.getEmail()).orElseThrow();
+        User user = userRepository.findByUsernameIgnoreCaseOrUserEmailIgnoreCase(principal, principal)
+                .orElseThrow();
 
         UserDetails userDetails = org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername())
@@ -82,6 +88,8 @@ public class AuthService {
         user.setUserPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setUserRole(UserRole.customer);
         user.setUserCreatedAt(OffsetDateTime.now());
+        user.setActive(true);
+        user.setPhotoApprovalPending(false);
         userRepository.save(user);
 
         RewardTier lowestTier = rewardTierRepository.findFirstByOrderByRewardTierMinPointsAsc()
@@ -91,11 +99,19 @@ public class AuthService {
         customer.setUser(user);
         customer.setRewardTier(lowestTier);
         customer.setCustomerFirstName(request.getFirstName());
+        String mi = request.getMiddleInitial() != null ? request.getMiddleInitial().trim() : null;
+        if (mi != null && mi.isEmpty()) {
+            mi = null;
+        }
+        customer.setCustomerMiddleInitial(mi);
         customer.setCustomerLastName(request.getLastName());
         customer.setCustomerPhone(request.getPhone());
+        String businessPhone = request.getBusinessPhone();
+        if (businessPhone != null && !businessPhone.isBlank()) {
+            customer.setCustomerBusinessPhone(businessPhone.trim());
+        }
         customer.setCustomerEmail(request.getEmail());
         customer.setCustomerRewardBalance(0);
-        customer.setPhotoApprovalPending(false);
         customerRepository.save(customer);
 
         UserDetails userDetails = org.springframework.security.core.userdetails.User
