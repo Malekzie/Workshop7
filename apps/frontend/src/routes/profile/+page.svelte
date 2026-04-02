@@ -1,13 +1,13 @@
-<script>
+<script lang="ts">
 	import ProfileSidebar from '$lib/components/ProfileSidebar.svelte';
 	import ProfileDetails from '$lib/components/ProfileDetails.svelte';
 	import ProfileRecomendations from '$lib/components/ProfileRecomendations.svelte';
 	import { onMount } from 'svelte';
 	import { getProfile } from '$lib/services/profile';
 
-	let profile = null;
+	let profile: any = null;
 	let loading = true;
-	let error = null;
+	let error: string | null = null;
 
 	onMount(async () => {
 		try {
