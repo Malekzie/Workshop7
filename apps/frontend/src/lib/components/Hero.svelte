@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { resolve } from 'path';
+	import { resolve } from '$app/paths';
 
 	// No props needed for static mockup
 </script>
@@ -32,7 +32,7 @@
 			</p>
 			<div class="flex gap-4 pt-2">
 				<a
-					href={resolve('/specials')}
+					href={resolve('/menu')}
 					class="inline-flex items-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
 				>
 					Browse Menu
