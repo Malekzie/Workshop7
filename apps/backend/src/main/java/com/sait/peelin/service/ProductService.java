@@ -19,6 +19,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -38,7 +40,16 @@ public class ProductService {
         } else {
             products = productRepository.findAll();
         }
-        return products.stream().map(p -> CatalogMapper.product(p, productTagRepository)).toList();
+
+        // Fetch all product tags for the result set in one query to avoid N+1
+        List<Integer> productIds = products.stream().map(Product::getId).collect(Collectors.toList());
+        Map<Integer, List<ProductTag>> tagsByProduct = productTagRepository.findByProduct_IdIn(productIds)
+                .stream()
+                .collect(Collectors.groupingBy(pt -> pt.getProduct().getId()));
+
+        return products.stream()
+                .map(p -> CatalogMapper.product(p, tagsByProduct.getOrDefault(p.getId(), List.of())))
+                .toList();
     }
 
     public ProductDto get(Integer id) {
