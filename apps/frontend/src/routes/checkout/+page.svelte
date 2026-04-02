@@ -48,6 +48,7 @@
 				orderMethod,
 				paymentMethod,
 				orderComment: orderComment || undefined,
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				items: $cart.items.map((i: any) => ({
 					productId: i.productId,
 					quantity: i.quantity
