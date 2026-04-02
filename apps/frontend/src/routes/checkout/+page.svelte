@@ -48,7 +48,7 @@
 				orderMethod,
 				paymentMethod,
 				orderComment: orderComment || undefined,
-				items: $cart.items.map((i) => ({
+				items: $cart.items.map((i: any) => ({
 					productId: i.productId,
 					quantity: i.quantity
 				}))
