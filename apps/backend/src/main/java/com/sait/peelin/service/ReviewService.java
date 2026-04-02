@@ -77,7 +77,34 @@ public class ReviewService {
                 r.getReviewComment(),
                 r.getReviewStatus(),
                 r.getReviewSubmittedDate(),
-                r.getReviewApprovalDate()
+                r.getReviewApprovalDate(),
+                reviewerDisplayName(r.getCustomer())
         );
+    }
+
+    /**
+     * First name plus last-name initial for public display (e.g. {@code James R.}).
+     */
+    static String reviewerDisplayName(Customer c) {
+        if (c == null) {
+            return "Customer";
+        }
+        String first = trimName(c.getCustomerFirstName());
+        String last = trimName(c.getCustomerLastName());
+        if (first.isEmpty()) {
+            first = "Customer";
+        }
+        if (last.isEmpty()) {
+            return first;
+        }
+        char initial = Character.toUpperCase(last.charAt(0));
+        return first + " " + initial + ".";
+    }
+
+    private static String trimName(String s) {
+        if (s == null) {
+            return "";
+        }
+        return s.trim();
     }
 }

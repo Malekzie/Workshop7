@@ -68,6 +68,7 @@ public class BakeryService {
         b.setStatus(req.getStatus() != null ? req.getStatus() : BakeryStatus.open);
         b.setLatitude(req.getLatitude());
         b.setLongitude(req.getLongitude());
+        b.setBakeryImageUrl(normalizeBakeryImageUrl(req.getBakeryImageUrl()));
         return CatalogMapper.bakery(bakeryRepository.save(b));
     }
 
@@ -85,6 +86,7 @@ public class BakeryService {
         }
         b.setLatitude(req.getLatitude());
         b.setLongitude(req.getLongitude());
+        b.setBakeryImageUrl(normalizeBakeryImageUrl(req.getBakeryImageUrl()));
         return CatalogMapper.bakery(bakeryRepository.save(b));
     }
 
@@ -101,5 +103,13 @@ public class BakeryService {
         if (!bakeryRepository.existsById(id)) {
             throw new ResourceNotFoundException("Bakery not found");
         }
+    }
+
+    private static String normalizeBakeryImageUrl(String url) {
+        if (!StringUtils.hasText(url)) {
+            return null;
+        }
+        String t = url.trim();
+        return t.isEmpty() ? null : t;
     }
 }

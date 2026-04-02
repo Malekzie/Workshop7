@@ -14,5 +14,7 @@ public record ReviewDto(
         String comment,
         ReviewStatus status,
         OffsetDateTime submittedAt,
-        OffsetDateTime approvalDate
+        OffsetDateTime approvalDate,
+        /** Public storefront label, e.g. "James R." (first name + last initial). */
+        String reviewerDisplayName
 ) {}
