@@ -30,7 +30,7 @@
 	<nav class="mt-4 flex-1 space-y-1">
 		{#each [{ label: 'Profile', href: '/profile' }, { label: 'Orders', href: '/orders' }, { label: 'Preferences', href: '/profile/preferences' }] as link (link.href)}
 			<a
-				href={link.href}
+				href={resolve(link.href)}
 				class="flex items-center gap-3 rounded-full px-4 py-2.5 transition-colors
           {$page.url.pathname === link.href
 					? 'bg-[#703210] text-white'

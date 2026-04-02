@@ -2,7 +2,7 @@
 	import AboutUsHero from '$lib/components/AboutUsHero.svelte';
 	import AboutUsValues from '$lib/components/AboutUsValues.svelte';
 	import BakeryLocations from '$lib/components/BakeryLocations.svelte';
-	import type { PageProps } from './$types';
+	import { resolve } from '$app/paths';
 </script>
 
 <div class="bg-surface-container-low min-h-screen px-6 py-16">

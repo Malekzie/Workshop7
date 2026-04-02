@@ -32,13 +32,13 @@
 			</p>
 			<div class="flex gap-4 pt-2">
 				<a
-					href={resolve('#specials')}
+					href={resolve('/specials')}
 					class="inline-flex items-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
 				>
 					Browse Menu
 				</a>
 				<a
-					href="/about"
+					href={resolve('/about')}
 					class="inline-flex items-center rounded-full border border-border px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
 				>
 					Our Story
