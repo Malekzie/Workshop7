@@ -6,10 +6,14 @@ let cache = null;
 const API_BASE = 'http://localhost:8080/api/v1/tags';
 
 function authHeaders() {
-	return {
-		'Content-Type': 'application/json',
-		Authorization: `Bearer ${get(token)}`
+	const t = get(token);
+	const headers = {
+		'Content-Type': 'application/json'
 	};
+
+	if (t) headers['Authorization'] = `Bearer ${t}`;
+
+	return headers;
 }
 
 export async function getTags() {
