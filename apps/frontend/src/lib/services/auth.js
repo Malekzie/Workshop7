@@ -21,7 +21,7 @@ export async function loginUser(email, password) {
 		// saves to store + localStorage
 		setAuth(data);
 		return { ok: true };
-	} catch (e) {
+	} catch {
 		return { ok: false, message: 'Could not reach the server. Try again later.' };
 	}
 }
@@ -43,7 +43,7 @@ export async function registerUser(payload) {
 		const data = await res.json();
 		setAuth(data);
 		return { ok: true };
-	} catch (e) {
+	} catch {
 		return { ok: false, message: 'Could not reach the server. Try again later.' };
 	}
 }

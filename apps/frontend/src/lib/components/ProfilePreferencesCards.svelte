@@ -9,7 +9,7 @@
 		<h3 class="text-on-surface text-xl font-bold">Notifications</h3>
 
 		<div class="space-y-5">
-			{#each [{ key: 'emailNotifications', label: 'Email Notifications', desc: 'Order updates & promos' }, { key: 'smsNotifications', label: 'SMS Notifications', desc: 'Delivery alerts' }] as item}
+			{#each [{ key: 'emailNotifications', label: 'Email Notifications', desc: 'Order updates & promos' }, { key: 'smsNotifications', label: 'SMS Notifications', desc: 'Delivery alerts' }] as item (item.key)}
 				<div class="flex items-center justify-between">
 					<div>
 						<p class="text-on-surface font-medium">{item.label}</p>
@@ -38,7 +38,7 @@
 		<h3 class="text-on-surface text-xl font-bold">Dietary Preferences</h3>
 
 		<div class="space-y-5">
-			{#each [{ key: 'veganOnly', label: 'Vegan Only' }, { key: 'glutenFree', label: 'Gluten Free' }] as item}
+			{#each [{ key: 'veganOnly', label: 'Vegan Only' }, { key: 'glutenFree', label: 'Gluten Free' }] as item (item.key)}
 				<div class="flex items-center justify-between">
 					<p class="text-on-surface font-medium">{item.label}</p>
 
@@ -64,7 +64,7 @@
 		<h3 class="text-on-surface text-xl font-bold">Allergies</h3>
 
 		<div class="space-y-5">
-			{#each [{ key: 'nuts', label: 'Nuts' }, { key: 'dairy', label: 'Dairy' }, { key: 'eggs', label: 'Eggs' }, { key: 'soy', label: 'Soy' }] as item}
+			{#each [{ key: 'nuts', label: 'Nuts' }, { key: 'dairy', label: 'Dairy' }, { key: 'eggs', label: 'Eggs' }, { key: 'soy', label: 'Soy' }] as item (item.key)}
 				<div class="flex items-center justify-between">
 					<p class="text-on-surface font-medium">{item.label}</p>
 

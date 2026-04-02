@@ -35,7 +35,7 @@
 
 		if (emailError || passwordError) return;
 
-		const { ok, data } = await loginUser(email, password);
+		const { ok } = await loginUser(email, password);
 
 		if (!ok) {
 			emailError = 'Invalid email or password.';
@@ -132,8 +132,9 @@
 							<label class="block text-xs font-semibold tracking-wide text-primary uppercase">
 								Password
 							</label>
-							<a class="text-xs text-primary hover:underline" href="/login/recover-password"
-								>Forgot?</a
+							<a
+								class="text-xs text-primary hover:underline"
+								href={resolve('/login/recover-password')}>Forgot?</a
 							>
 						</div>
 						<input
@@ -170,7 +171,9 @@
 					<!-- Signup -->
 					<p class="text-center text-sm">
 						No account?
-						<a href="/register" class="font-semibold text-primary hover:underline">Sign up</a>
+						<a href={resolve('/register')} class="font-semibold text-primary hover:underline"
+							>Sign up</a
+						>
 					</p>
 				</form>
 			</div>

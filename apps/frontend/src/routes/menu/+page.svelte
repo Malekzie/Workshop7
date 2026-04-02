@@ -60,7 +60,7 @@
 					All
 				</button>
 
-				{#each tags as tag}
+				{#each tags as tag (tag.id)}
 					<button
 						onclick={() => (activeTagId = tag.id)}
 						class="rounded-md px-3 py-2 text-left text-sm transition hover:cursor-pointer hover:bg-[#8e4e14]/10
