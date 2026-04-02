@@ -3,7 +3,8 @@ import { writable } from 'svelte/store';
 // Placeholder - replace with full cart implementation
 function createCart() {
 	const { subscribe, update, set } = writable({
-		items: [],
+		items:
+			/** @type {{ productId: number, productName: string, productImageUrl: string | null, unitPrice: number, quantity: number, lineTotal: number }[]} */ ([]),
 		subtotal: 0,
 		discount: 0,
 		total: 0
