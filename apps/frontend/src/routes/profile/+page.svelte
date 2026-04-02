@@ -12,7 +12,7 @@
 	onMount(async () => {
 		try {
 			profile = await getProfile();
-		} catch (err) {
+		} catch {
 			error = 'Failed to load profile. Please try again later.';
 		} finally {
 			loading = false;

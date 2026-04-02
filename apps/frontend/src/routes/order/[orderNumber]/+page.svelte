@@ -100,7 +100,7 @@
 
 			{#if !isCancelled(order.orderStatus)}
 				<div class="flex items-center gap-0 overflow-x-auto pb-2">
-					{#each STATUS_STEPS as step, i}
+					{#each STATUS_STEPS as step, i (i)}
 						{@const active = i <= statusIndex(order.orderStatus)}
 						<div class="flex flex-shrink-0 flex-col items-center">
 							<div

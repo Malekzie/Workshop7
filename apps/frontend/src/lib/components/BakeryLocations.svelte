@@ -28,7 +28,7 @@
 	<h2 class="mb-8 text-center text-3xl font-bold">Our Bakery Locations</h2>
 
 	<div class="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-		{#each locations as loc}
+		{#each locations as loc (loc.name)}
 			<div
 				class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition hover:scale-105 hover:shadow-lg"
 			>

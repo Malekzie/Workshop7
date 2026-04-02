@@ -3,8 +3,6 @@
 	import AboutUsValues from '$lib/components/AboutUsValues.svelte';
 	import BakeryLocations from '$lib/components/BakeryLocations.svelte';
 	import type { PageProps } from './$types';
-
-	let { data }: PageProps = $props();
 </script>
 
 <div class="bg-surface-container-low min-h-screen px-6 py-16">
@@ -26,7 +24,7 @@
 			</p>
 
 			<a
-				href="/menu"
+				href={resolve('/menu')}
 				class="inline-block rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary/90"
 			>
 				View Menu

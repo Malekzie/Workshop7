@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { ShoppingCart, User, ChevronDown, Menu, X } from '@lucide/svelte';
+	import { ShoppingCart, User, Menu, X } from '@lucide/svelte';
 	import { isLoggedIn } from '$lib/stores/authStore';
 
 	interface Props {
@@ -11,8 +11,6 @@
 	let { cartCount = 0 }: Props = $props();
 	let menuOpen = $state(false);
 	let categoryOpen = $state(false);
-
-	const categories = ['Breads', 'Pastries', 'Cakes', 'Seasonal'];
 
 	function handleClickOutside(e: MouseEvent) {
 		const target = e.target as HTMLElement;
@@ -114,7 +112,7 @@
 			<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">Menu</p>
 
 			<hr class="border-border" />
-			<a href="/about" class="text-sm text-foreground hover:text-primary">About</a>
+			<a href={resolve('/about')} class="text-sm text-foreground hover:text-primary">About</a>
 			<!-- show order if user is logged in -->
 			{#if $isLoggedIn}
 				<a href={resolve('/order')} class="text-sm text-foreground hover:text-primary">Order</a>

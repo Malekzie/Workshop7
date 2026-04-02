@@ -28,7 +28,7 @@
 	</div>
 
 	<nav class="mt-4 flex-1 space-y-1">
-		{#each [{ label: 'Profile', href: '/profile' }, { label: 'Orders', href: '/orders' }, { label: 'Preferences', href: '/profile/preferences' }] as link}
+		{#each [{ label: 'Profile', href: '/profile' }, { label: 'Orders', href: '/orders' }, { label: 'Preferences', href: '/profile/preferences' }] as link (link.href)}
 			<a
 				href={link.href}
 				class="flex items-center gap-3 rounded-full px-4 py-2.5 transition-colors
@@ -49,7 +49,8 @@
 		</button>
 		<a
 			// TODO add support link for customer service chat
-			href="#"
+			href={resolve('/profile')}
+			// TODO update to support page when implemented
 			class="flex w-full items-center space-x-3 rounded-full px-4 py-2 text-stone-500 hover:bg-[#8e4e14]/10"
 		>
 			<span>Support</span>
