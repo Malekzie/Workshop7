@@ -1,8 +1,8 @@
 spring:
   data:
     redis:
-      url: ${UPSTASH_REDIS_URL}
-      password: ${UPSTASH_REDIS_TOKEN}
+      url: ${UPSTASH_REDIS_REST_URL}
+      password: ${UPSTASH_REDIS_REST_TOKEN}
       ssl:
         enabled: true
   application:
