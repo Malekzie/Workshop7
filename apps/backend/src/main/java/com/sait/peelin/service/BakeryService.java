@@ -26,6 +26,7 @@ public class BakeryService {
     private final BakeryHourRepository bakeryHourRepository;
     private final AddressRepository addressRepository;
 
+    @Transactional(readOnly = true)
     public List<BakeryDto> list(String search) {
         List<Bakery> list = StringUtils.hasText(search)
                 ? bakeryRepository.findByBakeryNameContainingIgnoreCase(search.trim())
@@ -33,11 +34,13 @@ public class BakeryService {
         return list.stream().map(CatalogMapper::bakery).toList();
     }
 
+    @Transactional(readOnly = true)
     public BakeryDto get(Integer id) {
         Bakery b = bakeryRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Bakery not found"));
         return CatalogMapper.bakery(b);
     }
 
+    @Transactional(readOnly = true)
     public List<BakeryHourDto> hours(Integer bakeryId) {
         ensureBakery(bakeryId);
         return bakeryHourRepository.findByBakery_IdOrderByDayOfWeekAsc(bakeryId).stream()
