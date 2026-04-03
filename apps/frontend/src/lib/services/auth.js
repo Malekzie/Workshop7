@@ -1,4 +1,5 @@
-import { setAuth } from '$lib/stores/authStore.js';
+import { setAuth, clearAuth, token } from '$lib/stores/authStore.js';
+import { get } from 'svelte/store';
 import * as Sentry from '@sentry/sveltekit';
 
 const API_BASE = 'http://localhost:8080/api/v1/auth';
@@ -36,6 +37,22 @@ export async function loginUser(email, password) {
 		});
 		return { ok: false, message: 'Could not reach the server. Try again later.' };
 	}
+}
+
+// logs out the current user, invalidating the token on the server
+export async function logoutUser() {
+	const t = get(token);
+	if (t) {
+		try {
+			await fetch(`${API_BASE}/logout`, {
+				method: 'POST',
+				headers: { Authorization: `Bearer ${t}` }
+			});
+		} catch {
+			// best-effort — clear local auth regardless
+		}
+	}
+	clearAuth();
 }
 
 // registers a new user
