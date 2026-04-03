@@ -1,17 +1,14 @@
 package com.sait.peelin.service;
 
+import com.sait.peelin.dto.v1.auth.AccountProfilePatchRequest;
 import com.sait.peelin.dto.v1.auth.AuthResponse;
 import com.sait.peelin.dto.v1.auth.ChangePasswordRequest;
 import com.sait.peelin.dto.v1.auth.LoginRequest;
 import com.sait.peelin.dto.v1.auth.RegisterRequest;
-import com.sait.peelin.model.Address;
 import com.sait.peelin.model.Customer;
-import com.sait.peelin.model.RewardTier;
 import com.sait.peelin.model.User;
 import com.sait.peelin.model.UserRole;
-import com.sait.peelin.repository.AddressRepository;
 import com.sait.peelin.repository.CustomerRepository;
-import com.sait.peelin.repository.RewardTierRepository;
 import com.sait.peelin.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,17 +22,21 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
+    private static final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]{3,50}$");
+    /** Practical RFC 5322–oriented check aligned with mobile app validation. */
+    private static final Pattern EMAIL_PATTERN = Pattern.compile(
+            "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,}$");
+
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final UserRepository userRepository;
-    private final AddressRepository addressRepository;
     private final CustomerRepository customerRepository;
-    private final RewardTierRepository rewardTierRepository;
     private final PasswordEncoder passwordEncoder;
     private final CurrentUserService currentUserService;
 
@@ -68,12 +69,7 @@ public class AuthService {
 
         String token = jwtService.generateToken(userDetails);
 
-        AuthResponse res = new AuthResponse();
-        res.setToken(token);
-        res.setUsername(user.getUsername());
-        res.setRole(user.getUserRole().name());
-        res.setUserId(user.getUserId());
-        return res;
+        return buildAuthResponse(user, token);
     }
 
     @Transactional
@@ -95,37 +91,6 @@ public class AuthService {
         user.setPhotoApprovalPending(false);
         userRepository.save(user);
 
-        RewardTier lowestTier = rewardTierRepository.findFirstByOrderByRewardTierMinPointsAsc()
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No reward tiers configured"));
-
-        Customer customer = new Customer();
-        customer.setUser(user);
-        customer.setRewardTier(lowestTier);
-        Address address = new Address();
-        address.setAddressLine1(request.getAddressLine1().trim());
-        String line2 = request.getAddressLine2();
-        address.setAddressLine2(line2 == null || line2.isBlank() ? null : line2.trim());
-        address.setAddressCity(request.getCity().trim());
-        address.setAddressProvince(request.getProvince().trim());
-        address.setAddressPostalCode(request.getPostalCode().trim());
-        addressRepository.save(address);
-        customer.setAddress(address);
-        customer.setCustomerFirstName(request.getFirstName());
-        String mi = request.getMiddleInitial() != null ? request.getMiddleInitial().trim() : null;
-        if (mi != null && mi.isEmpty()) {
-            mi = null;
-        }
-        customer.setCustomerMiddleInitial(mi);
-        customer.setCustomerLastName(request.getLastName());
-        customer.setCustomerPhone(request.getPhone());
-        String businessPhone = request.getBusinessPhone();
-        if (businessPhone != null && !businessPhone.isBlank()) {
-            customer.setCustomerBusinessPhone(businessPhone.trim());
-        }
-        customer.setCustomerEmail(request.getEmail());
-        customer.setCustomerRewardBalance(0);
-        customerRepository.save(customer);
-
         UserDetails userDetails = org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername())
                 .password(user.getUserPasswordHash())
@@ -133,13 +98,72 @@ public class AuthService {
                 .build();
 
         String token = jwtService.generateToken(userDetails);
+        return buildAuthResponse(user, token);
+    }
 
-        AuthResponse res = new AuthResponse();
-        res.setToken(token);
-        res.setUsername(user.getUsername());
-        res.setRole(user.getUserRole().name());
-        res.setUserId(user.getUserId());
-        return res;
+    /**
+     * Updates username and/or sign-in email for the current user. Returns a fresh JWT
+     * (subject is username). Syncs customer profile email when applicable.
+     */
+    @Transactional
+    public AuthResponse patchMyProfile(AccountProfilePatchRequest req) {
+        if (req.getUsername() == null && req.getEmail() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nothing to update");
+        }
+        User u = currentUserService.requireUser();
+        boolean dirty = false;
+
+        if (req.getUsername() != null) {
+            String nu = req.getUsername().trim();
+            if (nu.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username cannot be empty");
+            }
+            if (!USERNAME_PATTERN.matcher(nu).matches()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid username");
+            }
+            if (!nu.equalsIgnoreCase(u.getUsername())) {
+                if (userRepository.existsByUsernameIgnoreCaseAndUserIdNot(nu, u.getUserId())) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already taken");
+                }
+                u.setUsername(nu);
+                dirty = true;
+            }
+        }
+
+        if (req.getEmail() != null) {
+            String ne = req.getEmail().trim().toLowerCase();
+            if (ne.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email cannot be empty");
+            }
+            if (ne.length() > 254 || !EMAIL_PATTERN.matcher(ne).matches()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid email");
+            }
+            if (!ne.equalsIgnoreCase(u.getUserEmail())) {
+                if (userRepository.existsByUserEmailIgnoreCaseAndUserIdNot(ne, u.getUserId())) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
+                }
+                u.setUserEmail(ne);
+                dirty = true;
+                Optional<Customer> cust = customerRepository.findByUser_UserId(u.getUserId());
+                if (cust.isPresent()) {
+                    Customer c = cust.get();
+                    c.setCustomerEmail(ne);
+                    customerRepository.save(c);
+                }
+            }
+        }
+
+        if (dirty) {
+            userRepository.save(u);
+        }
+
+        UserDetails userDetails = org.springframework.security.core.userdetails.User
+                .withUsername(u.getUsername())
+                .password(u.getUserPasswordHash())
+                .authorities("ROLE_" + u.getUserRole().name().toUpperCase())
+                .build();
+        String token = jwtService.generateToken(userDetails);
+        return buildAuthResponse(u, token);
     }
 
     @Transactional
@@ -153,5 +177,15 @@ public class AuthService {
         }
         u.setUserPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(u);
+    }
+
+    private AuthResponse buildAuthResponse(User user, String token) {
+        AuthResponse res = new AuthResponse();
+        res.setToken(token);
+        res.setUsername(user.getUsername());
+        res.setRole(user.getUserRole().name());
+        res.setUserId(user.getUserId());
+        res.setEmail(user.getUserEmail());
+        return res;
     }
 }

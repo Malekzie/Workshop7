@@ -67,9 +67,6 @@ class AuthControllerTest {
         req.setUsername("newuser");
         req.setEmail("new@example.com");
         req.setPassword("password");
-        req.setFirstName("First");
-        req.setLastName("Last");
-        req.setPhone("1234567890");
 
         when(authService.register(any(RegisterRequest.class))).thenReturn(new AuthResponse("token", "newuser", "customer", UUID.randomUUID()));
 
