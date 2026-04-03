@@ -1,5 +1,6 @@
 <script lang="ts">
-	import SpecialCard from './SpecialCard.svelte';
+	import SpecialCard from "$lib/components/product/SpecialCard.svelte";
+
 
 	const specials = [
 		{

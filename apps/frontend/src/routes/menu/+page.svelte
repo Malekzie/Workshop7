@@ -1,5 +1,5 @@
 <script>
-	import ProductCard from '$lib/components/ProductCard.svelte';
+	import ProductCard from '$lib/components/product/ProductCard.svelte';
 	import { getProducts } from '$lib/services/products';
 	import { getTags } from '$lib/services/tags';
 	import { onMount } from 'svelte';

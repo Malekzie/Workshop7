@@ -1,7 +1,7 @@
 <script>
-	import ProfileSidebar from '$lib/components/ProfileSidebar.svelte';
-	import ProfileDetails from '$lib/components/ProfileDetails.svelte';
-	import ProfileRecomendations from '$lib/components/ProfileRecomendations.svelte';
+	import ProfileSidebar from '$lib/components/profile/ProfileSidebar.svelte';
+	import ProfileDetails from '$lib/components/profile/ProfileDetails.svelte';
+	import ProfileRecomendations from '$lib/components/profile/ProfileRecomendations.svelte';
 	import { onMount } from 'svelte';
 	import { getProfile } from '$lib/services/profile';
 	import { logoutUser } from '$lib/services/auth';

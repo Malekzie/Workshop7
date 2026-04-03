@@ -27,3 +27,5 @@ vite.config.ts.timestamp-*
 CLAUDE.md
 # Sentry Config File
 .env.sentry-build-plugin
+# W're using npm, Im only personally using bun (robbie)
+bun.lock
