@@ -133,10 +133,6 @@
 							<label class="block text-xs font-semibold tracking-wide text-primary uppercase">
 								Password
 							</label>
-							<a
-								class="text-xs text-primary hover:underline"
-								href={resolve('/login/recover-password')}>Forgot?</a
-							>
 						</div>
 						<input
 							class="input w-full rounded-md border border-border p-3 transition focus:border-primary focus:ring-2 focus:ring-primary/40 focus:outline-none
@@ -159,6 +155,10 @@
 							<input type="checkbox" />
 							Keep me signed in
 						</label>
+						<a
+							class="text-xs text-primary hover:underline"
+							href={resolve('/login/recover-password')}>Forgot?</a
+						>
 					</div>
 
 					<!-- Submit -->
