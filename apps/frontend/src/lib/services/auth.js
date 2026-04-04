@@ -2,7 +2,7 @@ import { clearAuth, setAuth, token } from '$lib/stores/authStore.js';
 import { get } from 'svelte/store';
 import * as Sentry from '@sentry/sveltekit';
 
-const API_BASE = 'http://localhost:8080/api/v1/auth';
+const API_BASE = '/api/v1/auth';
 
 // Log in with email and password, returns {ok: boolean, message?: string}
 export async function loginUser(email, password) {
@@ -70,7 +70,10 @@ export async function registerUser(payload) {
 				scope.setTag('action', 'REGISTER_FAILED');
 				scope.setTag('reason', res.status === 409 ? 'duplicate_account' : 'api_error');
 				scope.setTag('status_code', String(res.status));
-				Sentry.captureMessage(`Registration failed: HTTP ${res.status}`, res.status >= 500 ? 'error' : 'warning');
+				Sentry.captureMessage(
+					`Registration failed: HTTP ${res.status}`,
+					res.status >= 500 ? 'error' : 'warning'
+				);
 			});
 			return { ok: false, message: err.message ?? 'Registration failed.' };
 		}
@@ -87,4 +90,3 @@ export async function registerUser(payload) {
 		return { ok: false, message: 'Could not reach the server. Try again later.' };
 	}
 }
-

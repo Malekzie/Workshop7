@@ -2,6 +2,7 @@ package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.dto.v1.auth.*;
 import com.sait.peelin.service.AuthService;
+import com.sait.peelin.service.JwtService;
 import com.sait.peelin.service.PasswordResetService;
 import com.sait.peelin.service.TokenDenylistService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +22,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.time.Duration;
 
 
@@ -33,6 +35,10 @@ public class AuthController {
     private final AuthService authService;
     private final TokenDenylistService tokenDenylistService;
     private final PasswordResetService passwordResetService;
+    private final JwtService jwtService;
+
+    @Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
 
     @Value("${app.jwt.expiration:864000000}")
     private long jwtExpiration;
@@ -121,5 +127,22 @@ public class AuthController {
         passwordResetService.resetPassword(request.getToken(), request.getNewPassword());
 
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/oauth2/success")
+    public void oauth2Success(
+            HttpServletRequest request,
+            HttpServletResponse response) throws IOException {
+        String token = (String) request.getSession().getAttribute("oauth2_pending_token");
+        if (token == null) {
+            response.sendRedirect(frontendUrl + "/login?error=oauth_failed");
+            return;
+        }
+        request.getSession().removeAttribute("oauth2_pending_token");
+        setTokenCookie(response, token);
+        AuthResponse auth = authService.getUserInfoFromToken(token);
+        response.sendRedirect(frontendUrl + "/auth/callback?username=" + auth.getUsername()
+                + "&role=" + auth.getRole()
+                + "&userId=" + auth.getUserId());
     }
 }
