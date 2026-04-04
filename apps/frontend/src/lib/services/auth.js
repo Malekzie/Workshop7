@@ -1,7 +1,6 @@
-import { clearAuth, setAuth, clearAuth, token } from '$lib/stores/authStore.js';
+import { clearAuth, setAuth, token } from '$lib/stores/authStore.js';
 import { get } from 'svelte/store';
 import * as Sentry from '@sentry/sveltekit';
-import {clearAuth, setAuth } from '$lib/stores/authStore.js'
 
 const API_BASE = 'http://localhost:8080/api/v1/auth';
 
@@ -89,14 +88,3 @@ export async function registerUser(payload) {
 	}
 }
 
-// logout the user
-export async function logoutUser() {
-	try {
-		await fetch(`${API_BASE}/logout`, {
-			method: 'POST',
-			credentials: 'include'
-		});
-	} catch {}
-
-	clearAuth();
-}
