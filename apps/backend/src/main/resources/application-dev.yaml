@@ -19,14 +19,6 @@ spring:
     validate-on-migrate: false
     # After one successful run, align the DB with: UPDATE flyway_schema_history SET checksum = -316084932 WHERE version = '10';
     # Then set validate-on-migrate back to true (or omit).
-  cache:
-    type: none
-  data:
-    redis:
-      url: ""
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
   spaces:
     endpoint: ${DO_SPACES_ENDPOINT:}
     bucket: ${DO_SPACES_BUCKET:}

@@ -60,7 +60,7 @@ public class OrderService {
     }
 
     @Transactional
-    @CacheEvict(value = "orders", allEntries = true)
+    @CacheEvict(value = {"orders", "analytics", "dashboard"}, allEntries = true)
     public OrderDto checkout(CheckoutRequest req) {
         User user = currentUserService.requireUser();
         Customer customer;
@@ -183,7 +183,7 @@ public class OrderService {
     }
 
     @Transactional
-    @CacheEvict(value = "orders", allEntries = true)
+    @CacheEvict(value = {"orders", "analytics", "dashboard"}, allEntries = true)
     public OrderDto updateStatus(UUID orderId, OrderStatusPatchRequest req) {
         User u = currentUserService.requireUser();
         if (u.getUserRole() != UserRole.admin && u.getUserRole() != UserRole.employee) {
@@ -201,7 +201,7 @@ public class OrderService {
     }
 
     @Transactional
-    @CacheEvict(value = "orders", allEntries = true)
+    @CacheEvict(value = {"orders", "analytics", "dashboard"}, allEntries = true)
     public OrderDto markDelivered(UUID orderId, OrderDeliveredPatchRequest req) {
         User u = currentUserService.requireUser();
         if (u.getUserRole() != UserRole.admin && u.getUserRole() != UserRole.employee) {
@@ -222,7 +222,7 @@ public class OrderService {
     }
 
     @Transactional
-    @CacheEvict(value = "orders", allEntries = true)
+    @CacheEvict(value = {"orders", "analytics", "dashboard"}, allEntries = true)
     public OrderDto acceptDelivery(UUID orderId) {
         User u = currentUserService.requireUser();
         if (u.getUserRole() != UserRole.customer) {
