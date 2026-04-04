@@ -1,6 +1,7 @@
 package com.sait.peelin.security;
 
 import com.sait.peelin.service.JwtService;
+import com.sait.peelin.service.TokenDenylistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -22,6 +23,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final TokenDenylistService tokenDenylistService;
 
     @Override
     protected void doFilterInternal(
@@ -58,6 +60,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+
+        if (tokenDenylistService.isDenied(jwt)) {
             filterChain.doFilter(request, response);
             return;
         }
