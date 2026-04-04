@@ -5,7 +5,6 @@ import com.sait.peelin.model.*;
 import com.sait.peelin.repository.ProductTagRepository;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public final class CatalogMapper {
@@ -44,27 +43,6 @@ public final class CatalogMapper {
     }
 
     public static ProductDto product(Product p, List<Integer> tagIds) {
-        return new ProductDto(
-                p.getId(),
-                p.getProductName(),
-                p.getProductDescription(),
-                p.getProductBasePrice(),
-                p.getProductImageUrl(),
-                tagIds
-        );
-    }
-
-    /**
-     * Maps a product using a pre-loaded list of its tags, avoiding a per-product repository call.
-     * Use this overload when mapping a collection of products to prevent N+1 queries.
-     *
-     * @param p    product entity
-     * @param tags product tags already fetched for this product
-     */
-    public static ProductDto product(Product p, List<ProductTag> tags) {
-        List<Integer> tagIds = tags.stream()
-                .map(pt -> pt.getTag().getId())
-                .collect(Collectors.toList());
         return new ProductDto(
                 p.getId(),
                 p.getProductName(),

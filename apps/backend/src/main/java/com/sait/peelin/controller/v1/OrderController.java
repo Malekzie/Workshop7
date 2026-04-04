@@ -32,7 +32,7 @@ public class OrderController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public OrderDto checkout(@Valid @RequestBody CheckoutRequest req) {
+    public CheckoutSessionResponse checkout(@Valid @RequestBody CheckoutRequest req) {
         return orderService.checkout(req);
     }
 
