@@ -1,9 +1,8 @@
 package com.sait.peelin.controller.v1;
 
-import com.sait.peelin.dto.v1.auth.AuthResponse;
-import com.sait.peelin.dto.v1.auth.LoginRequest;
-import com.sait.peelin.dto.v1.auth.RegisterRequest;
+import com.sait.peelin.dto.v1.auth.*;
 import com.sait.peelin.service.AuthService;
+import com.sait.peelin.service.PasswordResetService;
 import com.sait.peelin.service.TokenDenylistService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -33,6 +32,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final TokenDenylistService tokenDenylistService;
+    private final PasswordResetService passwordResetService;
 
     @Value("${app.jwt.expiration:864000000}")
     private long jwtExpiration;
@@ -107,5 +107,19 @@ public class AuthController {
         // TODO: implement OAuth2 login (Google/Microsoft)
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
                 .body("OAuth2 login is scaffolded but not yet implemented");
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.requestPasswordReset(request.getEmail());
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request.getToken(), request.getNewPassword());
+
+        return ResponseEntity.ok().build();
     }
 }
