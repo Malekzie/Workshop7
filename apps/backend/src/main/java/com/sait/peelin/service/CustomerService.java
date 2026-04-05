@@ -167,6 +167,10 @@ public class CustomerService {
             c.getUser().setPhotoApprovalPending(req.getPhotoApprovalPending());
             userRepository.save(c.getUser());
         }
+        if (req.getUsername() != null && c.getUser() != null) {
+            c.getUser().setUsername(req.getUsername());
+            userRepository.save(c.getUser());
+        }
     }
 
     private void upsertCustomerAddress(Customer c, AddressUpsertRequest req) {

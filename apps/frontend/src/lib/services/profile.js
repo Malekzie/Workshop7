@@ -26,3 +26,15 @@ export async function getProfile() {
 
 	return data;
 }
+
+export async function updateProfile(profileData) {
+	const res = await fetch(`${API}/customers/me`, {
+		method: 'PATCH',
+		credentials: 'include',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(profileData)
+	});
+
+	if (!res.ok) throw new Error('Failed to update profile: ' + res.status);
+	return res.json();
+}

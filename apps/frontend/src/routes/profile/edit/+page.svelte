@@ -9,7 +9,8 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Separator } from '$lib/components/ui/separator';
 	import { onMount } from 'svelte';
-	import { getProfile } from '$lib/services/profile';
+	import { getProfile, updateProfile } from '$lib/services/profile';
+	import { logoutUser } from '$lib/services/auth';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 
@@ -20,6 +21,8 @@
 	let success = $state(false);
 
 	let fields = $state({
+		username: '',
+		email: '',
 		firstName: '',
 		middleInitial: '',
 		lastName: '',
@@ -59,11 +62,13 @@
 				lastName: profile.lastName ?? '',
 				phone: profile.phone ?? '',
 				businessPhone: profile.businessPhone ?? '',
-				addressLine1: profile.address?.addressLine1 ?? '',
-				addressLine2: profile.address?.addressLine2 ?? '',
-				city: profile.address?.addressCity ?? '',
-				province: profile.address?.addressProvince ?? 'AB',
-				postalCode: profile.address?.addressPostalCode ?? ''
+				addressLine1: profile.address?.line1 ?? '',
+				addressLine2: profile.address?.line2 ?? '',
+				city: profile.address?.city ?? '',
+				province: profile.address?.province ?? 'AB',
+				postalCode: profile.address?.postalCode ?? '',
+				username: profile.username ?? '',
+				email: profile.email ?? ''
 			};
 		} catch {
 			error = true;
@@ -83,6 +88,10 @@
 		if (!fields.postalCode.trim()) e.postalCode = 'Postal code is required.';
 		else if (!/^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/.test(fields.postalCode.trim()))
 			e.postalCode = 'Enter a valid Canadian postal code.';
+		if (!fields.username.trim()) e.username = 'Username is required.';
+		if (!fields.email.trim()) e.email = 'Email is required.';
+		else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email.trim()))
+			e.email = 'Enter a valid email address.';
 		errors = e;
 		return Object.keys(e).length === 0;
 	}
@@ -103,29 +112,35 @@
 		saving = true;
 		success = false;
 
+		const usernameChanged = fields.username.trim() !== profile.username;
+
 		try {
-			const res = await fetch('/api/v1/customers/me', {
-				method: 'PATCH',
-				credentials: 'include',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					firstName: fields.firstName.trim(),
-					middleInitial: fields.middleInitial.trim() || null,
-					lastName: fields.lastName.trim(),
-					phone: fields.phone.replace(/\D/g, ''),
-					businessPhone: fields.businessPhone.trim() || null,
-					addressLine1: fields.addressLine1.trim(),
-					addressLine2: fields.addressLine2.trim() || null,
+			await updateProfile({
+				username: fields.username.trim(),
+				email: fields.email.trim(),
+				firstName: fields.firstName.trim(),
+				middleInitial: fields.middleInitial.trim() || null,
+				lastName: fields.lastName.trim(),
+				phone: fields.phone.trim(),
+				businessPhone: fields.businessPhone.trim() || null,
+				address: {
+					line1: fields.addressLine1.trim(),
+					line2: fields.addressLine2.trim() || null,
 					city: fields.city.trim(),
 					province: fields.province,
 					postalCode: fields.postalCode.trim().toUpperCase()
-				})
+				}
 			});
 
-			if (!res.ok) throw new Error('Failed to save');
 			success = true;
-			setTimeout(() => goto(resolve('/profile')), 1200);
-		} catch {
+
+			if (usernameChanged) {
+				await logoutUser();
+				goto(resolve('/login'));
+			} else {
+				setTimeout(() => goto(resolve('/profile')));
+			}
+		} catch (e) {
 			errors.general = 'Failed to save changes. Please try again.';
 		} finally {
 			saving = false;
@@ -160,6 +175,37 @@
 						<CardDescription>Your name and contact details</CardDescription>
 					</CardHeader>
 					<CardContent class="space-y-4">
+						<div class="space-y-1.5">
+							<label class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+								>Username</label
+							>
+							<input
+								type="text"
+								bind:value={fields.username}
+								class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
+            {errors.username ? 'border-destructive ring-1 ring-destructive' : ''}"
+							/>
+							{#if errors.username}
+								<p class="text-xs text-destructive">{errors.username}</p>
+							{:else if profile && fields.username.trim() !== profile.username}
+								<p class="text-xs text-amber-500">
+									You'll need to log in again after changing your username.
+								</p>
+							{/if}
+						</div>
+
+						<div class="space-y-1.5">
+							<label class="text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+								>Email</label
+							>
+							<input
+								type="email"
+								bind:value={fields.email}
+								class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
+            {errors.email ? 'border-destructive ring-1 ring-destructive' : ''}"
+							/>
+							{#if errors.email}<p class="text-xs text-destructive">{errors.email}</p>{/if}
+						</div>
 						<!-- First / Last Name -->
 						<div class="grid grid-cols-2 gap-4">
 							<div class="space-y-1.5">
@@ -322,7 +368,11 @@
 				{/if}
 
 				{#if success}
-					<p class="text-sm text-green-600">Profile updated successfully! Redirecting...</p>
+					{#if fields.username.trim() !== profile.username}
+						<p class="text-sm text-green-600">Username changed. Redirecting to login...</p>
+					{:else}
+						<p class="text-sm text-green-600">Profile updated successfully! Redirecting...</p>
+					{/if}
 				{/if}
 
 				<div class="flex justify-end gap-3">
