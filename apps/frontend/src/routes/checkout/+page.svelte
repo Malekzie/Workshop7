@@ -2,6 +2,9 @@
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { cart } from '$lib/stores/cart';
+	import { isProfileComplete } from '$lib/utils/profile';
+	import { onMount } from 'svelte';
+	import { getProfile } from '$lib/services/profile';
 	import * as Sentry from '@sentry/sveltekit';
 
 	const API = 'http://localhost:8080';
