@@ -47,3 +47,17 @@ export async function deleteAccount() {
 
 	if (!res.ok) throw new Error('Failed to delete account: ' + res.status);
 }
+
+export async function uploadProfilePhoto(file) {
+	const formData = new FormData();
+	formData.append('photo', file);
+
+	const res = await fetch(`${API}/account/profile-photo`, {
+		method: 'POST',
+		credentials: 'include',
+		body: formData
+	});
+
+	if (!res.ok) throw new Error('Failed to upload profile photo: ' + res.status);
+	return res.json();
+}
