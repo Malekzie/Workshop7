@@ -10,6 +10,7 @@
 	import { getTags } from '$lib/services/tags';
 	import { Search, X, ShoppingBag, Plus, Minus, Check } from '@lucide/svelte';
 	import { onMount } from 'svelte';
+	import { page } from '$app/stores';
 
 	let activeTagId = $state(null);
 	let searchQuery = $state('');
@@ -49,6 +50,11 @@
 	onMount(async () => {
 		try {
 			[products, tags] = await Promise.all([getProducts(), getTags()]);
+
+			const tagParam = $page.url.searchParams.get('tag');
+			if (tagParam && tags.some((t) => String(t.id) === tagParam)) {
+				activeTagId = tags.find((t) => String(t.id) === tagParam)?.id ?? null;
+			}
 		} catch (e) {
 			console.error('Failed to load menu:', e);
 		} finally {
@@ -163,7 +169,7 @@
 
 			{#if loading}
 				<div class="grid grid-cols-2 gap-5 lg:grid-cols-3">
-					{#each Array(6) as _, i (i)}
+					{#each Array.from({ length: 6 }), i (i)}
 						<div class="flex flex-col overflow-hidden rounded-xl border border-border bg-white">
 							<Skeleton class="h-48 w-full rounded-none" />
 							<div class="flex flex-col gap-3 p-4">

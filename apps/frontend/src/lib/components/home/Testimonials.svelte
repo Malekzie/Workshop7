@@ -1,28 +1,28 @@
 <script lang="ts">
-	const testimonials = [
-		{
-			quote:
-				"The sourdough here is the best I've had outside of San Francisco. I pick one up every Saturday morning without fail.",
-			name: 'Sarah M.',
-			detail: 'Regular since opening day'
-		},
-		{
-			quote:
-				'Ordered a custom birthday cake last minute and they pulled it off beautifully. Tasted even better than it looked.',
-			name: 'James R.',
-			detail: 'Custom cake order'
-		},
-		{
-			quote:
-				"The croissants are dangerously good. Perfectly flaky, buttery — I've already converted three coworkers.",
-			name: 'Priya K.',
-			detail: 'Pastry enthusiast'
-		}
-	];
+	import { onMount } from 'svelte';
+	import { getTopReviews } from '$lib/services/review';
+
+	interface Review {
+		id: string;
+		rating: number;
+		comment: string;
+		reviewerDisplayName: string;
+		bakeryName: string | null;
+	}
+
+	let reviews = $state<Review[]>([]);
 
 	function stars(n: number) {
 		return Array(n).fill('★').join('');
 	}
+
+	onMount(async () => {
+		try {
+			reviews = await getTopReviews(3);
+		} catch (e) {
+			console.error('Failed to load reviews:', e);
+		}
+	});
 </script>
 
 <section class="bg-muted px-6 py-20">
@@ -33,15 +33,17 @@
 		</div>
 
 		<div class="grid grid-cols-1 gap-6 md:grid-cols-3">
-			{#each testimonials as t (t)}
+			{#each reviews as r (r.id)}
 				<figure class="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6">
-					<p class="text-sm tracking-widest text-primary">{stars(5)}</p>
+					<p class="text-sm tracking-widest text-primary">{stars(r.rating)}</p>
 					<blockquote class="flex-1 text-sm leading-relaxed text-foreground">
-						"{t.quote}"
+						"{r.comment}"
 					</blockquote>
 					<figcaption class="border-t border-border pt-4">
-						<p class="text-sm font-semibold text-foreground">{t.name}</p>
-						<p class="text-xs text-muted-foreground">{t.detail}</p>
+						<p class="text-sm font-semibold text-foreground">{r.reviewerDisplayName}</p>
+						{#if r.bakeryName}
+							<p class="text-xs text-muted-foreground">{r.bakeryName}</p>
+						{/if}
 					</figcaption>
 				</figure>
 			{/each}

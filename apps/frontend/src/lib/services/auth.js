@@ -1,4 +1,4 @@
-import { clearAuth, setAuth, token } from '$lib/stores/authStore.js';
+import { clearAuth, setAuth } from '$lib/stores/authStore.js';
 import * as Sentry from '@sentry/sveltekit';
 
 const API_BASE = '/api/v1/auth';

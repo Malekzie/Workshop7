@@ -9,13 +9,24 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Separator } from '$lib/components/ui/separator';
 	import { onMount } from 'svelte';
-	import { getProfile, updateProfile, deleteAccount } from '$lib/services/profile';
+	import {
+		getProfile,
+		updateProfile,
+		deleteAccount,
+		uploadProfilePhoto
+	} from '$lib/services/profile';
 	import { logoutUser } from '$lib/services/auth';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/stores';
 
 	const reason = $derived($page.url.searchParams.get('reason'));
+
+	const initials = $derived(
+		profile
+			? [profile.firstName?.[0], profile.lastName?.[0]].filter(Boolean).join('').toUpperCase()
+			: ''
+	);
 
 	let profile = $state(null);
 	let loading = $state(true);
@@ -24,6 +35,9 @@
 	let success = $state(false);
 	let showDeleteConfirm = $state(false);
 	let deleting = $state(false);
+	let photoFile = $state(null);
+	let photoPreview = $state(null);
+	let uploadingPhoto = $state(false);
 
 	let fields = $state({
 		username: '',
@@ -195,6 +209,81 @@
 			{/if}
 
 			<form onsubmit={handleSave} class="space-y-6">
+				<!-- Profile Photo -->
+				<Card>
+					<CardHeader>
+						<CardTitle>Profile Photo</CardTitle>
+						<CardDescription>Upload a new profile photo</CardDescription>
+					</CardHeader>
+					<CardContent class="flex items-center gap-6">
+						<!-- Preview -->
+						<div
+							class="h-20 w-20 shrink-0 overflow-hidden rounded-full border-2 border-border bg-muted"
+						>
+							{#if photoPreview}
+								<img src={photoPreview} alt="Preview" class="h-full w-full object-cover" />
+							{:else if profile?.profilePhotoPath}
+								<img
+									src={profile.profilePhotoPath}
+									alt="Current photo"
+									class="h-full w-full object-cover"
+								/>
+							{:else}
+								<div
+									class="flex h-full w-full items-center justify-center text-2xl font-bold text-muted-foreground"
+								>
+									{initials}
+								</div>
+							{/if}
+						</div>
+
+						<div class="flex flex-col gap-2">
+							<input
+								type="file"
+								accept="image/jpeg,image/png"
+								class="hidden"
+								id="photo-input"
+								onchange={(e) => {
+									const file = e.target.files?.[0];
+									if (!file) return;
+									photoFile = file;
+									photoPreview = URL.createObjectURL(file);
+								}}
+							/>
+							<label
+								for="photo-input"
+								class="cursor-pointer rounded-lg border border-border px-4 py-2 text-sm font-medium transition hover:bg-muted"
+							>
+								Choose photo
+							</label>
+							{#if photoFile}
+								<Button
+									type="button"
+									disabled={uploadingPhoto}
+									onclick={async () => {
+										uploadingPhoto = true;
+										try {
+											const updated = await uploadProfilePhoto(photoFile);
+											profile = { ...profile, profilePhotoPath: updated.profilePhotoPath };
+											photoFile = null;
+											photoPreview = null;
+										} catch {
+											errors.general = 'Failed to upload photo. Please try again.';
+										} finally {
+											uploadingPhoto = false;
+										}
+									}}
+								>
+									{uploadingPhoto ? 'Uploading...' : 'Upload photo'}
+								</Button>
+							{/if}
+							{#if profile?.photoApprovalPending}
+								<p class="text-xs text-amber-500">Your photo is pending review.</p>
+							{/if}
+						</div>
+					</CardContent>
+				</Card>
+
 				<!-- Personal Info -->
 				<Card>
 					<CardHeader>

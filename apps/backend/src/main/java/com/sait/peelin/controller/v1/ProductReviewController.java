@@ -93,4 +93,9 @@ public class ProductReviewController {
     public List<ReviewDto> pending() {
         return reviewService.pending();
     }
+
+    @GetMapping("/reviews/top")
+    public List<ReviewDto> top(@RequestParam(defaultValue = "3") int limit) {
+        return reviewService.topReviews(limit);
+    }
 }
