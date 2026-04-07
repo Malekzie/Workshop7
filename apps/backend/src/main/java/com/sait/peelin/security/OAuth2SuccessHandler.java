@@ -93,7 +93,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             customer.setCustomerFirstName(nameParts[0]);
             customer.setCustomerLastName(nameParts.length > 1 ? nameParts[1] : "");
             customer.setCustomerEmail(finalEmail);
-            customer.setCustomerPhone("");
+            customer.setCustomerPhone(null);
             customer.setCustomerRewardBalance(0);
             customerRepository.save(customer);
 
