@@ -39,6 +39,7 @@ public class SecurityConfig {
                                 "/test-error",
                                 "/unhandled",
                                 "/api/v1/auth/**",
+                                "/api/v1/stripe/webhook",
                                 "/actuator/health",
                                 "/actuator/health/**",
                                 "/swagger-ui.html",
@@ -49,6 +50,7 @@ public class SecurityConfig {
                                 "/login/oauth2/**",
                                 "/oauth2/**"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/orders").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reviews/top").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/product-specials", "/api/v1/product-specials/**").permitAll()
