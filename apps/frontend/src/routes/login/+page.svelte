@@ -89,12 +89,13 @@
 					<img src="/images/google_logo.svg" alt="Google" class="h-5 w-5" />
 					Google
 				</a>
-				<button
+				<a
+					href={resolve('/oauth2/authorization/microsoft')}
 					class="flex items-center justify-center gap-3 rounded-full border border-border bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm transition hover:cursor-pointer hover:bg-gray-50 hover:shadow-md active:scale-[0.98]"
 				>
 					<img src="/images/microsoft-icon.svg" alt="Microsoft" class="h-5 w-5" />
 					Microsoft
-				</button>
+				</a>
 			</div>
 
 			<!-- Divider -->
