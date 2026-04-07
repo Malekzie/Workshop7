@@ -6,7 +6,7 @@
 	import { loginUser } from '$lib/services/auth.js';
 	import { user } from '$lib/stores/authStore';
 
-	let email = '';
+	let identifier = '';
 	let password = '';
 
 	let emailError = '';
@@ -16,9 +16,8 @@
 	let passwordTouched = false;
 	let showPassword = false;
 
-	function validateEmail(value) {
-		if (!value.trim()) return 'Email is required.';
-		if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) return 'Enter a valid email address.';
+	function validateIdentifier(value) {
+		if (!value.trim()) return 'Email or username is required.';
 		return '';
 	}
 
@@ -44,12 +43,12 @@
 		emailTouched = true;
 		passwordTouched = true;
 
-		emailError = validateEmail(email);
+		emailError = validateIdentifier(identifier);
 		passwordError = validatePassword(password);
 
 		if (emailError || passwordError) return;
 
-		const { ok } = await loginUser(email, password);
+		const { ok } = await loginUser(identifier, password);
 
 		if (!ok) {
 			emailError = 'Invalid email or password.';
@@ -123,23 +122,23 @@
 			<!-- Form Card -->
 			<div class="bg-surface-container rounded-2xl border border-border p-6 shadow-sm">
 				<form class="space-y-6" onsubmit={handleSignIn}>
-					<!-- Email -->
+					<!-- Email or Username -->
 					<div class="space-y-2">
 						<label
 							for="login-email"
 							class="block text-xs font-semibold tracking-wide text-primary uppercase"
 						>
-							Email Address
+							Email or Username
 						</label>
 						<input
 							id="login-email"
 							class="input w-full rounded-md border border-border p-3 transition focus:border-primary focus:ring-2 focus:ring-primary/40 focus:outline-none
 								{emailError && emailTouched ? 'border-red-400 ring-2 ring-red-400' : ''}"
-							type="email"
-							placeholder="you@example.com"
-							bind:value={email}
+							type="text"
+							placeholder="you@example.com or username"
+							bind:value={identifier}
 							oninput={() => {
-								if (emailTouched) emailError = validateEmail(email);
+								if (emailTouched) emailError = validateIdentifier(identifier);
 							}}
 						/>
 						{#if emailError && emailTouched}

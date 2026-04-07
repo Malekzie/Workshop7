@@ -4,12 +4,13 @@ import * as Sentry from '@sentry/sveltekit';
 const API_BASE = '/api/v1/auth';
 
 // Log in with email and password, returns {ok: boolean, message?: string}
-export async function loginUser(email, password) {
+export async function loginUser(identifier, password) {
 	try {
 		const res = await fetch(`${API_BASE}/login`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ email, password })
+			body: JSON.stringify({ email: identifier, password }),
+			credentials: 'include'
 		});
 
 		if (!res.ok) {
