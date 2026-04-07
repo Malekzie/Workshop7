@@ -47,8 +47,10 @@
 			goto(resolve('/staff/dashboard'), { replaceState: true });
 			return;
 		}
-		bakeryNames = await getBakeryNames();
-		await loadData();
+		await Promise.all([
+			getBakeryNames().then((n) => (bakeryNames = n)),
+			loadData()
+		]);
 	});
 
 	async function loadData() {
