@@ -1,6 +1,9 @@
 <script>
 	import ProfileSidebar from '$lib/components/profile/ProfileSidebar.svelte';
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import { user } from '$lib/stores/authStore';
 	import { getTags } from '$lib/services/tags';
 	import { getMyPreferences, saveMyPreferences } from '$lib/services/preferences';
 
@@ -12,6 +15,10 @@
 	let error = $state(null);
 
 	onMount(async () => {
+		if ($user?.role !== 'customer') {
+			goto(resolve('/profile'));
+			return;
+		}
 		try {
 			const [tagsData, prefsData] = await Promise.all([getTags(), getMyPreferences()]);
 			tags = tagsData;

@@ -1,6 +1,7 @@
 <script>
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { loginUser } from '$lib/services/auth.js';
 
 	let email = '';
@@ -43,7 +44,8 @@
 			return;
 		}
 
-		goto(resolve('/profile'));
+		const redirectTo = page.url.searchParams.get('redirectTo');
+		goto(resolve(redirectTo ?? '/profile'));
 	}
 </script>
 

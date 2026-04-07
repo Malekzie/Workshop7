@@ -23,8 +23,11 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 	const { pathname } = event.url;
 	const user = event.locals.user;
 
-	if (pathname.startsWith('/account')) {
-		if (!user) throw redirect(303, '/login');
+	const customerRoutes = ['/cart', '/checkout', '/orders', '/profile'];
+	const isProtected = customerRoutes.some((r) => pathname === r || pathname.startsWith(r + '/'));
+
+	if (isProtected && !user) {
+		throw redirect(303, `/login?redirectTo=${encodeURIComponent(pathname)}`);
 	} else if (pathname.startsWith('/employee')) {
 		if (!user || (user.role !== 'employee' && user.role !== 'admin')) {
 			throw redirect(303, '/?error=forbidden');

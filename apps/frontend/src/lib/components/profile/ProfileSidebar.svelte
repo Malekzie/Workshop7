@@ -16,11 +16,15 @@
 		ShoppingCart
 	} from '@lucide/svelte';
 
-	const navLinks = [
-		{ label: 'Profile', href: '/profile', icon: User },
-		{ label: 'Orders', href: '/orders/orderHistory', icon: ShoppingBag },
-		{ label: 'Preferences', href: '/profile/preferences', icon: SlidersHorizontal }
+	const allNavLinks = [
+		{ label: 'Profile', href: '/profile', icon: User, roles: null },
+		{ label: 'Orders', href: '/orders', icon: ShoppingBag, roles: null },
+		{ label: 'Preferences', href: '/profile/preferences', icon: SlidersHorizontal, roles: ['customer'] }
 	];
+
+	const navLinks = $derived(
+		allNavLinks.filter((l) => l.roles === null || l.roles.includes($user?.role ?? ''))
+	);
 
 	const initials = $derived([$user?.username?.[0]].filter(Boolean).join('').toUpperCase() || '?');
 
@@ -67,7 +71,7 @@
 
 	<!-- Bottom actions -->
 	<div class="mt-auto flex flex-col gap-2 border-t border-border p-6">
-		<Button href={resolve('/')} class="w-full gap-2">
+		<Button href={resolve('/menu')} class="w-full gap-2">
 			<ShoppingCart class="h-4 w-4" />
 			New Order
 		</Button>

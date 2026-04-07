@@ -60,8 +60,8 @@
 				class="text-sm font-medium text-foreground transition-colors hover:text-primary">About</a
 			>
 			<a
-				href={resolve('/order')}
-				class="text-sm font-medium text-foreground transition-colors hover:text-primary">Order</a
+				href={resolve('/orders')}
+				class="text-sm font-medium text-foreground transition-colors hover:text-primary">Orders</a
 			>
 		</div>
 
@@ -112,7 +112,7 @@
 			<a href={resolve('/about')} class="text-sm text-foreground hover:text-primary">About</a>
 			<!-- show order if user is logged in -->
 			{#if $isLoggedIn}
-				<a href={resolve('/order')} class="text-sm text-foreground hover:text-primary">Order</a>
+				<a href={resolve('/orders')} class="text-sm text-foreground hover:text-primary">Orders</a>
 			{/if}
 			<div class="flex gap-4 pt-2">
 				<button

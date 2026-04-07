@@ -40,25 +40,25 @@ public class CacheConfig implements CachingConfigurer {
         );
 
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(10))
+                .entryTtl(Duration.ofHours(1))
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(
                         new GenericJackson2JsonRedisSerializer(mapper)));
 
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
-        cacheConfigurations.put("tags",             defaultConfig.entryTtl(Duration.ofMinutes(30)));
-        cacheConfigurations.put("products",         defaultConfig.entryTtl(Duration.ofMinutes(15)));
-        cacheConfigurations.put("bakeries",         defaultConfig.entryTtl(Duration.ofMinutes(20)));
+        cacheConfigurations.put("tags",             defaultConfig.entryTtl(Duration.ofHours(6)));
+        cacheConfigurations.put("products",         defaultConfig.entryTtl(Duration.ofHours(2)));
+        cacheConfigurations.put("bakeries",         defaultConfig.entryTtl(Duration.ofHours(3)));
         // Renamed from product-specials: old Redis entries used a different JSON shape than current typing.
-        cacheConfigurations.put("product-specials-v2", defaultConfig.entryTtl(Duration.ofHours(1)));
-        cacheConfigurations.put("orders",           defaultConfig.entryTtl(Duration.ofMinutes(2)));
-        cacheConfigurations.put("rewards",          defaultConfig.entryTtl(Duration.ofMinutes(5)));
-        cacheConfigurations.put("analytics",        defaultConfig.entryTtl(Duration.ofMinutes(30)));
-        cacheConfigurations.put("dashboard",        defaultConfig.entryTtl(Duration.ofMinutes(5)));
-        cacheConfigurations.put("customers",        defaultConfig.entryTtl(Duration.ofMinutes(5)));
-        cacheConfigurations.put("employees",        defaultConfig.entryTtl(Duration.ofMinutes(5)));
-        cacheConfigurations.put("current-users",    defaultConfig.entryTtl(Duration.ofMinutes(1)));
-        cacheConfigurations.put("reward-tiers",     defaultConfig.entryTtl(Duration.ofMinutes(30)));
-        cacheConfigurations.put("reviews",          defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        cacheConfigurations.put("product-specials-v2", defaultConfig.entryTtl(Duration.ofHours(6)));
+        cacheConfigurations.put("orders",           defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        cacheConfigurations.put("rewards",          defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("analytics",        defaultConfig.entryTtl(Duration.ofHours(2)));
+        cacheConfigurations.put("dashboard",        defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("customers",        defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("employees",        defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("current-users",    defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        cacheConfigurations.put("reward-tiers",     defaultConfig.entryTtl(Duration.ofHours(6)));
+        cacheConfigurations.put("reviews",          defaultConfig.entryTtl(Duration.ofMinutes(30)));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

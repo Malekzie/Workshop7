@@ -24,8 +24,8 @@ public class CustomerPreferenceService {
     @Transactional(readOnly = true)
     public List<CustomerPreferenceDto> getMyPreferences() {
         User u = currentUserService.requireUser();
-        Customer c = customerRepository.findByUser_UserId(u.getUserId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No customer profile"));
+        Customer c = customerRepository.findByUser_UserId(u.getUserId()).orElse(null);
+        if (c == null) return List.of();
         return preferenceRepository.findByCustomer_Id(c.getId())
                 .stream()
                 .map(p -> new CustomerPreferenceDto(

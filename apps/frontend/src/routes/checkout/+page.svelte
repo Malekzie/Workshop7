@@ -99,7 +99,7 @@
 
 			const order = await res.json();
 			cart.clear();
-			goto(resolve(`/order/confirmation/${order.orderNumber}`));
+			goto(resolve(`/orders/${order.orderNumber}/confirmation`));
 		} catch (err: unknown) {
 			Sentry.withScope((scope) => {
 				scope.setTag('action', 'CHECKOUT_FAILED');
