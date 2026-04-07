@@ -60,8 +60,9 @@ class OrderControllerTest {
         req.setItems(java.util.List.of(line));
 
         OrderDto responseDto = new OrderDto(
-                UUID.randomUUID(), "ORD-123", UUID.randomUUID(), 1, "Bakery", 
-                null, com.sait.peelin.model.OrderMethod.pickup, null, BigDecimal.TEN, BigDecimal.ZERO, 
+                UUID.randomUUID(), "ORD-123", UUID.randomUUID(), 1, "Bakery",
+                null, com.sait.peelin.model.OrderMethod.pickup, null, BigDecimal.TEN, BigDecimal.ZERO,
+                BigDecimal.valueOf(13), BigDecimal.valueOf(1.30), BigDecimal.valueOf(11.30),
                 null, null, null, "Comment", java.util.List.of());
         when(orderService.checkout(any(CheckoutRequest.class))).thenReturn(responseDto);
 

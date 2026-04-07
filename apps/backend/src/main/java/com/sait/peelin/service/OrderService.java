@@ -32,6 +32,8 @@ public class OrderService {
     private final BatchRepository batchRepository;
     private final CustomerRepository customerRepository;
     private final EmployeeRepository employeeRepository;
+    private final TaxRateRepository taxRateRepository;
+    private final CustomerService customerService;
     private final CurrentUserService currentUserService;
 
     @Transactional(readOnly = true)
@@ -62,9 +64,19 @@ public class OrderService {
     @Transactional
     @CacheEvict(value = {"orders", "analytics", "dashboard"}, allEntries = true)
     public OrderDto checkout(CheckoutRequest req) {
-        User user = currentUserService.requireUser();
+        User user = currentUserService.currentUserOrNull();
         Customer customer;
-        if (user.getUserRole() == UserRole.customer) {
+        boolean guestCheckout = false;
+        if (user == null) {
+            if (req.getGuest() == null) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication or guest details are required");
+            }
+            if (req.getCustomerId() != null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Guest checkout cannot target an existing customer id");
+            }
+            customer = customerService.resolveOrCreateGuestCustomer(req.getGuest());
+            guestCheckout = true;
+        } else if (user.getUserRole() == UserRole.customer) {
             customer = customerRepository.findByUser_UserId(user.getUserId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile not found"));
         } else if (user.getUserRole() == UserRole.admin || user.getUserRole() == UserRole.employee) {
@@ -87,13 +99,17 @@ public class OrderService {
         Bakery bakery = bakeryRepository.findById(req.getBakeryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Bakery not found"));
 
-        if (req.getOrderMethod() == OrderMethod.delivery && req.getAddressId() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Delivery requires addressId");
+        if (req.getOrderMethod() == OrderMethod.delivery
+                && req.getAddressId() == null
+                && customer.getAddress() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Delivery requires address information");
         }
         Address address = null;
         if (req.getAddressId() != null) {
             address = addressRepository.findById(req.getAddressId())
                     .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
+        } else if (req.getOrderMethod() == OrderMethod.delivery) {
+            address = customer.getAddress();
         }
 
         BigDecimal subtotal = BigDecimal.ZERO;
@@ -108,7 +124,9 @@ public class OrderService {
         BigDecimal discount = BigDecimal.ZERO;
         if (req.getManualDiscount() != null) {
             discount = req.getManualDiscount().max(BigDecimal.ZERO);
-        } else if (customer.getRewardTier().getRewardTierDiscountRate() != null) {
+        } else if (!guestCheckout
+                && customer.getRewardTier() != null
+                && customer.getRewardTier().getRewardTierDiscountRate() != null) {
             discount = subtotal.multiply(customer.getRewardTier().getRewardTierDiscountRate())
                     .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         }
@@ -119,6 +137,10 @@ public class OrderService {
         if (total.compareTo(BigDecimal.ZERO) < 0) {
             total = BigDecimal.ZERO;
         }
+        BigDecimal taxRatePercent = resolveTaxRatePercent(resolveTaxProvince(customer));
+        BigDecimal taxAmount = total.multiply(taxRatePercent)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        BigDecimal grandTotal = total.add(taxAmount);
 
         Order order = new Order();
         order.setOrderNumber("ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
@@ -131,6 +153,13 @@ public class OrderService {
         order.setOrderPlacedDatetime(OffsetDateTime.now());
         order.setOrderTotal(total);
         order.setOrderDiscount(discount);
+        order.setOrderTaxRate(taxRatePercent);
+        order.setOrderTaxAmount(taxAmount);
+        if (guestCheckout && req.getGuest() != null) {
+            order.setGuestName(buildGuestName(req.getGuest().getFirstName(), req.getGuest().getLastName()));
+            order.setGuestEmail(req.getGuest().getEmail().trim().toLowerCase());
+            order.setGuestPhone(req.getGuest().getPhone().trim());
+        }
         order.setOrderStatus(OrderStatus.placed);
         order = orderRepository.save(order);
 
@@ -155,7 +184,7 @@ public class OrderService {
 
         Payment pay = new Payment();
         pay.setOrder(order);
-        pay.setPaymentAmount(total);
+        pay.setPaymentAmount(grandTotal);
         pay.setPaymentMethod(req.getPaymentMethod());
         pay.setPaymentStatus(PaymentStatus.completed);
         pay.setPaymentPaidAt(OffsetDateTime.now());
@@ -180,6 +209,48 @@ public class OrderService {
         customerRepository.save(customer);
 
         return toDto(orderRepository.findById(order.getId()).orElseThrow());
+    }
+
+    private String resolveTaxProvince(Customer customer) {
+        Address source = customer.getAddress();
+        if (source == null || source.getAddressProvince() == null || source.getAddressProvince().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer province is required for tax calculation");
+        }
+        return source.getAddressProvince();
+    }
+
+    private String buildGuestName(String firstName, String lastName) {
+        return ((firstName != null ? firstName.trim() : "") + " " + (lastName != null ? lastName.trim() : "")).trim();
+    }
+
+    private BigDecimal resolveTaxRatePercent(String provinceRaw) {
+        String normalizedProvince = normalizeProvince(provinceRaw);
+        return taxRateRepository.findByProvinceNameIgnoreCase(normalizedProvince)
+                .map(TaxRate::getTaxPercent)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "No tax rate configured for province/territory: " + normalizedProvince));
+    }
+
+    private String normalizeProvince(String provinceRaw) {
+        String province = provinceRaw == null ? "" : provinceRaw.trim();
+        String upper = province.toUpperCase();
+        return switch (upper) {
+            case "AB" -> "Alberta";
+            case "BC" -> "British Columbia";
+            case "MB" -> "Manitoba";
+            case "NB" -> "New Brunswick";
+            case "NL", "NF" -> "Newfoundland and Labrador";
+            case "NT" -> "Northwest Territories";
+            case "NS" -> "Nova Scotia";
+            case "NU" -> "Nunavut";
+            case "ON" -> "Ontario";
+            case "PE", "PEI" -> "Prince Edward Island";
+            case "QC", "PQ" -> "Quebec";
+            case "SK" -> "Saskatchewan";
+            case "YT", "YK" -> "Yukon";
+            default -> province;
+        };
     }
 
     @Transactional

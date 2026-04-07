@@ -1,5 +1,6 @@
 package com.sait.peelin.controller.v1;
 
+import com.sait.peelin.dto.v1.CustomerBootstrapRequest;
 import com.sait.peelin.dto.v1.CustomerDto;
 import com.sait.peelin.dto.v1.CustomerPatchRequest;
 import com.sait.peelin.service.CustomerService;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,6 +35,12 @@ public class CustomerSelfController {
     @GetMapping
     public CustomerDto me() {
         return customerService.me();
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public CustomerDto createMe(@Valid @RequestBody CustomerBootstrapRequest req) {
+        return customerService.createMyProfile(req);
     }
 
     @Operation(summary = "Update my profile", description = "Partially update the authenticated customer's profile fields.")
