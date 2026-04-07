@@ -19,6 +19,10 @@
 		}
 	}
 
+	function handleCartClick() {
+		goto(resolve('/cart'));
+	}
+
 	// handles where to direct user when clicking profile based on if they are logged in or not
 	function handleProfileClick() {
 		if ($user?.role === 'admin' || $user?.role === 'employee') {
@@ -81,6 +85,7 @@
 				<User size={20} />
 			</button>
 			<button
+				onclick={handleCartClick}
 				aria-label="Cart ({cartCount} items)"
 				class="relative text-foreground transition-colors hover:text-primary"
 			>
