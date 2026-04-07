@@ -6,7 +6,7 @@ spring:
       username: ${VALKEY_USERNAME:default}
       password: ${VALKEY_PASSWORD:}
       ssl:
-        enabled: {VALKEY_SSL:false}
+        enabled: ${VALKEY_SSL:false}
   application:
     name: Peelin' Good
   config:
