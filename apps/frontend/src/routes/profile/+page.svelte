@@ -107,11 +107,19 @@
 								<AvatarImage
 									src={profile.profilePhotoPath}
 									alt="{profile.firstName} {profile.lastName}"
+									class={profile.photoApprovalPending ? 'opacity-60 grayscale' : ''}
 								/>
 								<AvatarFallback class="bg-primary text-2xl font-bold text-primary-foreground">
 									{initials}
 								</AvatarFallback>
 							</Avatar>
+							{#if profile.photoApprovalPending}
+								<div
+									class="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap text-white"
+								>
+									Pending approval
+								</div>
+							{/if}
 						</div>
 
 						<div class="space-y-2">
