@@ -2,11 +2,11 @@
 
 @import 'tw-animate-css';
 
-@import "shadcn-svelte/tailwind.css";
+@import 'shadcn-svelte/tailwind.css';
 
-@import "@fontsource-variable/montserrat";
+@import '@fontsource-variable/montserrat';
 
-@import "@fontsource-variable/public-sans";
+@import '@fontsource-variable/public-sans';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -129,8 +129,9 @@
 	body {
 		@apply bg-background text-foreground;
 	}
-	html {
-			font-family: var(--font-sans);
+
+	html {
+		font-family: var(--font-sans);
 	}
 }
 
@@ -141,4 +142,8 @@
 	body {
 		font-family: 'Inter', system-ui, sans-serif;
 	}
+}
+
+button {
+	cursor: pointer;
 }

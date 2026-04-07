@@ -35,11 +35,11 @@
 			{#if categories.length === 0}
 				<p class="p-6 text-sm text-muted-foreground">Loading categories...</p>
 			{:else}
-				<div class="grid grid-cols-2 divide-x divide-y divide-border md:grid-cols-4 md:divide-y-0">
+				<div class="grid grid-cols-2 gap-4 md:grid-cols-4">
 					{#each categories as cat (cat.id)}
 						<a
 							href={resolve(`/menu?tag=${cat.id}`)}
-							class="group relative flex flex-col gap-1 bg-white px-6 py-7 transition-colors hover:bg-[#FAF7F2]"
+							class="group relative flex flex-col gap-1 bg-white px-6 py-7 transition-colors hover:cursor-pointer hover:bg-[#FAF7F2]"
 						>
 							{#if cat.badge}
 								<span

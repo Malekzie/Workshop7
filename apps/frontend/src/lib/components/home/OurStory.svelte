@@ -13,36 +13,31 @@
 
 		<!-- Text -->
 		<div class="flex flex-col gap-4">
-			<p class="text-[11px] font-semibold tracking-[0.2em] text-[#C4714A] uppercase">Our story</p>
+			<p class="text-[11px] font-semibold tracking-[0.2em] text-[#C4714A] uppercase">About us</p>
+
 			<h2 class="text-4xl leading-tight font-black tracking-tight text-[#2C1A0E]">
-				A little bakery<br />with a lot of
-				<span class="text-[#C4714A]">heart.</span>
+				Baked fresh.<br />
+				Made with
+				<span class="text-[#C4714A]">care.</span>
 			</h2>
+
 			<p class="text-sm leading-relaxed text-muted-foreground">
-				Peelin' Good started from a simple belief: good bread and a warm space can make any day
-				better. We use locally sourced ingredients, time-honoured techniques, and a whole lot of
-				care.
+				At Peelin' Good, everything we make is rooted in simple ingredients and thoughtful
+				technique. Our bakery is built on a love for slow baking, quality sourcing, and creating a
+				space that feels warm and welcoming.
 			</p>
+
 			<p class="text-sm leading-relaxed text-muted-foreground">
-				Every item is made by hand, in small batches, the same day you eat it. No shortcuts. Just
-				honest baking.
+				From handcrafted breads to daily pastries, every item is made in small batches with
+				attention to detail—no shortcuts, just honest baking.
 			</p>
+
 			<a
 				href={resolve('/about')}
 				class="mt-1 self-start text-sm font-semibold text-[#C4714A] underline decoration-[#C4714A]/40 underline-offset-4 hover:decoration-[#C4714A]"
 			>
-				Read the full story →
+				Learn more about us →
 			</a>
-
-			<!-- Stats -->
-			<div class="mt-4 grid grid-cols-3 gap-4 border-t border-border pt-6">
-				{#each [{ num: '50+', label: 'Items baked daily' }, { num: '3yr', label: 'Sourdough starter' }, { num: '100%', label: 'Local suppliers' }] as stat (stat.num)}
-					<div>
-						<p class="text-2xl font-black tracking-tight text-[#2C1A0E]">{stat.num}</p>
-						<p class="mt-0.5 text-[11px] text-muted-foreground">{stat.label}</p>
-					</div>
-				{/each}
-			</div>
 		</div>
 	</div>
 </section>

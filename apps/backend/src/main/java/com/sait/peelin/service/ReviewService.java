@@ -233,4 +233,14 @@ public class ReviewService {
         }
         return s.trim();
     }
+
+    @Transactional(readOnly = true)
+    public List<ReviewDto> topReviews(int limit) {
+        return reviewRepository
+                .findByReviewStatusOrderByReviewRatingDescReviewSubmittedDateDesc(ReviewStatus.approved)
+                .stream()
+                .limit(limit)
+                .map(this::toDto)
+                .toList();
+    }
 }
