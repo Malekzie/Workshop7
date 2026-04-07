@@ -76,11 +76,11 @@ public class EmployeeProfileService {
         employeeRepository.save(e);
         return toDto(e);
     }
-
+    @Transactional(readOnly = true)
     public List<EmployeeDto> listAll() {
         return employeeRepository.findAll().stream().map(this::toDto).toList();
     }
-
+    @Transactional(readOnly = true)
     public EmployeeDto get(UUID id) {
         return toDto(employeeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Employee not found")));
     }

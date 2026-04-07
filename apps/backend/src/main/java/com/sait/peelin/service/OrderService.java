@@ -4,9 +4,12 @@ import com.sait.peelin.dto.v1.*;
 import com.sait.peelin.exception.ResourceNotFoundException;
 import com.sait.peelin.model.*;
 import com.sait.peelin.repository.*;
+import com.stripe.model.PaymentIntent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,12 +18,15 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class OrderService {
+
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
@@ -35,6 +41,7 @@ public class OrderService {
     private final TaxRateRepository taxRateRepository;
     private final CustomerService customerService;
     private final CurrentUserService currentUserService;
+    private final StripeService stripeService;
 
     @Transactional(readOnly = true)
     @Cacheable(value = "orders", keyGenerator = "userIdKeyGenerator")
@@ -63,8 +70,8 @@ public class OrderService {
 
     @Transactional
     @CacheEvict(value = {"orders", "analytics", "dashboard"}, allEntries = true)
-    public OrderDto checkout(CheckoutRequest req) {
-        User user = currentUserService.currentUserOrNull();
+    public CheckoutSessionResponse checkout(CheckoutRequest req) {
+        User user = currentUserService.requireUser();
         Customer customer;
         boolean guestCheckout = false;
         if (user == null) {
@@ -160,9 +167,10 @@ public class OrderService {
             order.setGuestEmail(req.getGuest().getEmail().trim().toLowerCase());
             order.setGuestPhone(req.getGuest().getPhone().trim());
         }
-        order.setOrderStatus(OrderStatus.placed);
+        order.setOrderStatus(OrderStatus.pending_payment);
         order = orderRepository.save(order);
 
+        List<OrderItem> savedItems = new ArrayList<>();
         for (CheckoutRequest.CheckoutLineRequest line : req.getItems()) {
             Product p = productRepository.findById(line.getProductId()).orElseThrow();
             Batch batch = null;
@@ -179,36 +187,30 @@ public class OrderService {
             oi.setOrderItemQuantity(line.getQuantity());
             oi.setOrderItemUnitPriceAtTime(unit);
             oi.setOrderItemLineTotal(lineTotal);
-            orderItemRepository.save(oi);
+            savedItems.add(orderItemRepository.save(oi));
         }
 
         Payment pay = new Payment();
         pay.setOrder(order);
         pay.setPaymentAmount(grandTotal);
         pay.setPaymentMethod(req.getPaymentMethod());
-        pay.setPaymentStatus(PaymentStatus.completed);
-        pay.setPaymentPaidAt(OffsetDateTime.now());
-        pay.setPaymentTransactionId("TXN-" + UUID.randomUUID().toString().substring(0, 12).toUpperCase());
+        pay.setPaymentStatus(PaymentStatus.pending);
+
+        String clientSecret;
+        String paymentIntentId;
+        try {
+            PaymentIntent intent = stripeService.createPaymentIntent(order.getId(), total);
+            pay.setStripeSessionId(intent.getId());
+            clientSecret = intent.getClientSecret();
+            paymentIntentId = intent.getId();
+        } catch (Exception e) {
+            log.error("Failed to create Stripe payment intent for order {}", order.getId(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Payment provider unavailable");
+        }
+
         paymentRepository.save(pay);
 
-        // Loyalty points earned are intentionally scaled so that reward tier thresholds
-        // (100k+ points) can be reached after a realistic number of orders.
-        // Current UI expectation: ~$29 orders should yield ~29,000 points.
-        int points = total
-                .multiply(BigDecimal.valueOf(1000))
-                .setScale(0, RoundingMode.DOWN)
-                .intValue();
-        Reward reward = new Reward();
-        reward.setCustomer(customer);
-        reward.setOrder(order);
-        reward.setRewardPointsEarned(Math.max(points, 1));
-        reward.setRewardTransactionDate(OffsetDateTime.now());
-        rewardRepository.save(reward);
-
-        customer.setCustomerRewardBalance(customer.getCustomerRewardBalance() + reward.getRewardPointsEarned());
-        customerRepository.save(customer);
-
-        return toDto(orderRepository.findById(order.getId()).orElseThrow());
+        return new CheckoutSessionResponse(order.getId(), order.getOrderNumber(), clientSecret, paymentIntentId);
     }
 
     private String resolveTaxProvince(Customer customer) {

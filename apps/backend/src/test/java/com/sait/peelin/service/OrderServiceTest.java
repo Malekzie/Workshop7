@@ -1,8 +1,9 @@
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.CheckoutRequest;
-import com.sait.peelin.dto.v1.GuestCustomerRequest;
 import com.sait.peelin.dto.v1.OrderDto;
+import com.sait.peelin.dto.v1.GuestCustomerRequest;
+import com.sait.peelin.dto.v1.CheckoutSessionResponse;
 import com.sait.peelin.model.*;
 import com.sait.peelin.repository.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +13,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.stripe.model.PaymentIntent;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -38,6 +41,7 @@ class OrderServiceTest {
     @Mock private TaxRateRepository taxRateRepository;
     @Mock private CustomerService customerService;
     @Mock private CurrentUserService currentUserService;
+    @Mock private StripeService stripeService;
 
     @InjectMocks
     private OrderService orderService;
@@ -75,10 +79,6 @@ class OrderServiceTest {
         product.setId(101);
         product.setProductName("Test Bread");
         product.setProductBasePrice(BigDecimal.valueOf(5.0));
-
-        taxRate = new TaxRate();
-        taxRate.setProvinceName("Ontario");
-        taxRate.setTaxPercent(BigDecimal.valueOf(13.0));
     }
 
     @Test
@@ -97,6 +97,13 @@ class OrderServiceTest {
             return o;
         });
 
+        PaymentIntent mockIntent = mock(PaymentIntent.class);
+        try {
+            when(stripeService.createPaymentIntent(any(UUID.class), any(BigDecimal.class))).thenReturn(mockIntent);
+            when(mockIntent.getId()).thenReturn("pi_test_id");
+            when(mockIntent.getClientSecret()).thenReturn("pi_test_secret");
+        } catch (Exception ignored) {}
+
         CheckoutRequest req = new CheckoutRequest();
         req.setBakeryId(1);
         req.setOrderMethod(OrderMethod.pickup);
@@ -108,10 +115,12 @@ class OrderServiceTest {
         req.setItems(List.of(line));
 
         // Act
-        OrderDto result = orderService.checkout(req);
+        CheckoutSessionResponse result = orderService.checkout(req);
 
         // Assert
         assertNotNull(result);
+        assertNotNull(result.orderId());
+        assertNotNull(result.orderNumber());
         verify(orderRepository, atLeastOnce()).save(any(Order.class));
         verify(orderItemRepository, atLeastOnce()).save(any(OrderItem.class));
         verify(paymentRepository).save(any(Payment.class));
@@ -162,6 +171,13 @@ class OrderServiceTest {
             return o;
         });
 
+        PaymentIntent mockIntent = mock(PaymentIntent.class);
+        try {
+            when(stripeService.createPaymentIntent(any(UUID.class), any(BigDecimal.class))).thenReturn(mockIntent);
+            when(mockIntent.getId()).thenReturn("pi_test_id");
+            when(mockIntent.getClientSecret()).thenReturn("pi_test_secret");
+        } catch (Exception ignored) {}
+
         CheckoutRequest req = new CheckoutRequest();
         req.setBakeryId(1);
         req.setCustomerId(customer.getId()); // Providing customer ID
@@ -174,7 +190,7 @@ class OrderServiceTest {
         req.setItems(List.of(line));
 
         // Act
-        OrderDto result = orderService.checkout(req);
+        CheckoutSessionResponse result = orderService.checkout(req);
 
         // Assert
         assertNotNull(result);
