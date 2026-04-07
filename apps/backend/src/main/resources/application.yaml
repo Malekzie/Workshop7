@@ -1,7 +1,7 @@
 spring:
   data:
     redis:
-      url: ${UPSTASH_REDIS_URL}
+      url: ${VALKEY_REDIS_URL}
   application:
     name: Peelin' Good
   config:
