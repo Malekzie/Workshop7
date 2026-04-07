@@ -46,7 +46,7 @@ export async function logoutUser() {
 			credentials: 'include'
 		});
 	} catch (e) {
-		Sentry.captureMessage(`Logout failed: `, e);
+		Sentry.captureException(e);
 	}
 	clearAuth();
 }

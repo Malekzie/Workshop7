@@ -5,6 +5,7 @@ import com.sait.peelin.dto.v1.CheckoutRequest;
 import com.sait.peelin.dto.v1.CheckoutSessionResponse;
 import com.sait.peelin.service.JwtService;
 import com.sait.peelin.service.OrderService;
+import com.sait.peelin.service.TokenDenylistService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -40,6 +41,9 @@ class OrderControllerTest {
 
     @MockitoBean
     private JwtService jwtService;
+
+    @MockitoBean
+    private TokenDenylistService tokenDenylistService;
 
     @MockitoBean
     private UserDetailsService userDetailsService;
