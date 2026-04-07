@@ -21,7 +21,9 @@
 
 	// handles where to direct user when clicking profile based on if they are logged in or not
 	function handleProfileClick() {
-		if ($isLoggedIn) {
+		if ($user?.role === 'admin' || $user?.role === 'employee') {
+			goto(resolve('/staff/dashboard'));
+		} else if ($isLoggedIn) {
 			goto(resolve('/profile'));
 		} else {
 			goto(resolve('/login'));
@@ -63,12 +65,6 @@
 				href={resolve('/orders')}
 				class="text-sm font-medium text-foreground transition-colors hover:text-primary">Orders</a
 			>
-			{#if $user?.role === 'admin' || $user?.role === 'employee'}
-				<a
-					href={resolve('/staff/dashboard')}
-					class="text-sm font-medium text-foreground transition-colors hover:text-primary">Staff Portal</a
-				>
-			{/if}
 		</div>
 
 		<!-- Right icons -->
@@ -119,9 +115,6 @@
 			<!-- show order if user is logged in -->
 			{#if $isLoggedIn}
 				<a href={resolve('/orders')} class="text-sm text-foreground hover:text-primary">Orders</a>
-			{/if}
-			{#if $user?.role === 'admin' || $user?.role === 'employee'}
-				<a href={resolve('/staff/dashboard')} class="text-sm text-foreground hover:text-primary">Staff Portal</a>
 			{/if}
 			<div class="flex gap-4 pt-2">
 				<button
