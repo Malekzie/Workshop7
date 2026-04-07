@@ -19,7 +19,12 @@
 	const allNavLinks = [
 		{ label: 'Profile', href: '/profile', icon: User, roles: null },
 		{ label: 'Orders', href: '/orders', icon: ShoppingBag, roles: null },
-		{ label: 'Preferences', href: '/profile/preferences', icon: SlidersHorizontal, roles: ['customer'] }
+		{
+			label: 'Preferences',
+			href: '/profile/preferences',
+			icon: SlidersHorizontal,
+			roles: ['customer']
+		}
 	];
 
 	const navLinks = $derived(
@@ -34,7 +39,7 @@
 	}
 </script>
 
-<aside class="hidden w-72 flex-col border-r border-border bg-card md:flex">
+<aside class="hidden h-full w-72 flex-col overflow-y-auto border-r border-border bg-card md:flex">
 	<div class="flex flex-col gap-6 p-6 pt-8">
 		<!-- User identity -->
 		<div class="flex items-center gap-3">
