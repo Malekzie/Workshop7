@@ -13,8 +13,8 @@ import java.util.UUID;
 public interface ReviewRepository extends JpaRepository<Review, UUID> {
 
     List<Review> findByProduct_Id(Integer productId);
-    List<Review> findByProduct_IdAndReviewStatus(Integer productId, com.sait.peelin.model.ReviewStatus status);
-    List<Review> findByBakery_Id(Integer bakeryId);
+    List<Review> findByProduct_IdAndReviewStatusAndOrderIsNull(Integer productId, com.sait.peelin.model.ReviewStatus status);
+    List<Review> findByBakery_IdAndOrderIsNotNull(Integer bakeryId);
     List<Review> findByReviewStatusOrderByReviewSubmittedDateDesc(com.sait.peelin.model.ReviewStatus status);
     List<Review> findByReviewStatusAndBakery_IdOrderByReviewSubmittedDateDesc(
             com.sait.peelin.model.ReviewStatus status,
@@ -28,4 +28,8 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
     Optional<Double> averageRatingForBakery(@Param("bakeryId") Integer bakeryId);
 
     List<Review> findByReviewStatusOrderByReviewRatingDescReviewSubmittedDateDesc(ReviewStatus status);
+
+    boolean existsByCustomer_IdAndProduct_IdAndOrderIsNull(UUID customerId, Integer productId);
+
+    boolean existsByOrder_IdAndCustomer_Id(UUID orderId, UUID customerId);
 }
