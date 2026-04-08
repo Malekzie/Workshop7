@@ -76,3 +76,12 @@ export async function uploadProfilePhoto(file) {
 	if (!res.ok) throw new Error('Failed to upload profile photo: ' + res.status);
 	return res.json();
 }
+
+export async function deactivateAccount() {
+	const res = await apiFetch(`${API}/customers/me/deactivate`, {
+		method: 'PATCH'
+	});
+
+	if (!res) return;
+	if (!res.ok) throw new Error('Failed to deactivate account: ' + res.status);
+}

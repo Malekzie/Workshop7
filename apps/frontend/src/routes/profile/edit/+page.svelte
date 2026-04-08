@@ -13,7 +13,8 @@
 		getProfile,
 		updateProfile,
 		deleteAccount,
-		uploadProfilePhoto
+		uploadProfilePhoto,
+		deactivateAccount
 	} from '$lib/services/profile';
 	import { logoutUser } from '$lib/services/auth';
 	import { goto } from '$app/navigation';
@@ -38,6 +39,8 @@
 	let photoFile = $state(null);
 	let photoPreview = $state(null);
 	let uploadingPhoto = $state(false);
+	let showDeactivateConfirm = $state(false);
+	let deactivating = $state(false);
 
 	let fields = $state({
 		username: '',
@@ -107,6 +110,20 @@
 			errors.general = 'Failed to delete account. Please try again.';
 		} finally {
 			deleting = false;
+		}
+	}
+
+	async function handleDeactivate() {
+		deactivating = true;
+		try {
+			await deactivateAccount();
+			await logoutUser();
+			goto(resolve('/'));
+		} catch {
+			showDeactivateConfirm = false;
+			errors.general = 'Failed to deactivate account. Please try again.';
+		} finally {
+			deactivating = false;
 		}
 	}
 
@@ -571,5 +588,41 @@
 				</Button>
 			</div>
 		{/if}
+
+		{#if showDeactivateConfirm}
+			<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+				<div class="mx-4 w-full max-w-md rounded-xl border border-amber-500 bg-card p-6 shadow-xl">
+					<h2 class="text-lg font-bold text-amber-600">Deactivate Account</h2>
+					<p class="mt-2 text-sm text-muted-foreground">
+						Your account will be deactivated and you will be logged out. Contact support to
+						reactivate it.
+					</p>
+					<div class="mt-6 flex justify-end gap-3">
+						<Button variant="outline" onclick={() => (showDeactivateConfirm = false)}>Cancel</Button
+						>
+						<Button
+							class="bg-amber-500 text-white hover:bg-amber-600"
+							disabled={deactivating}
+							onclick={handleDeactivate}
+						>
+							{deactivating ? 'Deactivating...' : 'Yes, deactivate my account'}
+						</Button>
+					</div>
+				</div>
+			</div>
+		{/if}
+
+		<div class="mt-5 rounded-xl border border-amber-300/50 p-6">
+			<h2 class="text-sm font-semibold text-amber-600">Deactivate Account</h2>
+			<p class="mt-1 text-sm text-muted-foreground">
+				Temporarily deactivate your account. You can reactivate it by contacting support.
+			</p>
+			<Button
+				class="mt-4 bg-amber-500 text-white hover:cursor-pointer hover:bg-amber-600"
+				onclick={() => (showDeactivateConfirm = true)}
+			>
+				Deactivate Account
+			</Button>
+		</div>
 	</main>
 </div>

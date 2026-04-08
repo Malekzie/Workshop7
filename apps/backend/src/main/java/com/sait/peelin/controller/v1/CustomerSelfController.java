@@ -76,4 +76,11 @@ public class CustomerSelfController {
     public List<CustomerPreferenceDto> savePreferences(@RequestBody CustomerPreferenceSaveRequest request) {
         return customerPreferenceService.saveMyPreferences(request);
     }
+
+    @Operation(summary = "Deactivate my account", description = "Deactivates the authenticated customer's account without deleting it.")
+    @PatchMapping("/deactivate")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deactivateMe() {
+        customerService.deactivateMe();
+    }
 }
