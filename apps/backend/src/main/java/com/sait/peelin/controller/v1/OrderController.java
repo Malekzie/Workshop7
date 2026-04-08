@@ -59,6 +59,33 @@ public class OrderController {
         return orderService.checkout(req);
     }
 
+    @Operation(summary = "Confirm Stripe payment", description = "Verifies the PaymentIntent succeeded and marks the order paid. "
+            + "Call after Payment Sheet completes; complements webhooks (e.g. for local development).")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Order returned with updated status"),
+            @ApiResponse(responseCode = "400", description = "Intent does not match order", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Logged-in customer does not own this order", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Payment not succeeded at Stripe", content = @Content)
+    })
+    @PostMapping("/{id}/confirm-stripe-payment")
+    public OrderDto confirmStripePayment(
+            @PathVariable UUID id,
+            @Valid @RequestBody ConfirmStripePaymentRequest body) {
+        return orderService.confirmStripePayment(id, body);
+    }
+
+    @Operation(summary = "Resume Stripe payment", description = "For an order in pending_payment: returns a PaymentIntent client secret to open the Payment Sheet again, "
+            + "or marks the order paid if Stripe already captured payment.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Client secret to present the sheet, or order already paid"),
+            @ApiResponse(responseCode = "400", description = "Order not awaiting payment", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Not allowed to view this order", content = @Content)
+    })
+    @PostMapping("/{id}/resume-stripe-payment")
+    public ResumePaymentSessionResponse resumeStripePayment(@PathVariable UUID id) {
+        return orderService.resumeStripePayment(id);
+    }
+
     @Operation(summary = "Update order status", description = "Change the status of an order (e.g. PREPARING → READY). Requires ADMIN or EMPLOYEE role.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Status updated"),

@@ -5,6 +5,7 @@ import com.sait.peelin.exception.ResourceNotFoundException;
 import com.sait.peelin.model.*;
 import com.sait.peelin.repository.*;
 import com.sait.peelin.support.PhoneNumberFormatter;
+import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -43,6 +44,7 @@ public class OrderService {
     private final CustomerService customerService;
     private final CurrentUserService currentUserService;
     private final StripeService stripeService;
+    private final StripePaymentFulfillmentService stripePaymentFulfillmentService;
     private final RewardAccrualService rewardAccrualService;
     private final RewardTierRepository rewardTierRepository;
 
@@ -232,6 +234,147 @@ public class OrderService {
         paymentRepository.save(pay);
 
         return new CheckoutSessionResponse(order.getId(), order.getOrderNumber(), clientSecret, paymentIntentId);
+    }
+
+    /**
+     * After Payment Sheet completes, verifies the PaymentIntent with Stripe and marks the order paid.
+     * Use when webhooks are unavailable (e.g. local dev without {@code stripe listen}); production may still rely on webhooks.
+     */
+    @Transactional
+    public OrderDto confirmStripePayment(UUID orderId, ConfirmStripePaymentRequest req) {
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+        User u = currentUserService.currentUserOrNull();
+        if (order.getCustomer() != null && order.getCustomer().getUser() != null
+                && u != null && u.getUserRole() == UserRole.customer
+                && !order.getCustomer().getUser().getUserId().equals(u.getUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your order");
+        }
+
+        Payment payment = paymentRepository.findByOrder_Id(orderId).stream()
+                .filter(p -> req.paymentIntentId().equals(p.getStripeSessionId()))
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Payment intent does not match this order"));
+
+        if (payment.getPaymentStatus() == PaymentStatus.completed) {
+            return toDto(orderRepository.findById(orderId).orElseThrow());
+        }
+
+        if (!stripeService.isConfigured()) {
+            if (req.paymentIntentId().startsWith("dev_pi_")) {
+                stripePaymentFulfillmentService.fulfillOrderByPaymentIntentId(req.paymentIntentId());
+                return toDto(orderRepository.findById(orderId).orElseThrow());
+            }
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Stripe is not configured");
+        }
+
+        try {
+            PaymentIntent pi = stripeService.retrievePaymentIntent(req.paymentIntentId());
+            if (!"succeeded".equals(pi.getStatus())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Payment not completed");
+            }
+            String metaOrderId = pi.getMetadata() != null ? pi.getMetadata().get("orderId") : null;
+            if (metaOrderId == null || !orderId.toString().equals(metaOrderId)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Payment does not match order");
+            }
+        } catch (StripeException e) {
+            log.error("Stripe retrieve failed for order {}", orderId, e);
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Unable to verify payment with provider");
+        }
+
+        stripePaymentFulfillmentService.fulfillOrderByPaymentIntentId(req.paymentIntentId());
+        return toDto(orderRepository.findById(orderId).orElseThrow());
+    }
+
+    /**
+     * Returns a PaymentIntent client secret to resume the sheet for {@link OrderStatus#pending_payment},
+     * or fulfills immediately if Stripe already shows the intent succeeded.
+     */
+    @Transactional
+    public ResumePaymentSessionResponse resumeStripePayment(UUID orderId) {
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+        assertCanView(order);
+
+        if (order.getOrderStatus() != OrderStatus.pending_payment) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order is not awaiting payment");
+        }
+
+        Payment payment = paymentRepository.findByOrder_Id(orderId).stream()
+                .filter(p -> p.getPaymentStatus() == PaymentStatus.pending)
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "No pending payment for this order"));
+
+        String existingPi = payment.getStripeSessionId();
+        if (existingPi == null || existingPi.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Payment session missing");
+        }
+
+        if (!stripeService.isConfigured()) {
+            if (existingPi.startsWith("dev_pi_")) {
+                String clientSecret = existingPi + "_secret_dev";
+                return new ResumePaymentSessionResponse(order.getId(), order.getOrderNumber(), clientSecret, existingPi, false);
+            }
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Stripe is not configured");
+        }
+
+        try {
+            PaymentIntent intent = stripeService.retrievePaymentIntent(existingPi);
+            String status = intent.getStatus();
+
+            if ("succeeded".equals(status)) {
+                stripePaymentFulfillmentService.fulfillOrderByPaymentIntentId(existingPi);
+                Order refreshed = orderRepository.findById(orderId).orElseThrow();
+                return new ResumePaymentSessionResponse(refreshed.getId(), refreshed.getOrderNumber(), null, existingPi, true);
+            }
+
+            if ("canceled".equals(status)) {
+                PaymentIntent created = stripeService.createPaymentIntent(order.getId(), payment.getPaymentAmount());
+                payment.setStripeSessionId(created.getId());
+                paymentRepository.save(payment);
+                return new ResumePaymentSessionResponse(
+                        order.getId(),
+                        order.getOrderNumber(),
+                        created.getClientSecret(),
+                        created.getId(),
+                        false);
+            }
+
+            String clientSecret = intent.getClientSecret();
+            if (clientSecret == null || clientSecret.isBlank()) {
+                PaymentIntent created = stripeService.createPaymentIntent(order.getId(), payment.getPaymentAmount());
+                payment.setStripeSessionId(created.getId());
+                paymentRepository.save(payment);
+                return new ResumePaymentSessionResponse(
+                        order.getId(),
+                        order.getOrderNumber(),
+                        created.getClientSecret(),
+                        created.getId(),
+                        false);
+            }
+
+            return new ResumePaymentSessionResponse(
+                    order.getId(),
+                    order.getOrderNumber(),
+                    clientSecret,
+                    existingPi,
+                    false);
+        } catch (StripeException e) {
+            log.warn("Stripe retrieve failed for resume on order {}, creating new PaymentIntent", orderId, e);
+            try {
+                PaymentIntent created = stripeService.createPaymentIntent(order.getId(), payment.getPaymentAmount());
+                payment.setStripeSessionId(created.getId());
+                paymentRepository.save(payment);
+                return new ResumePaymentSessionResponse(
+                        order.getId(),
+                        order.getOrderNumber(),
+                        created.getClientSecret(),
+                        created.getId(),
+                        false);
+            } catch (StripeException e2) {
+                log.error("Could not create replacement PaymentIntent for order {}", orderId, e2);
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Payment provider unavailable");
+            }
+        }
     }
 
     /**

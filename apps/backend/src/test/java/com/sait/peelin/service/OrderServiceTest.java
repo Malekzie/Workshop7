@@ -43,6 +43,7 @@ class OrderServiceTest {
     @Mock private CustomerService customerService;
     @Mock private CurrentUserService currentUserService;
     @Mock private StripeService stripeService;
+    @Mock private StripePaymentFulfillmentService stripePaymentFulfillmentService;
     @Mock private RewardAccrualService rewardAccrualService;
 
     @InjectMocks
