@@ -4,6 +4,7 @@ import com.sait.peelin.dto.v1.*;
 import com.sait.peelin.exception.ResourceNotFoundException;
 import com.sait.peelin.model.*;
 import com.sait.peelin.repository.*;
+import com.sait.peelin.support.PhoneNumberFormatter;
 import com.stripe.model.PaymentIntent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -42,6 +43,7 @@ public class OrderService {
     private final CustomerService customerService;
     private final CurrentUserService currentUserService;
     private final StripeService stripeService;
+    private final RewardAccrualService rewardAccrualService;
     private final RewardTierRepository rewardTierRepository;
 
     @Transactional(readOnly = true)
@@ -174,7 +176,7 @@ public class OrderService {
             }
             String gp = req.getGuest().getPhone();
             if (gp != null && !gp.trim().isEmpty()) {
-                order.setGuestPhone(gp.trim());
+                order.setGuestPhone(PhoneNumberFormatter.formatStoredPhone(gp));
             } else {
                 order.setGuestPhone(null);
             }
@@ -255,7 +257,7 @@ public class OrderService {
         return p != null && !p.trim().isEmpty() && !p.trim().equalsIgnoreCase("unknown");
     }
 
-    private String buildGuestName(String firstName, String lastName) {
+    private static String buildGuestName(String firstName, String lastName) {
         return ((firstName != null ? firstName.trim() : "") + " " + (lastName != null ? lastName.trim() : "")).trim();
     }
 
@@ -306,11 +308,11 @@ public class OrderService {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             }
         }
-        OrderStatus previousStatus = o.getOrderStatus();
+        OrderStatus previous = o.getOrderStatus();
         o.setOrderStatus(req.getStatus());
         Order saved = orderRepository.save(o);
-        if (req.getStatus() == OrderStatus.completed && previousStatus != OrderStatus.completed) {
-            awardRewardPoints(saved);
+        if (req.getStatus() == OrderStatus.cancelled && previous != OrderStatus.cancelled) {
+            rewardAccrualService.reverseEarnedPointsForOrder(saved);
         }
         return toDto(saved);
     }
