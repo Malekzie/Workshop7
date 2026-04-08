@@ -77,6 +77,20 @@ public class CustomerService {
             return existing;
         }
 
+        Customer reusableGuest = findSingleGuestByContact(user.getUserEmail(), phone);
+        if (reusableGuest != null) {
+            reusableGuest.setUser(user);
+            reusableGuest.setGuestExpiryDate(null);
+            reusableGuest.setCustomerEmail(user.getUserEmail());
+            if (StringUtils.hasText(phone)) {
+                reusableGuest.setCustomerPhone(phone.trim());
+            }
+            if (reusableGuest.getCustomerTierAssignedDate() == null) {
+                reusableGuest.setCustomerTierAssignedDate(LocalDate.now());
+            }
+            return customerRepository.save(reusableGuest);
+        }
+
         Customer customer = new Customer();
         customer.setUser(user);
         customer.setRewardTier(lowestRewardTier());
@@ -165,6 +179,8 @@ public class CustomerService {
 
     @Transactional
     public Customer resolveOrCreateGuestCustomer(GuestCustomerRequest request) {
+        assertGuestCheckoutEmailNotRegisteredAccount(request.getEmail());
+
         Customer existing = findSingleGuestByContact(request.getEmail(), request.getPhone());
         if (existing == null && hasFullGuestIdentity(request)) {
             existing = findExactGuestCustomer(
@@ -360,6 +376,31 @@ public class CustomerService {
                 && StringUtils.hasText(r.getPostalCode())
                 && StringUtils.hasText(r.getPhone())
                 && StringUtils.hasText(r.getEmail());
+    }
+
+    /**
+     * Guest checkout may not use an email tied to a registered account. Pure guest rows
+     * (customer without user) are allowed.
+     */
+    private void assertGuestCheckoutEmailNotRegisteredAccount(String emailRaw) {
+        if (!StringUtils.hasText(emailRaw)) {
+            return;
+        }
+        String trimmed = emailRaw.trim();
+        if (GuestContactFiller.isSyntheticGuestEmail(trimmed)) {
+            return;
+        }
+        String emailNorm = trimmed.toLowerCase();
+        if (userRepository.existsByUserEmailIgnoreCase(emailNorm)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "This email is already registered. Sign in to complete your order.");
+        }
+        for (Customer c : customerRepository.findByCustomerEmailNormalized(emailNorm)) {
+            if (c.getUser() != null) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "This email is already registered. Sign in to complete your order.");
+            }
+        }
     }
 
     private Customer findSingleGuestByContact(String email, String phoneRaw) {
