@@ -23,7 +23,6 @@
 
 	function validatePassword(value) {
 		if (!value) return 'Password is required.';
-		if (value.length < 8) return 'Must be at least 8 characters.';
 		return '';
 	}
 
