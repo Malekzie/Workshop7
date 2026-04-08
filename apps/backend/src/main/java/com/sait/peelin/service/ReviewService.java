@@ -47,7 +47,11 @@ public class ReviewService {
 
     @Transactional(readOnly = true)
     public List<ReviewDto> forBakery(Integer bakeryId) {
-        return reviewRepository.findByBakery_IdAndOrderIsNotNull(bakeryId).stream().map(this::toDto).toList();
+        return reviewRepository
+                .findByBakery_IdAndOrderIsNotNullAndReviewStatus(bakeryId, ReviewStatus.approved)
+                .stream()
+                .map(this::toDto)
+                .toList();
     }
 
     @Transactional(readOnly = true)
