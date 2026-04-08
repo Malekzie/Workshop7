@@ -248,6 +248,21 @@
 					</p>
 				{/if}
 
+				{#if selectedProduct.tagIds && selectedProduct.tagIds.length > 0}
+					<div class="flex flex-wrap gap-2">
+						{#each selectedProduct.tagIds as tagId (tagId)}
+							{@const tagName = tags.find((t) => t.id === tagId)?.name}
+							{#if tagName}
+								<span
+									class="rounded-full bg-[#F5EFE6] px-3 py-1 text-xs font-semibold text-[#C4714A]"
+								>
+									{tagName}
+								</span>
+							{/if}
+						{/each}
+					</div>
+				{/if}
+
 				<Separator />
 
 				<!-- Quantity -->
