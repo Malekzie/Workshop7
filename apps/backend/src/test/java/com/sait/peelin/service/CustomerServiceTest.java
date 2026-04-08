@@ -243,7 +243,7 @@ class CustomerServiceTest {
         assertEquals(guest, result);
         assertEquals(user, guest.getUser());
         assertEquals("newreal@email.com", guest.getCustomerEmail());
-        assertEquals("+1 (403) 555-2222", guest.getCustomerPhone().trim());
+        assertEquals("(403) 555-2222", guest.getCustomerPhone());
         verify(customerRepository).save(guest);
     }
 }

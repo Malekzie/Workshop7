@@ -16,6 +16,7 @@ import com.sait.peelin.repository.CustomerRepository;
 import com.sait.peelin.repository.RewardTierRepository;
 import com.sait.peelin.repository.UserRepository;
 import com.sait.peelin.support.GuestContactFiller;
+import com.sait.peelin.support.PhoneNumberFormatter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -83,7 +84,7 @@ public class CustomerService {
             reusableGuest.setGuestExpiryDate(null);
             reusableGuest.setCustomerEmail(user.getUserEmail());
             if (StringUtils.hasText(phone)) {
-                reusableGuest.setCustomerPhone(phone.trim());
+                reusableGuest.setCustomerPhone(PhoneNumberFormatter.formatStoredPhone(phone));
             }
             if (reusableGuest.getCustomerTierAssignedDate() == null) {
                 reusableGuest.setCustomerTierAssignedDate(LocalDate.now());
@@ -95,7 +96,9 @@ public class CustomerService {
         customer.setUser(user);
         customer.setRewardTier(lowestRewardTier());
         customer.setCustomerEmail(user.getUserEmail());
-        customer.setCustomerPhone(StringUtils.hasText(phone) ? phone.trim() : GuestContactFiller.allocateSyntheticPhoneDigits());
+        customer.setCustomerPhone(StringUtils.hasText(phone)
+                ? PhoneNumberFormatter.formatStoredPhone(phone)
+                : GuestContactFiller.allocateSyntheticPhoneDigits());
         customer.setCustomerRewardBalance(0);
         customer.setCustomerTierAssignedDate(LocalDate.now());
         customer.setGuestExpiryDate(null);
@@ -207,7 +210,7 @@ public class CustomerService {
         customer.setAddress(createAddressIfPresent(request));
         applyNewGuestContact(customer, request);
         applyGuestOptionalNames(customer, request);
-        customer.setCustomerBusinessPhone(normalizeOptional(request.getBusinessPhone()));
+        customer.setCustomerBusinessPhone(PhoneNumberFormatter.formatStoredPhoneOrNull(request.getBusinessPhone()));
         customer.setCustomerRewardBalance(0);
         customer.setGuestExpiryDate(LocalDate.now().plusYears(1));
         return customerRepository.save(customer);
@@ -301,8 +304,10 @@ public class CustomerService {
             c.setCustomerMiddleInitial(v.isEmpty() ? null : v);
         }
         if (req.getLastName() != null) c.setCustomerLastName(req.getLastName());
-        if (req.getPhone() != null) c.setCustomerPhone(req.getPhone());
-        if (req.getBusinessPhone() != null) c.setCustomerBusinessPhone(req.getBusinessPhone());
+        if (req.getPhone() != null) c.setCustomerPhone(PhoneNumberFormatter.formatStoredPhone(req.getPhone()));
+        if (req.getBusinessPhone() != null) {
+            c.setCustomerBusinessPhone(PhoneNumberFormatter.formatStoredPhoneOrNull(req.getBusinessPhone()));
+        }
         if (req.getEmail() != null) c.setCustomerEmail(req.getEmail());
         if (req.getAddressId() != null) {
             c.setAddress(addressRepository.findById(req.getAddressId())
@@ -479,7 +484,7 @@ public class CustomerService {
             existing.setCustomerMiddleInitial(normalizeOptional(req.getMiddleInitial()));
         }
         if (StringUtils.hasText(req.getBusinessPhone())) {
-            existing.setCustomerBusinessPhone(normalizeOptional(req.getBusinessPhone()));
+            existing.setCustomerBusinessPhone(PhoneNumberFormatter.formatStoredPhoneOrNull(req.getBusinessPhone()));
         }
         if (existing.getAddress() == null && StringUtils.hasText(req.getAddressLine1())) {
             existing.setAddress(createAddress(
@@ -502,8 +507,8 @@ public class CustomerService {
         customer.setCustomerFirstName(normalizeRequired(firstName));
         customer.setCustomerMiddleInitial(normalizeOptional(middleInitial));
         customer.setCustomerLastName(normalizeRequired(lastName));
-        customer.setCustomerPhone(normalizeRequired(phone));
-        customer.setCustomerBusinessPhone(normalizeOptional(businessPhone));
+        customer.setCustomerPhone(PhoneNumberFormatter.formatStoredPhone(phone));
+        customer.setCustomerBusinessPhone(PhoneNumberFormatter.formatStoredPhoneOrNull(businessPhone));
         customer.setCustomerEmail(normalizeRequired(email).toLowerCase());
     }
 

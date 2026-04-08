@@ -4,6 +4,7 @@ import com.sait.peelin.dto.v1.*;
 import com.sait.peelin.exception.ResourceNotFoundException;
 import com.sait.peelin.model.*;
 import com.sait.peelin.repository.*;
+import com.sait.peelin.support.PhoneNumberFormatter;
 import com.stripe.model.PaymentIntent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -173,7 +174,7 @@ public class OrderService {
             }
             String gp = req.getGuest().getPhone();
             if (gp != null && !gp.trim().isEmpty()) {
-                order.setGuestPhone(gp.trim());
+                order.setGuestPhone(PhoneNumberFormatter.formatStoredPhone(gp));
             } else {
                 order.setGuestPhone(null);
             }
@@ -253,7 +254,7 @@ public class OrderService {
         return address.getAddressProvince() != null && !address.getAddressProvince().trim().isEmpty();
     }
 
-    private String buildGuestName(String firstName, String lastName) {
+    private static String buildGuestName(String firstName, String lastName) {
         return ((firstName != null ? firstName.trim() : "") + " " + (lastName != null ? lastName.trim() : "")).trim();
     }
 
