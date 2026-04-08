@@ -51,6 +51,7 @@ public class SecurityConfig {
                                 "/oauth2/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/orders").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/orders/*/confirm-stripe-payment").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reviews/top").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/product-specials", "/api/v1/product-specials/**").permitAll()

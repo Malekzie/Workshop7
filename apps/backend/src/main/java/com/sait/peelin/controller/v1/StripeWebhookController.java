@@ -1,9 +1,6 @@
 package com.sait.peelin.controller.v1;
 
-import com.sait.peelin.model.*;
-import com.sait.peelin.repository.OrderRepository;
-import com.sait.peelin.repository.PaymentRepository;
-import com.sait.peelin.service.RewardAccrualService;
+import com.sait.peelin.service.StripePaymentFulfillmentService;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.stripe.exception.SignatureVerificationException;
@@ -21,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.OffsetDateTime;
 import java.util.Optional;
 
 @RestController
@@ -34,9 +30,7 @@ public class StripeWebhookController {
     @Value("${stripe.webhook-secret:}")
     private String webhookSecret;
 
-    private final PaymentRepository paymentRepository;
-    private final OrderRepository orderRepository;
-    private final RewardAccrualService rewardAccrualService;
+    private final StripePaymentFulfillmentService stripePaymentFulfillmentService;
 
     @PostMapping("/webhook")
     @Transactional
@@ -64,7 +58,7 @@ public class StripeWebhookController {
         if ("payment_intent.succeeded".equals(event.getType())) {
             String paymentIntentId = extractPaymentIntentId(event, payloadStr);
             if (paymentIntentId != null) {
-                fulfillOrderByPaymentIntentId(paymentIntentId);
+                stripePaymentFulfillmentService.fulfillOrderByPaymentIntentId(paymentIntentId);
             } else {
                 log.warn("payment_intent.succeeded event {}: could not read PaymentIntent id (deserializer + JSON fallback)",
                         event.getId());
@@ -102,30 +96,4 @@ public class StripeWebhookController {
         }
     }
 
-    private void fulfillOrderByPaymentIntentId(String paymentIntentId) {
-        Optional<Payment> paymentOpt = paymentRepository.findByStripeSessionId(paymentIntentId);
-        if (paymentOpt.isEmpty()) {
-            log.warn("No payment found for Stripe PaymentIntent {}", paymentIntentId);
-            return;
-        }
-
-        Payment payment = paymentOpt.get();
-        if (payment.getPaymentStatus() == PaymentStatus.completed) {
-            log.info("Payment already fulfilled for PaymentIntent {}", paymentIntentId);
-            return;
-        }
-
-        payment.setPaymentStatus(PaymentStatus.completed);
-        payment.setPaymentPaidAt(OffsetDateTime.now());
-        payment.setPaymentTransactionId(paymentIntentId);
-        paymentRepository.save(payment);
-
-        Order order = payment.getOrder();
-        order.setOrderStatus(OrderStatus.paid);
-        orderRepository.save(order);
-
-        rewardAccrualService.grantEarnedPointsForPaidOrder(order);
-
-        log.info("Order {} fulfilled via PaymentIntent {}", order.getId(), paymentIntentId);
-    }
 }
