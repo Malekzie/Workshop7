@@ -23,7 +23,6 @@ public class DashboardService {
     private final CustomerRepository customerRepository;
     private final ProductRepository productRepository;
     private final OrderItemRepository orderItemRepository;
-    private final ReviewRepository reviewRepository;
 
     @Cacheable(value = "dashboard", key = "'summary'")
     @Transactional(readOnly = true)
@@ -35,7 +34,7 @@ public class DashboardService {
         List<Order> recent = orderRepository.findAll(
                 PageRequest.of(0, 15, Sort.by(Sort.Direction.DESC, "orderPlacedDatetime"))
         ).getContent();
-        List<OrderDto> recentDtos = recent.stream().map(o -> OrderMapper.toDto(o, orderItemRepository, reviewRepository)).toList();
+        List<OrderDto> recentDtos = recent.stream().map(o -> OrderMapper.toDto(o, orderItemRepository)).toList();
         return new DashboardSummaryDto(revenue, orders, customers, products, recentDtos);
     }
 }

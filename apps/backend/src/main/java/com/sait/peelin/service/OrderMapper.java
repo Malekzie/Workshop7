@@ -6,18 +6,15 @@ import com.sait.peelin.model.Customer;
 import com.sait.peelin.model.Order;
 import com.sait.peelin.model.OrderItem;
 import com.sait.peelin.repository.OrderItemRepository;
-import com.sait.peelin.repository.ReviewRepository;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
 public final class OrderMapper {
 
     private OrderMapper() {}
 
-    public static OrderDto toDto(Order o, OrderItemRepository orderItemRepository, ReviewRepository reviewRepository) {
+    public static OrderDto toDto(Order o, OrderItemRepository orderItemRepository) {
         List<OrderItem> items = orderItemRepository.findByOrder_Id(o.getId());
         List<OrderItemDto> itemDtos = items.stream().map(OrderMapper::itemDto).toList();
         BigDecimal subtotal = o.getOrderTotal();
@@ -27,7 +24,6 @@ public final class OrderMapper {
             grandTotal = subtotal.add(taxAmount);
         }
 
-        boolean hasLocationReview = o.getCustomer() != null && reviewRepository.existsByOrder_IdAndCustomer_Id(o.getId(), o.getCustomer().getId());
         return new OrderDto(
                 o.getId(),
                 o.getOrderNumber(),
@@ -47,8 +43,7 @@ public final class OrderMapper {
                 o.getOrderScheduledDatetime(),
                 o.getOrderDeliveredDatetime(),
                 o.getOrderComment(),
-                itemDtos,
-                hasLocationReview
+                itemDtos
         );
     }
 

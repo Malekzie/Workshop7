@@ -5,14 +5,20 @@
 	import { onMount } from 'svelte';
 	import { getMyOrders } from '$lib/services/orders';
 	import { createProductReview, createOrderReview } from '$lib/services/review';
+	import { apiFetch } from '$lib/utils/api';
 	import { resolve } from '$app/paths';
+
+	const API = '/api/v1';
 
 	let orders = $state([]);
 	let loading = $state(true);
 	let error = $state(null);
 
+	// Accept delivery dialog state
+	let acceptDialog = $state(null); // { order }
+
 	// Review modal state
-	let reviewModal = $state(null); // { type: 'order'|'product', orderId, productId, productName }
+	let reviewModal = $state(null); // { type: 'order'|'product', orderId, productId, label }
 	let reviewRating = $state(0);
 	let reviewComment = $state('');
 	let reviewSubmitting = $state(false);
@@ -29,8 +35,21 @@
 		}
 	});
 
-	function canReview(order) {
-		return ['completed', 'delivered', 'picked_up'].includes(order.status);
+	// Accept delivery without review
+	async function acceptDelivery(orderId) {
+		try {
+			await apiFetch(`${API}/orders/${orderId}/accept-delivery`, { method: 'PATCH' });
+			orders = orders.map((o) => (o.id === orderId ? { ...o, status: 'completed' } : o));
+		} catch {
+			// silently fail — order will still show
+		}
+		acceptDialog = null;
+	}
+
+	// Accept delivery and leave a review
+	function acceptAndReview(order) {
+		acceptDialog = null;
+		openOrderReview(order);
 	}
 
 	function openOrderReview(order) {
@@ -74,18 +93,23 @@
 		reviewError = null;
 		try {
 			if (reviewModal.type === 'order') {
+				// Accept delivery first if still in delivered/picked_up state
+				const order = orders.find((o) => o.id === reviewModal.orderId);
+				if (order && ['delivered', 'picked_up'].includes(order.status)) {
+					await apiFetch(`${API}/orders/${reviewModal.orderId}/accept-delivery`, {
+						method: 'PATCH'
+					});
+					orders = orders.map((o) =>
+						o.id === reviewModal.orderId ? { ...o, status: 'completed' } : o
+					);
+				}
 				await createOrderReview(reviewModal.orderId, reviewRating, reviewComment);
-				// Mark the order as reviewed locally so the button disappears
-				orders = orders.map((o) =>
-					o.id === reviewModal.orderId ? { ...o, hasLocationReview: true } : o
-				);
 			} else {
 				await createProductReview(reviewModal.productId, reviewRating, reviewComment);
-				// Mark the item as reviewed locally
 				orders = orders.map((o) => ({
 					...o,
 					items: o.items?.map((i) =>
-						i.productId === reviewModal.productId ? { ...i, hasProductReview: true } : i
+						i.productId === reviewModal.productId ? { ...i, reviewed: true } : i
 					)
 				}));
 			}
@@ -191,44 +215,35 @@
 								</div>
 							</div>
 
-							<!-- Review actions for completed orders -->
-							{#if canReview(order)}
-								<div class="mt-4 space-y-3 border-t border-border pt-4">
-									<!-- Location review -->
-									{#if !order.hasLocationReview}
-										<div class="flex items-center justify-between">
-											<p class="text-xs text-muted-foreground">
-												How was your experience with this order?
-											</p>
-											<button
-												onclick={() => openOrderReview(order)}
-												class="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground hover:opacity-90"
-											>
-												Review order
-											</button>
-										</div>
-									{:else}
-										<p class="text-xs text-muted-foreground">✓ Order reviewed</p>
-									{/if}
+							<!-- Accept delivery button for delivered/picked_up -->
+							{#if ['delivered', 'picked_up'].includes(order.status)}
+								<div class="mt-4 border-t border-border pt-4">
+									<button
+										onclick={() => (acceptDialog = { order })}
+										class="w-full rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+									>
+										Accept Delivery
+									</button>
+								</div>
+							{/if}
 
-									<!-- Product reviews -->
-									{#if order.items && order.items.length > 0}
-										<div class="space-y-2">
-											{#each order.items as item (item.productId)}
-												{#if !item.hasProductReview}
-													<div class="flex items-center justify-between">
-														<p class="text-xs text-muted-foreground">{item.productName}</p>
-														<button
-															onclick={() => openProductReview(order, item)}
-															class="rounded-full border border-border px-3 py-1 text-xs font-semibold text-foreground hover:bg-muted"
-														>
-															Review product
-														</button>
-													</div>
-												{/if}
-											{/each}
-										</div>
-									{/if}
+							<!-- Product reviews for completed orders -->
+							{#if order.status === 'completed' && order.items && order.items.length > 0}
+								<div class="mt-4 space-y-2 border-t border-border pt-4">
+									<p class="text-xs text-muted-foreground">Review products from this order:</p>
+									{#each order.items as item (item.productId)}
+										{#if !item.reviewed}
+											<div class="flex items-center justify-between">
+												<p class="text-xs text-muted-foreground">{item.productName}</p>
+												<button
+													onclick={() => openProductReview(order, item)}
+													class="rounded-full border border-border px-3 py-1 text-xs font-semibold text-foreground hover:bg-muted"
+												>
+													Review
+												</button>
+											</div>
+										{/if}
+									{/each}
 								</div>
 							{/if}
 						</div>
@@ -239,12 +254,47 @@
 	</main>
 </div>
 
+<!-- Accept Delivery Dialog -->
+{#if acceptDialog}
+	<div
+		class="fixed inset-0 z-40 bg-black/50"
+		onclick={() => (acceptDialog = null)}
+		role="presentation"
+	></div>
+	<div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+		<div class="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
+			<h2 class="text-lg font-bold text-foreground">Order Received?</h2>
+			<p class="mt-1 text-sm text-muted-foreground">
+				Confirm you received Order #{acceptDialog.order.orderNumber} from {acceptDialog.order
+					.bakeryName ?? "Peelin' Good"}.
+			</p>
+			<div class="mt-5 flex flex-col gap-3">
+				<button
+					onclick={() => acceptAndReview(acceptDialog.order)}
+					class="w-full rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+				>
+					Yes, leave a review
+				</button>
+				<button
+					onclick={() => acceptDelivery(acceptDialog.order.id)}
+					class="w-full rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
+				>
+					No, finish order
+				</button>
+				<button
+					onclick={() => (acceptDialog = null)}
+					class="w-full px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
+				>
+					Cancel
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
 <!-- Review Modal -->
 {#if reviewModal}
-	<!-- Backdrop -->
 	<div class="fixed inset-0 z-40 bg-black/50" onclick={closeModal} role="presentation"></div>
-
-	<!-- Modal -->
 	<div class="fixed inset-0 z-50 flex items-center justify-center p-4">
 		<div class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
 			<h2 class="text-lg font-bold text-foreground">
@@ -252,7 +302,6 @@
 			</h2>
 			<p class="mt-1 text-sm text-muted-foreground">{reviewModal.label}</p>
 
-			<!-- Star rating -->
 			<div class="mt-5 flex gap-2">
 				{#each [1, 2, 3, 4, 5] as star (star)}
 					<button
@@ -266,7 +315,6 @@
 				{/each}
 			</div>
 
-			<!-- Comment -->
 			<textarea
 				bind:value={reviewComment}
 				placeholder="Leave a comment (optional)"
