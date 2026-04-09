@@ -22,6 +22,7 @@ import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -48,6 +49,7 @@ public class OrderService {
     private final RewardAccrualService rewardAccrualService;
     private final RewardTierRepository rewardTierRepository;
     private final RecommendationService recommendationService;
+    private final ReviewRepository reviewRepository;
 
     @Transactional(readOnly = true)
     @Cacheable(value = "orders", keyGenerator = "userIdKeyGenerator")
@@ -563,6 +565,6 @@ public class OrderService {
     }
 
     private OrderDto toDto(Order o) {
-        return OrderMapper.toDto(o, orderItemRepository);
+        return OrderMapper.toDto(o, orderItemRepository, reviewRepository);
     }
 }

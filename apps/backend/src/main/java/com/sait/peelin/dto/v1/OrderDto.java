@@ -27,5 +27,6 @@ public record OrderDto(
         OffsetDateTime scheduledAt,
         OffsetDateTime deliveredAt,
         String comment,
-        List<OrderItemDto> items
+        List<OrderItemDto> items,
+        boolean hasLocationReview
 ) {}

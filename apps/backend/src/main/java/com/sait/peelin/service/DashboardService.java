@@ -4,10 +4,7 @@ import com.sait.peelin.dto.v1.DashboardSummaryDto;
 import com.sait.peelin.dto.v1.OrderDto;
 import com.sait.peelin.model.Order;
 import com.sait.peelin.model.OrderStatus;
-import com.sait.peelin.repository.CustomerRepository;
-import com.sait.peelin.repository.OrderItemRepository;
-import com.sait.peelin.repository.OrderRepository;
-import com.sait.peelin.repository.ProductRepository;
+import com.sait.peelin.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
@@ -26,6 +23,7 @@ public class DashboardService {
     private final CustomerRepository customerRepository;
     private final ProductRepository productRepository;
     private final OrderItemRepository orderItemRepository;
+    private final ReviewRepository reviewRepository;
 
     @Cacheable(value = "dashboard", key = "'summary'")
     @Transactional(readOnly = true)
@@ -37,7 +35,7 @@ public class DashboardService {
         List<Order> recent = orderRepository.findAll(
                 PageRequest.of(0, 15, Sort.by(Sort.Direction.DESC, "orderPlacedDatetime"))
         ).getContent();
-        List<OrderDto> recentDtos = recent.stream().map(o -> OrderMapper.toDto(o, orderItemRepository)).toList();
+        List<OrderDto> recentDtos = recent.stream().map(o -> OrderMapper.toDto(o, orderItemRepository, reviewRepository)).toList();
         return new DashboardSummaryDto(revenue, orders, customers, products, recentDtos);
     }
 }
