@@ -38,6 +38,18 @@ public class AdminUserService {
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
     }
 
+    /**
+     * Returns all admin and employee users — used for messaging recipient lists.
+     * Does not include customers.
+     */
+    public List<UserSummaryDto> listStaff() {
+        currentUserService.requireUser();
+        return userRepository.findAll().stream()
+                .filter(u -> u.getUserRole() == UserRole.admin || u.getUserRole() == UserRole.employee)
+                .map(this::toDto)
+                .toList();
+    }
+
     @Transactional
     public UserSummaryDto setActive(UUID userId, boolean active) {
         User actor = currentUserService.requireUser();
