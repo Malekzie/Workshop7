@@ -1,8 +1,9 @@
 package com.sait.peelin.service;
 
-import com.resend.Resend;
-import com.resend.core.exception.ResendException;
-import com.resend.services.emails.model.CreateEmailOptions;
+import com.sendgrid.*;
+import com.sendgrid.helpers.mail.Mail;
+import com.sendgrid.helpers.mail.objects.Content;
+import com.sendgrid.helpers.mail.objects.Email;
 import com.sait.peelin.model.PasswordResetToken;
 import com.sait.peelin.model.User;
 import com.sait.peelin.repository.PasswordResetTokenRepository;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.security.SecureRandom;
 import java.time.OffsetDateTime;
 import java.util.Base64;
@@ -23,23 +25,20 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class PasswordResetService {
+
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${app.resend.enabled:false}")
-    private boolean resendEnabled;
+    @Value("${app.sendgrid.api-key:}")
+    private String sendGridApiKey;
 
-    @Value("${app.resend.api-key:}")
-    private String resendApiKey;
-
-    @Value("${app.resend.from-email:onboarding@resend.dev}")
+    @Value("${app.sendgrid.from-email:}")
     private String fromEmail;
 
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
-    // Token expires after 1 hour
     private static final int EXPIRY_HOURS = 1;
 
     @Transactional
@@ -86,7 +85,6 @@ public class PasswordResetService {
         user.setUserPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        // Mark token as used
         resetToken.setUsed(true);
         tokenRepository.save(resetToken);
     }
@@ -100,11 +98,6 @@ public class PasswordResetService {
 
     private void sendResetEmail(User user, String token) {
         String resetLink = frontendUrl + "/login/reset-password?token=" + token;
-
-        if (!resendEnabled || resendApiKey == null || resendApiKey.isBlank()) {
-            System.out.println("Password reset email delivery is disabled (Resend not configured). Reset link: " + resetLink);
-            return;
-        }
 
         String htmlBody = """
                 <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
@@ -120,22 +113,22 @@ public class PasswordResetService {
                 </div>
                 """.formatted(user.getUsername(), EXPIRY_HOURS, resetLink, EXPIRY_HOURS);
 
+        Email from = new Email(fromEmail, "Peelin' Good Bakery");
+        Email to = new Email(user.getUserEmail());
+        Content content = new Content("text/html", htmlBody);
+        Mail mail = new Mail(from, "Reset your Peelin' Good password", to, content);
 
-        System.out.println("Attempting to send email to: " + user.getUserEmail());
-        System.out.println("Using API key starting with: " + resendApiKey.substring(0, Math.min(5, resendApiKey.length())));
-        System.out.println("Reset link: " + resetLink);
+        SendGrid sg = new SendGrid(sendGridApiKey);
+        Request request = new Request();
+
         try {
-            Resend resend = new Resend(resendApiKey);
-            CreateEmailOptions emailOptions = CreateEmailOptions.builder()
-                    .from(fromEmail)
-                    .to(user.getUserEmail())
-                    .subject("Reset your Peelin' Good password")
-                    .html(htmlBody)
-                    .build();
-            resend.emails().send(emailOptions);
-        } catch (ResendException e) {
-            System.out.println("Resend error: " + e.getMessage());
-            e.printStackTrace();
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+            Response response = sg.api(request);
+            System.out.println("SendGrid response: " + response.getStatusCode());
+        } catch (IOException e) {
+            System.err.println("Failed to send password reset email: " + e.getMessage());
             throw new RuntimeException("Failed to send password reset email", e);
         }
     }

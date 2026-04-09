@@ -3,6 +3,7 @@
 	let error = '';
 	let touched = false;
 	let success = false;
+	let loading = false;
 
 	function validateEmail(value) {
 		if (!value.trim()) return 'Email is required.';
@@ -21,17 +22,23 @@
 
 	async function handleSubmit(event) {
 		event.preventDefault();
-
 		touched = true;
 		error = validateEmail(email);
-
 		if (error) return;
 
-		// MOCK backend call
-		await new Promise((resolve) => setTimeout(resolve, 500));
-
-		// Always show success message, even if email doesn't exist
-		success = true;
+		loading = true;
+		try {
+			await fetch('/api/v1/auth/forgot-password', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ email })
+			});
+		} catch {
+			// Always show success to prevent email enumeration
+		} finally {
+			loading = false;
+			success = true;
+		}
 	}
 </script>
 
@@ -56,9 +63,9 @@
 			{:else}
 				<form class="space-y-6" on:submit={handleSubmit}>
 					<div class="space-y-1.5">
-						<label for="recoveryEmailInput" class="text-on-surface-variant px-1 text-sm font-bold"
-							>Email Address</label
-						>
+						<label for="recoveryEmailInput" class="text-on-surface-variant px-1 text-sm font-bold">
+							Email Address
+						</label>
 						<input
 							id="recoveryEmailInput"
 							type="email"
@@ -76,9 +83,10 @@
 
 					<button
 						type="submit"
-						class="text-on-primary mt-4 w-full rounded-full bg-primary py-3.5 text-base font-bold transition hover:cursor-pointer hover:opacity-90"
+						disabled={loading}
+						class="text-on-primary mt-4 w-full rounded-full bg-primary py-3.5 text-base font-bold transition hover:cursor-pointer hover:opacity-90 disabled:opacity-60"
 					>
-						Send Recovery Email
+						{loading ? 'Sending...' : 'Send Recovery Email'}
 					</button>
 				</form>
 			{/if}
