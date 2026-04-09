@@ -84,8 +84,22 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         final String finalProvider = provider;
         final String finalName = name != null ? name : (email != null ? email.split("@")[0] : "user");
 
-        User user = userRepository.findByProviderAndProviderId(finalProvider, finalProviderId).orElseGet(() -> {
-            User newUser = new User();
+        User user = userRepository.findByProviderAndProviderId(finalProvider, finalProviderId)
+                .orElseGet(() -> {
+                    // Check if a user already exists with this email (e.g. signed up via different provider)
+                    Optional<User> existingByEmail = finalEmail != null
+                            ? userRepository.findByUserEmail(finalEmail.toLowerCase())
+                            : Optional.empty();
+
+                    if (existingByEmail.isPresent()) {
+                        // Link this provider to the existing account
+                        User existing = existingByEmail.get();
+                        existing.setProvider(finalProvider);
+                        existing.setProviderId(finalProviderId);
+                        return userRepository.save(existing);
+                    }
+
+                    User newUser = new User();
             newUser.setProvider(finalProvider);
             newUser.setProviderId(finalProviderId);
             newUser.setUsername(generateUsername(finalEmail != null ? finalEmail : finalProviderId));
