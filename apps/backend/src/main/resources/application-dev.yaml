@@ -2,12 +2,35 @@
 # the same "Web application" client entry you use for the Svelte app (localhost) — no per-LAN-IP URIs.
 # Mobile: use api.base.url=http://127.0.0.1:8080/ and run: adb reverse tcp:8080 tcp:8080
 #
+# Postgres (managed / small tier): if startup fails with
+#   FATAL: remaining connection slots are reserved for roles with the SUPERUSER attribute
+# the server has NO free slots for your DB user (every non-superuser slot is taken). This app
+# cannot fix that from code alone. You must:
+#   - Close DBeaver, pgAdmin, Metabase, other Spring Boot instances, teammates' sessions, etc.
+#   - In DigitalOcean: use the "Connection pool" / pooler URL+port if offered (multiplexes clients).
+#   - Or resize the cluster / increase max_connections, or wait ~2 min (DO sometimes caches the error).
+# Hikari + Flyway retries below only shrink this app and retry if a slot appears briefly.
+#
 # Flyway: shared/cloud DBs sometimes have history that does not match this repo (e.g. V28 applied on
 # DO but removed locally in favor of V29). Flyway 9+ ignores that only via ignore-migration-patterns
 # (`ignore-missing-migrations` no longer fixes "applied migration not resolved locally"). To clean the
 # DB permanently, run: flyway repair (CLI) or delete the stray row from flyway_schema_history.
+#
+# Mail: without MAIL_USERNAME / MAIL_PASSWORD the SMTP health check fails and logs a WARN when
+# something touches overall health (e.g. JMX). Disable that indicator in dev; enable mail checks in prod.
+management:
+  health:
+    mail:
+      enabled: false
 spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 2
+      minimum-idle: 0
+      connection-timeout: 60000
   flyway:
+    connect-retries: 20
+    connect-retries-interval: 3s
     ignore-migration-patterns:
       - "*:missing"
     out-of-order: true
