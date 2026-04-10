@@ -1,19 +1,32 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
+	import { get } from 'svelte/store';
 	import { cart } from '$lib/stores/cart';
+	import { user } from '$lib/stores/authStore.js';
 	import { isProfileComplete } from '$lib/utils/profile';
 	import { onMount } from 'svelte';
-	import { getProfile } from '$lib/services/profile';
+	import { getProfile, updateProfile } from '$lib/services/profile';
+	import { apiFetch } from '$lib/utils/api.js';
 	import * as Sentry from '@sentry/sveltekit';
 
-	const API = 'http://localhost:8080';
+	const ORDERS_API = '/api/v1/orders';
+
+	function localDateYmd(): string {
+		const d = new Date();
+		const y = d.getFullYear();
+		const m = String(d.getMonth() + 1).padStart(2, '0');
+		const day = String(d.getDate()).padStart(2, '0');
+		return `${y}-${m}-${day}`;
+	}
 
 	let profile = $state<{
 		firstName?: string;
 		lastName?: string;
 		email?: string;
 		phone?: string;
+		employeeDiscountEligible?: boolean;
+		rewardTierDiscountPercent?: number | string | null;
 		address?: {
 			line1?: string;
 			line2?: string;
@@ -41,6 +54,10 @@
 	const BAKERY_ID = 1;
 
 	onMount(async () => {
+		if (!get(user)) {
+			goto(resolve('/login?redirect=/checkout'));
+			return;
+		}
 		try {
 			profile = await getProfile();
 
@@ -64,6 +81,10 @@
 
 	async function submit() {
 		error = '';
+		if (!get(user)) {
+			goto(resolve('/login?redirect=/checkout'));
+			return;
+		}
 		if (!guestName || !guestEmail) {
 			error = 'Name and email are required.';
 			return;
@@ -79,39 +100,56 @@
 
 		submitting = true;
 		try {
+			if (orderMethod === 'delivery') {
+				await updateProfile({
+					address: {
+						line1,
+						line2: line2 || undefined,
+						city,
+						province,
+						postalCode
+					}
+				});
+			}
+
 			const body: Record<string, unknown> = {
-				guestName,
-				guestEmail,
-				guestPhone: guestPhone || undefined,
 				bakeryId: BAKERY_ID,
 				orderMethod,
 				paymentMethod,
-				orderComment: orderComment || undefined,
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				items: $cart.items.map((i: any) => ({
+				comment: orderComment.trim() || undefined,
+				pricingLocalDate: localDateYmd(),
+				items: $cart.items.map((i) => ({
 					productId: i.productId,
 					quantity: i.quantity
 				}))
 			};
 
-			if (orderMethod === 'delivery') {
-				body.deliveryAddress = { line1, line2: line2 || undefined, city, province, postalCode };
-			}
-
-			const res = await fetch(`${API}/api/v1/checkout`, {
+			const res = await apiFetch(ORDERS_API, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(body)
 			});
 
+			if (!res) return;
+
 			if (!res.ok) {
 				const data = await res.json().catch(() => ({}));
-				throw new Error(data.message ?? `Server error ${res.status}`);
+				const msg =
+					typeof data.message === 'string'
+						? data.message
+						: Array.isArray(data.errors)
+							? data.errors.map((e: { defaultMessage?: string }) => e.defaultMessage).filter(Boolean).join(' ')
+							: '';
+				throw new Error(msg || `Server error ${res.status}`);
 			}
 
-			const order = await res.json();
+			const session = (await res.json()) as { orderId?: string; orderNumber?: string };
+			const orderId = session.orderId;
+			if (!orderId) {
+				throw new Error('Order placed but no order id returned.');
+			}
 			cart.clear();
-			goto(resolve(`/orders/${order.orderNumber}/confirmation`));
+			goto(resolve(`/orders/${orderId}/confirmation`));
 		} catch (err: unknown) {
 			Sentry.withScope((scope) => {
 				scope.setTag('action', 'CHECKOUT_FAILED');
@@ -292,6 +330,14 @@
 			<!-- Summary -->
 			<section class="rounded-xl border border-border bg-card p-6 shadow-sm">
 				<h2 class="mb-4 text-lg font-semibold text-foreground">Summary</h2>
+				{#if profile?.employeeDiscountEligible}
+					<div
+						class="mb-4 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-medium text-primary"
+					>
+						20% employee discount applies to your order after today&apos;s specials and your loyalty tier
+						discount. Final amounts are calculated when you place the order.
+					</div>
+				{/if}
 				{#each $cart.items as item (item.productId)}
 					<div class="flex justify-between py-1 text-sm text-muted-foreground">
 						<span>{item.productName} × {item.quantity}</span>
@@ -299,15 +345,13 @@
 					</div>
 				{/each}
 				<hr class="my-3 border-border" />
-				{#if $cart.discount > 0}
-					<div class="flex justify-between text-sm text-accent">
-						<span>Discount</span>
-						<span>−${$cart.discount.toFixed(2)}</span>
-					</div>
-				{/if}
-				<div class="mt-1 flex justify-between font-bold text-foreground">
-					<span>Total</span>
-					<span>${$cart.total.toFixed(2)}</span>
+				<p class="text-xs text-muted-foreground">
+					Line totals use menu prices. Today&apos;s specials, loyalty tier, tax, and any employee discount are
+					applied on the server when you confirm.
+				</p>
+				<div class="mt-3 flex justify-between text-sm text-muted-foreground">
+					<span>Cart subtotal (list prices)</span>
+					<span>${$cart.subtotal.toFixed(2)}</span>
 				</div>
 			</section>
 

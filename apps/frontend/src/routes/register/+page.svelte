@@ -186,13 +186,25 @@
 			phone: payload.phone
 		};
 
-		const { ok, message } = await registerUser(registrationPayload);
+		const {
+			ok,
+			message,
+			employeeDiscountLinkEstablished,
+			employeeDiscountLinkMessage
+		} = await registerUser(registrationPayload);
 
 		if (!ok) {
 			errors.email = message ?? 'Registration failed.';
 			touched.email = true;
 			submitError = message ?? 'Registration failed. Please go back and check your details.';
 			return;
+		}
+
+		if (employeeDiscountLinkEstablished) {
+			const msg =
+				employeeDiscountLinkMessage?.trim() ||
+				'Your account is linked to your employee profile. You get 20% off eligible orders at checkout (after today’s specials and your loyalty tier).';
+			alert(msg);
 		}
 
 		try {

@@ -21,5 +21,7 @@ public record CustomerDto(
         Integer addressId,
         AddressDto address,
         String profilePhotoPath,
-        boolean photoApprovalPending
+        boolean photoApprovalPending,
+        /** True when this customer is linked to an employee and both accounts are active (20% employee discount applies at checkout). */
+        boolean employeeDiscountEligible
 ) {}

@@ -3,6 +3,7 @@ package com.sait.peelin.service;
 import com.sait.peelin.dto.v1.CheckoutRequest;
 import com.sait.peelin.dto.v1.GuestCustomerRequest;
 import com.sait.peelin.dto.v1.CheckoutSessionResponse;
+import com.sait.peelin.dto.v1.ProductSpecialTodayDto;
 import com.sait.peelin.model.*;
 import com.sait.peelin.repository.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.stripe.model.PaymentIntent;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -48,6 +50,8 @@ class OrderServiceTest {
     @Mock private RewardTierService rewardTierService;
     @Mock private RecommendationService recommendationService;
     @Mock private ReviewRepository reviewRepository;
+    @Mock private ProductSpecialService productSpecialService;
+    @Mock private EmployeeCustomerLinkService employeeCustomerLinkService;
 
     @InjectMocks
     private OrderService orderService;
@@ -92,6 +96,9 @@ class OrderServiceTest {
 
         lenient().when(stripeService.isConfigured()).thenReturn(true);
         lenient().when(rewardTierService.tierForBalance(100)).thenReturn(Optional.of(rewardTier));
+        lenient().when(productSpecialService.findFirstForDate(any(LocalDate.class)))
+                .thenReturn(new ProductSpecialTodayDto(null, null));
+        lenient().when(employeeCustomerLinkService.isEligibleForEmployeeDiscount(any(UUID.class))).thenReturn(false);
     }
 
     @Test

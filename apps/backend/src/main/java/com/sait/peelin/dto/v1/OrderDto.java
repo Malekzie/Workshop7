@@ -29,5 +29,8 @@ public record OrderDto(
         String comment,
         /** True if this customer already submitted a location/service review for this order (any status). */
         boolean locationReviewSubmitted,
+        BigDecimal orderSpecialDiscountAmount,
+        BigDecimal orderTierDiscountAmount,
+        BigDecimal orderEmployeeDiscountAmount,
         List<OrderItemDto> items
 ) {}

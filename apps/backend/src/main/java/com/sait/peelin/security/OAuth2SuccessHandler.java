@@ -3,12 +3,11 @@ package com.sait.peelin.security;
 import com.sait.peelin.model.*;
 import com.sait.peelin.repository.*;
 import com.sait.peelin.service.JwtService;
+import com.sait.peelin.service.OAuthMobileTicketService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -19,27 +18,27 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.time.Duration;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.Optional;
-import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
+    public static final String SESSION_MOBILE_OAUTH = "oauth2_mobile_flow";
+
     private final UserRepository userRepository;
     private final CustomerRepository customerRepository;
     private final RewardTierRepository rewardTierRepository;
     private final JwtService jwtService;
-
-    @Value("${app.jwt.expiration:864000000}")
-    private long jwtExpiration;
-
-    @Value("${app.cookie.secure:false}")
-    private boolean cookieSecure;
+    private final OAuthMobileTicketService oAuthMobileTicketService;
 
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
+
+    @Value("${app.mobile.oauth.redirect-scheme:workshop6}")
+    private String mobileOAuthRedirectScheme;
 
     @Override
     @Transactional
@@ -156,6 +155,16 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                 .build();
 
         String token = jwtService.generateToken(userDetails);
+
+        boolean mobile = Boolean.TRUE.equals(request.getSession().getAttribute(SESSION_MOBILE_OAUTH));
+        if (mobile) {
+            request.getSession().removeAttribute(SESSION_MOBILE_OAUTH);
+            String ticket = oAuthMobileTicketService.issue(token);
+            String deepLink = mobileOAuthRedirectScheme + "://oauth?ticket="
+                    + URLEncoder.encode(ticket, StandardCharsets.UTF_8);
+            response.sendRedirect(deepLink);
+            return;
+        }
 
         request.getSession().setAttribute("oauth2_pending_token", token);
         response.sendRedirect("/api/v1/auth/oauth2/success");

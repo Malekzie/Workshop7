@@ -25,6 +25,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CorsConfigurationSource corsConfigurationSource;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
+    private final GooglePrivateIpOAuth2AuthorizationRequestResolver googleOAuth2AuthorizationRequestResolver;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -62,6 +63,8 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(a ->
+                                a.authorizationRequestResolver(googleOAuth2AuthorizationRequestResolver))
                         .successHandler(oAuth2SuccessHandler))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

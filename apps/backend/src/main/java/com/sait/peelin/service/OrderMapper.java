@@ -61,6 +61,9 @@ public final class OrderMapper {
                 o.getOrderDeliveredDatetime(),
                 o.getOrderComment(),
                 locationReviewSubmitted,
+                o.getOrderSpecialDiscountAmount(),
+                o.getOrderTierDiscountAmount(),
+                o.getOrderEmployeeDiscountAmount(),
                 itemDtos
         );
     }
