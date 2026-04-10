@@ -6,6 +6,7 @@ import com.sait.peelin.model.EmployeeCustomerLink;
 import com.sait.peelin.repository.CustomerRepository;
 import com.sait.peelin.repository.EmployeeCustomerLinkRepository;
 import com.sait.peelin.repository.EmployeeRepository;
+import com.sait.peelin.support.PhoneNumberFormatter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,7 +15,7 @@ import org.springframework.util.StringUtils;
 import java.util.UUID;
 
 /**
- * Keeps linked employee/customer profile fields in sync (names, customer email ↔ work email).
+ * Keeps linked employee/customer profile fields in sync (names, phones, emails, shared address row).
  * Does not merge {@link com.sait.peelin.model.User} login identities across the two accounts.
  */
 @Service
@@ -78,6 +79,19 @@ public class LinkedProfileSyncService {
     /**
      * When sign-in email changes on either account, mirror the new value onto the linked profile’s email field.
      */
+    /**
+     * When a link is first created, treat the employee record as source of truth and copy onto the customer
+     * so the shopping profile matches HR data immediately.
+     */
+    @Transactional
+    public void afterLinkCreated(Employee employee, Customer customer) {
+        if (isSuppressed() || employee == null || customer == null) {
+            return;
+        }
+        applyEmployeeFieldsToCustomer(employee, customer);
+        customerRepository.save(customer);
+    }
+
     @Transactional
     public void afterLinkedUserSignInEmailChanged(UUID userId, String newEmailNormalized) {
         if (isSuppressed() || userId == null || !StringUtils.hasText(newEmailNormalized)) {
@@ -113,6 +127,13 @@ public class LinkedProfileSyncService {
         if (StringUtils.hasText(e.getEmployeeWorkEmail())) {
             c.setCustomerEmail(e.getEmployeeWorkEmail().trim().toLowerCase());
         }
+        if (StringUtils.hasText(e.getEmployeePhone())) {
+            c.setCustomerPhone(PhoneNumberFormatter.formatStoredPhone(e.getEmployeePhone()));
+        }
+        c.setCustomerBusinessPhone(PhoneNumberFormatter.formatStoredPhoneOrNull(e.getEmployeeBusinessPhone()));
+        if (e.getAddress() != null) {
+            c.setAddress(e.getAddress());
+        }
     }
 
     private void applyCustomerFieldsToEmployee(Customer c, Employee e) {
@@ -125,6 +146,13 @@ public class LinkedProfileSyncService {
         e.setEmployeeMiddleInitial(c.getCustomerMiddleInitial());
         if (StringUtils.hasText(c.getCustomerEmail())) {
             e.setEmployeeWorkEmail(c.getCustomerEmail().trim().toLowerCase());
+        }
+        if (StringUtils.hasText(c.getCustomerPhone())) {
+            e.setEmployeePhone(PhoneNumberFormatter.formatStoredPhone(c.getCustomerPhone()));
+        }
+        e.setEmployeeBusinessPhone(PhoneNumberFormatter.formatStoredPhoneOrNull(c.getCustomerBusinessPhone()));
+        if (c.getAddress() != null) {
+            e.setAddress(c.getAddress());
         }
     }
 }

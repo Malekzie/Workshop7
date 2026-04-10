@@ -34,6 +34,7 @@ public class EmployeeCustomerLinkService {
     private final EmployeeCustomerLinkRepository linkRepository;
     private final EmployeeRepository employeeRepository;
     private final CustomerRepository customerRepository;
+    private final LinkedProfileSyncService linkedProfileSyncService;
 
     @Transactional(readOnly = true)
     public boolean isEligibleForEmployeeDiscount(UUID customerId) {
@@ -85,6 +86,9 @@ public class EmployeeCustomerLinkService {
         link.setCustomer(customer);
         linkRepository.save(link);
         log.info("Auto-linked customer {} to employee {}", customer.getId(), match.getId());
+        Employee employeeFresh = employeeRepository.findById(match.getId()).orElse(match);
+        Customer customerFresh = customerRepository.findById(customer.getId()).orElse(customer);
+        linkedProfileSyncService.afterLinkCreated(employeeFresh, customerFresh);
         return true;
     }
 
@@ -132,5 +136,8 @@ public class EmployeeCustomerLinkService {
         link.setCustomer(customer);
         linkRepository.save(link);
         log.info("Admin linked employee {} to customer {}", employeeId, customerId);
+        Employee employeeFresh = employeeRepository.findById(employeeId).orElse(employee);
+        Customer customerFresh = customerRepository.findById(customerId).orElse(customer);
+        linkedProfileSyncService.afterLinkCreated(employeeFresh, customerFresh);
     }
 }
