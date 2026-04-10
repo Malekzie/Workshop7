@@ -8,7 +8,7 @@
 		<div class="flex flex-col gap-3">
 			<p class="font-serif text-xl font-bold text-foreground">Peelin' Good</p>
 			<p class="text-sm leading-relaxed text-muted-foreground">
-				Artisan baked goods, made fresh daily. Come find us — or order online.
+				Artisan baked goods, made fresh daily. Come find us, or order online.
 			</p>
 		</div>
 

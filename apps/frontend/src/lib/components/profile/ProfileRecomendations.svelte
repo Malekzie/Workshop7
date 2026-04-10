@@ -50,7 +50,7 @@
 				<p class="px-3 py-4 text-sm text-muted-foreground">Could not load recommendations.</p>
 			{:else if needsPreferences}
 				<p class="px-3 py-4 text-sm text-muted-foreground">
-					Set your taste preferences first — then we can suggest products tailored to you.
+					Set your taste preferences first, then we can suggest products tailored to you.
 				</p>
 				<Button variant="secondary" href={resolve('/profile/preferences')} class="mt-1 w-full">
 					Edit preferences
