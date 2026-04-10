@@ -61,6 +61,17 @@
 		</CardContent>
 	</Card>
 
+	{#if profile.employeeDiscountEligible}
+		<Card class="border-primary/30 bg-primary/5">
+			<CardContent class="pt-6">
+				<p class="text-sm font-semibold text-primary">
+					20% employee discount — You are eligible at checkout. Applied after today&apos;s specials and your
+					loyalty tier discount.
+				</p>
+			</CardContent>
+		</Card>
+	{/if}
+
 	<!-- Loyalty -->
 	{#if profile.rewardBalance != null || tierLabel}
 		<Card class="bg-[#FAF7F2]">

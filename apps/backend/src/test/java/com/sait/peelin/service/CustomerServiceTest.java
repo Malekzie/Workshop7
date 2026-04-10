@@ -11,6 +11,7 @@ import com.sait.peelin.repository.AddressRepository;
 import com.sait.peelin.repository.CustomerRepository;
 import com.sait.peelin.repository.RewardTierRepository;
 import com.sait.peelin.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -31,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -44,9 +46,17 @@ class CustomerServiceTest {
     @Mock private ProfilePhotoStorageService profilePhotoStorageService;
     @Mock private CurrentUserService currentUserService;
     @Mock private RewardTierService rewardTierService;
+    @Mock private EmployeeCustomerLinkService employeeCustomerLinkService;
+    @Mock private LinkedProfileSyncService linkedProfileSyncService;
 
     @InjectMocks
     private CustomerService customerService;
+
+    @BeforeEach
+    void stubEmployeeLinking() {
+        lenient().when(employeeCustomerLinkService.isEligibleForEmployeeDiscount(any())).thenReturn(false);
+        lenient().when(employeeCustomerLinkService.tryAutoLinkForCustomer(any())).thenReturn(false);
+    }
 
     @Test
     void createMyProfile_ReusesGuestCustomerByEmail() {

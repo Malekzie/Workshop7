@@ -64,7 +64,7 @@ class CustomerSelfControllerTest {
         CustomerDto dto = new CustomerDto(
                 UUID.randomUUID(), UUID.randomUUID(), "testuser", 1, "Gold", new BigDecimal("10"),
                 "First", "M", "Last", "phone", "business", "email",
-                0, null, null, null, false);
+                0, null, null, null, false, false);
         when(customerService.me()).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/customers/me"))
@@ -73,6 +73,7 @@ class CustomerSelfControllerTest {
                 .andExpect(jsonPath("$.lastName").value("Last"))
                 .andExpect(jsonPath("$.rewardTierName").value("Gold"))
                 .andExpect(jsonPath("$.rewardTierDiscountPercent").value(10))
-                .andExpect(jsonPath("$.rewardBalance").value(0));
+                .andExpect(jsonPath("$.rewardBalance").value(0))
+                .andExpect(jsonPath("$.employeeDiscountEligible").value(false));
     }
 }

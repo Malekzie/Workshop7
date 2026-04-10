@@ -11,11 +11,17 @@ import com.sait.peelin.model.Address;
 import com.sait.peelin.model.Customer;
 import com.sait.peelin.model.RewardTier;
 import com.sait.peelin.model.User;
-import com.sait.peelin.repository.*;
+import com.sait.peelin.repository.AddressRepository;
+import com.sait.peelin.repository.CustomerPreferenceRepository;
+import com.sait.peelin.repository.CustomerRepository;
+import com.sait.peelin.repository.RewardTierRepository;
+import com.sait.peelin.repository.UserRepository;
 import com.sait.peelin.support.GuestContactFiller;
 import com.sait.peelin.support.PhoneNumberFormatter;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -25,8 +31,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.cache.Cache;
-import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -45,8 +49,9 @@ public class CustomerService {
     private final CurrentUserService currentUserService;
     private final CustomerPreferenceRepository customerPreferenceRepository;
     private final CacheManager cacheManager;
+    private final EmployeeCustomerLinkService employeeCustomerLinkService;
+    private final LinkedProfileSyncService linkedProfileSyncService;
     private static final Logger log = LoggerFactory.getLogger(CustomerService.class);
-
 
     @Transactional(readOnly = true)
     public List<CustomerDto> listAdmin(String search) {
@@ -154,8 +159,9 @@ public class CustomerService {
                     request.getPostalCode()
             );
             reusableGuest.setAddress(linkedAddress);
-            customerRepository.save(reusableGuest);
-            return toDto(reusableGuest);
+            Customer savedGuest = customerRepository.save(reusableGuest);
+            employeeCustomerLinkService.tryAutoLinkForCustomer(savedGuest);
+            return toDto(savedGuest);
         }
 
         RewardTier lowestTier = lowestRewardTier();
@@ -182,8 +188,9 @@ public class CustomerService {
         );
         customer.setCustomerRewardBalance(0);
         customer.setGuestExpiryDate(null);
-        customerRepository.save(customer);
-        return toDto(customer);
+        Customer savedNew = customerRepository.save(customer);
+        employeeCustomerLinkService.tryAutoLinkForCustomer(savedNew);
+        return toDto(savedNew);
     }
 
     @Transactional
@@ -229,7 +236,9 @@ public class CustomerService {
         Customer c = customerRepository.findByUser_UserId(u.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No customer profile"));
         applyPatch(c, req);
-        return toDto(customerRepository.save(c));
+        Customer saved = customerRepository.save(c);
+        linkedProfileSyncService.afterCustomerProfilePatch(saved);
+        return toDto(saved);
     }
 
     @Transactional
@@ -237,7 +246,9 @@ public class CustomerService {
     public CustomerDto patch(UUID id, CustomerPatchRequest req) {
         Customer c = customerRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
         applyPatch(c, req);
-        return toDto(customerRepository.save(c));
+        Customer saved = customerRepository.save(c);
+        linkedProfileSyncService.afterCustomerProfilePatch(saved);
+        return toDto(saved);
     }
 
     @Transactional
@@ -585,28 +596,19 @@ public class CustomerService {
                 addr != null ? addr.getId() : null,
                 CatalogMapper.address(addr),
                 dtoUser != null ? dtoUser.getProfilePhotoPath() : null,
-                dtoUser != null && Boolean.TRUE.equals(dtoUser.getPhotoApprovalPending())
+                dtoUser != null && Boolean.TRUE.equals(dtoUser.getPhotoApprovalPending()),
+                employeeCustomerLinkService.isEligibleForEmployeeDiscount(c.getId())
         );
     }
 
     @Transactional
-    @CacheEvict(value = "customers", allEntries = true)
     public void deleteMe() {
         User u = currentUserService.requireUser();
         Customer c = customerRepository.findByUser_UserId(u.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No customer profile"));
 
-        customerPreferenceRepository.deleteAllByCustomerId(c.getId());
         customerRepository.delete(c);
         userRepository.delete(u);
-
-        // Force cache clear even if @CacheEvict fails
-        try {
-            Cache cache = cacheManager.getCache("customers");
-            if (cache != null) cache.clear();
-        } catch (Exception e) {
-            log.warn("Failed to manually clear customers cache: {}", e.getMessage());
-        }
     }
 
     @Transactional

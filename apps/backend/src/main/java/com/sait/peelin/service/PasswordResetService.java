@@ -102,6 +102,15 @@ public class PasswordResetService {
     }
 
     private void sendResetEmail(User user, String token) {
+        if (sendGridApiKey == null || sendGridApiKey.isBlank()) {
+            System.err.println("SendGrid not configured, skipping password reset email for: " + user.getUserEmail());
+            return;
+        }
+        if (fromEmail == null || fromEmail.isBlank()) {
+            System.err.println("app.sendgrid.from-email not set, skipping password reset email");
+            return;
+        }
+
         String resetLink = frontendUrl + "/login/reset-password?token=" + token;
 
         String htmlBody = """
