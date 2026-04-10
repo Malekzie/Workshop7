@@ -164,7 +164,7 @@ public class AuthController {
     public ResponseEntity<String> testWelcomeEmail() {
         User fakeUser = new User();
         fakeUser.setUsername("testuser");
-        fakeUser.setUserEmail("your_email@gmail.com"); // put your own email here
+        fakeUser.setUserEmail("auckmason@gmail.com");
         welcomeEmailService.sendWelcomeEmail(fakeUser);
         return ResponseEntity.ok("Email sent");
     }
