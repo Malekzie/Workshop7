@@ -1,13 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
-	import { get } from 'svelte/store';
 	import { cart } from '$lib/stores/cart';
-	import { user } from '$lib/stores/authStore.js';
-	import { isProfileComplete } from '$lib/utils/profile';
-	import { onMount } from 'svelte';
-	import { getProfile, updateProfile } from '$lib/services/profile';
-	import { apiFetch } from '$lib/utils/api.js';
 	import * as Sentry from '@sentry/sveltekit';
 	import { formatCanadianPostalInput } from '$lib/canadianPostalCode';
 
@@ -21,24 +15,10 @@
 		return `${y}-${m}-${day}`;
 	}
 
-	let profile = $state<{
-		firstName?: string;
-		lastName?: string;
-		email?: string;
-		phone?: string;
-		employeeDiscountEligible?: boolean;
-		rewardTierDiscountPercent?: number | string | null;
-		address?: {
-			line1?: string;
-			line2?: string;
-			city?: string;
-			province?: string;
-			postalCode?: string;
-		};
-	} | null>(null);
-	let guestName = $state('');
-	let guestEmail = $state('');
-	let guestPhone = $state('');
+	let firstName = $state('');
+	let lastName = $state('');
+	let email = $state('');
+	let phone = $state('');
 	let orderMethod = $state<'pickup' | 'delivery'>('pickup');
 	let paymentMethod = $state<'cash' | 'credit_card' | 'debit_card' | 'online'>('cash');
 	let orderComment = $state('');
@@ -46,7 +26,7 @@
 	let line1 = $state('');
 	let line2 = $state('');
 	let city = $state('');
-	let province = $state('');
+	let province = $state('AB');
 	let postalCode = $state('');
 
 	let submitting = $state(false);
@@ -54,44 +34,44 @@
 
 	const BAKERY_ID = 1;
 
-	onMount(async () => {
-		if (!get(user)) {
-			goto(resolve('/login?redirectTo=/checkout'));
-			return;
-		}
-		try {
-			profile = await getProfile();
+	const provinces = [
+		{ value: 'AB', label: 'Alberta' },
+		{ value: 'BC', label: 'British Columbia' },
+		{ value: 'MB', label: 'Manitoba' },
+		{ value: 'NB', label: 'New Brunswick' },
+		{ value: 'NL', label: 'Newfoundland and Labrador' },
+		{ value: 'NS', label: 'Nova Scotia' },
+		{ value: 'NT', label: 'Northwest Territories' },
+		{ value: 'NU', label: 'Nunavut' },
+		{ value: 'ON', label: 'Ontario' },
+		{ value: 'PE', label: 'Prince Edward Island' },
+		{ value: 'QC', label: 'Quebec' },
+		{ value: 'SK', label: 'Saskatchewan' },
+		{ value: 'YT', label: 'Yukon' }
+	];
 
-			if (!profile || !isProfileComplete(profile)) {
-				goto(resolve('/profile/edit?reason=checkout'));
-				return;
-			}
-
-			guestName = `${profile.firstName} ${profile.lastName}`.trim();
-			guestEmail = profile.email ?? '';
-			guestPhone = profile.phone ?? '';
-			line1 = profile.address?.line1 ?? '';
-			line2 = profile.address?.line2 ?? '';
-			city = profile.address?.city ?? '';
-			province = profile.address?.province ?? '';
-			postalCode = formatCanadianPostalInput(profile.address?.postalCode ?? '');
-		} catch {
-			console.warn('Failed to load profile, proceeding with empty checkout form');
-		}
-	});
+	function formatPhone(value: string): string {
+		const digits = value.replace(/\D/g, '').substring(0, 10);
+		const parts = [];
+		if (digits.length > 0) parts.push('(' + digits.substring(0, 3));
+		if (digits.length >= 4) parts.push(') ' + digits.substring(3, 6));
+		if (digits.length >= 7) parts.push('-' + digits.substring(6, 10));
+		return parts.join('');
+	}
 
 	async function submit() {
 		error = '';
-		if (!get(user)) {
-			goto(resolve('/login?redirectTo=/checkout'));
+
+		if (!firstName.trim() || !lastName.trim()) {
+			error = 'First and last name are required.';
 			return;
 		}
-		if (!guestName || !guestEmail) {
-			error = 'Name and email are required.';
+		if (!email.trim()) {
+			error = 'Email is required.';
 			return;
 		}
 		if (orderMethod === 'delivery' && (!line1 || !city || !province || !postalCode)) {
-			error = 'Full delivery address is required.';
+			error = 'Full delivery address is required for delivery orders.';
 			return;
 		}
 		if ($cart.items.length === 0) {
@@ -101,37 +81,36 @@
 
 		submitting = true;
 		try {
-			if (orderMethod === 'delivery') {
-				await updateProfile({
-					address: {
-						line1,
-						line2: line2 || undefined,
-						city,
-						province,
-						postalCode
-					}
-				});
-			}
-
 			const body: Record<string, unknown> = {
 				bakeryId: BAKERY_ID,
 				orderMethod,
 				paymentMethod,
 				comment: orderComment.trim() || undefined,
 				pricingLocalDate: localDateYmd(),
+				guest: {
+					firstName: firstName.trim(),
+					lastName: lastName.trim(),
+					email: email.trim(),
+					phone: phone.trim() || undefined,
+					...(orderMethod === 'delivery' && {
+						addressLine1: line1.trim(),
+						addressLine2: line2.trim() || undefined,
+						city: city.trim(),
+						province,
+						postalCode: postalCode.trim().toUpperCase()
+					})
+				},
 				items: $cart.items.map((i) => ({
 					productId: i.productId,
 					quantity: i.quantity
 				}))
 			};
 
-			const res = await apiFetch(ORDERS_API, {
+			const res = await fetch(ORDERS_API, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(body)
 			});
-
-			if (!res) return;
 
 			if (!res.ok) {
 				const data = await res.json().catch(() => ({}));
@@ -156,7 +135,7 @@
 			goto(resolve(`/orders/${orderId}/confirmation`));
 		} catch (err: unknown) {
 			Sentry.withScope((scope) => {
-				scope.setTag('action', 'CHECKOUT_FAILED');
+				scope.setTag('action', 'GUEST_CHECKOUT_FAILED');
 				scope.setTag('reason', 'api_error');
 				Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
 			});
@@ -168,14 +147,19 @@
 </script>
 
 <main class="mx-auto max-w-2xl px-6 py-16">
-	<h1 class="mb-10 font-serif text-4xl font-bold text-foreground">Checkout</h1>
+	<div class="mb-10 flex items-center justify-between">
+		<h1 class="font-serif text-4xl font-bold text-foreground">Guest Checkout</h1>
+		<a href={resolve('/login?redirectTo=/checkout')} class="text-sm text-primary hover:underline">
+			Sign in instead
+		</a>
+	</div>
 
 	{#if $cart.items.length === 0}
 		<div class="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
 			<p>Your cart is empty.</p>
-			<a href={resolve('/')} class="mt-4 inline-block text-primary hover:underline"
-				>Go back to the menu</a
-			>
+			<a href={resolve('/')} class="mt-4 inline-block text-primary hover:underline">
+				Go back to the menu
+			</a>
 		</div>
 	{:else}
 		<form
@@ -190,35 +174,50 @@
 				<h2 class="mb-4 text-lg font-semibold text-foreground">Contact</h2>
 				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 					<div class="flex flex-col gap-1">
-						<label for="guestName" class="text-sm font-medium text-foreground"
-							>Name <span class="text-destructive">*</span></label
-						>
+						<label for="firstName" class="text-sm font-medium text-foreground">
+							First Name <span class="text-destructive">*</span>
+						</label>
 						<input
-							id="guestName"
+							id="firstName"
 							type="text"
-							bind:value={guestName}
+							bind:value={firstName}
 							required
 							class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
 						/>
 					</div>
 					<div class="flex flex-col gap-1">
-						<label for="guestEmail" class="text-sm font-medium text-foreground"
-							>Email <span class="text-destructive">*</span></label
-						>
+						<label for="lastName" class="text-sm font-medium text-foreground">
+							Last Name <span class="text-destructive">*</span>
+						</label>
 						<input
-							id="guestEmail"
-							type="email"
-							bind:value={guestEmail}
+							id="lastName"
+							type="text"
+							bind:value={lastName}
 							required
 							class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
 						/>
 					</div>
 					<div class="flex flex-col gap-1 sm:col-span-2">
-						<label for="guestPhone" class="text-sm font-medium text-foreground">Phone</label>
+						<label for="email" class="text-sm font-medium text-foreground">
+							Email <span class="text-destructive">*</span>
+						</label>
 						<input
-							id="guestPhone"
+							id="email"
+							type="email"
+							bind:value={email}
+							required
+							class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
+						/>
+					</div>
+					<div class="flex flex-col gap-1 sm:col-span-2">
+						<label for="phone" class="text-sm font-medium text-foreground">Phone</label>
+						<input
+							id="phone"
 							type="tel"
-							bind:value={guestPhone}
+							bind:value={phone}
+							oninput={(e) => {
+								phone = formatPhone(e.currentTarget.value);
+							}}
 							class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
 						/>
 					</div>
@@ -242,9 +241,9 @@
 				{#if orderMethod === 'delivery'}
 					<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
 						<div class="flex flex-col gap-1 sm:col-span-2">
-							<label for="line1" class="text-sm font-medium text-foreground"
-								>Address Line 1 <span class="text-destructive">*</span></label
-							>
+							<label for="line1" class="text-sm font-medium text-foreground">
+								Address Line 1 <span class="text-destructive">*</span>
+							</label>
 							<input
 								id="line1"
 								type="text"
@@ -263,9 +262,9 @@
 							/>
 						</div>
 						<div class="flex flex-col gap-1">
-							<label for="city" class="text-sm font-medium text-foreground"
-								>City <span class="text-destructive">*</span></label
-							>
+							<label for="city" class="text-sm font-medium text-foreground">
+								City <span class="text-destructive">*</span>
+							</label>
 							<input
 								id="city"
 								type="text"
@@ -275,21 +274,23 @@
 							/>
 						</div>
 						<div class="flex flex-col gap-1">
-							<label for="province" class="text-sm font-medium text-foreground"
-								>Province <span class="text-destructive">*</span></label
-							>
-							<input
+							<label for="province" class="text-sm font-medium text-foreground">
+								Province <span class="text-destructive">*</span>
+							</label>
+							<select
 								id="province"
-								type="text"
 								bind:value={province}
-								required
 								class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
-							/>
+							>
+								{#each provinces as p}
+									<option value={p.value}>{p.label}</option>
+								{/each}
+							</select>
 						</div>
 						<div class="flex flex-col gap-1">
-							<label for="postalCode" class="text-sm font-medium text-foreground"
-								>Postal Code <span class="text-destructive">*</span></label
-							>
+							<label for="postalCode" class="text-sm font-medium text-foreground">
+								Postal Code <span class="text-destructive">*</span>
+							</label>
 							<input
 								id="postalCode"
 								type="text"
@@ -327,7 +328,7 @@
 				</div>
 			</section>
 
-			<!-- Comment -->
+			<!-- Order Notes -->
 			<section class="rounded-xl border border-border bg-card p-6 shadow-sm">
 				<h2 class="mb-4 text-lg font-semibold text-foreground">Order Notes</h2>
 				<textarea
@@ -341,14 +342,6 @@
 			<!-- Summary -->
 			<section class="rounded-xl border border-border bg-card p-6 shadow-sm">
 				<h2 class="mb-4 text-lg font-semibold text-foreground">Summary</h2>
-				{#if profile?.employeeDiscountEligible}
-					<div
-						class="mb-4 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm font-medium text-primary"
-					>
-						20% employee discount applies to your order after today&apos;s specials and your loyalty
-						tier discount. Final amounts are calculated when you place the order.
-					</div>
-				{/if}
 				{#each $cart.items as item (item.productId)}
 					<div class="flex justify-between py-1 text-sm text-muted-foreground">
 						<span>{item.productName} × {item.quantity}</span>
@@ -357,8 +350,7 @@
 				{/each}
 				<hr class="my-3 border-border" />
 				<p class="text-xs text-muted-foreground">
-					Line totals use menu prices. Today&apos;s specials, loyalty tier, tax, and any employee
-					discount are applied on the server when you confirm.
+					Line totals use menu prices. Tax and specials are applied when you confirm.
 				</p>
 				<div class="mt-3 flex justify-between text-sm text-muted-foreground">
 					<span>Cart subtotal (list prices)</span>

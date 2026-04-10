@@ -104,6 +104,18 @@
 		}
 	});
 
+	const missingFields = $derived(
+		reason === 'checkout' && profile
+			? {
+					phone: !profile.phone,
+					addressLine1: !profile.address?.line1,
+					city: !profile.address?.city,
+					province: !profile.address?.province,
+					postalCode: !profile.address?.postalCode
+				}
+			: {}
+	);
+
 	async function handleDeactivate() {
 		deactivating = true;
 		try {
@@ -256,7 +268,17 @@
 				<div
 					class="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
 				>
-					Please complete your profile before placing an order.
+					<p class="font-semibold">Please complete your profile before placing an order.</p>
+					{#if Object.values(missingFields).some(Boolean)}
+						<p class="mt-1">The following fields are required:</p>
+						<ul class="mt-1 list-disc pl-5">
+							{#if missingFields.phone}<li>Phone number</li>{/if}
+							{#if missingFields.addressLine1}<li>Address line 1</li>{/if}
+							{#if missingFields.city}<li>City</li>{/if}
+							{#if missingFields.province}<li>Province</li>{/if}
+							{#if missingFields.postalCode}<li>Postal code</li>{/if}
+						</ul>
+					{/if}
 				</div>
 			{/if}
 
@@ -444,7 +466,11 @@
 									fields.phone = formatPhone(e.target.value);
 								}}
 								class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
-									{errors.phone ? 'border-destructive ring-1 ring-destructive' : ''}"
+									{errors.phone
+									? 'border-destructive ring-1 ring-destructive'
+									: missingFields.phone
+										? 'border-amber-400 ring-1 ring-amber-400'
+										: ''}"
 							/>
 							{#if errors.phone}<p class="text-xs text-destructive">{errors.phone}</p>{/if}
 						</div>
@@ -488,7 +514,11 @@
 								type="text"
 								bind:value={fields.addressLine1}
 								class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
-                {errors.addressLine1 ? 'border-destructive ring-1 ring-destructive' : ''}"
+                {errors.addressLine1
+									? 'border-destructive ring-1 ring-destructive'
+									: missingFields.addressLine1
+										? 'border-amber-400 ring-1 ring-amber-400'
+										: ''}"
 							/>
 							{#if errors.addressLine1}<p class="text-xs text-destructive">
 									{errors.addressLine1}
@@ -522,7 +552,11 @@
 									type="text"
 									bind:value={fields.city}
 									class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
-                    {errors.city ? 'border-destructive ring-1 ring-destructive' : ''}"
+                    {errors.city
+										? 'border-destructive ring-1 ring-destructive'
+										: missingFields.city
+											? 'border-amber-400 ring-1 ring-amber-400'
+											: ''}"
 								/>
 								{#if errors.city}<p class="text-xs text-destructive">{errors.city}</p>{/if}
 							</div>
@@ -536,7 +570,11 @@
 									id="provinceInput"
 									bind:value={fields.province}
 									class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
-                    {errors.province ? 'border-destructive ring-1 ring-destructive' : ''}"
+                    {errors.province
+										? 'border-destructive ring-1 ring-destructive'
+										: missingFields.province
+											? 'border-amber-400 ring-1 ring-amber-400'
+											: ''}"
 								>
 									{#each provinces as p}
 										<option value={p.value}>{p.label}</option>
@@ -562,7 +600,11 @@
 										fields.postalCode = formatCanadianPostalInput(e.currentTarget.value);
 									}}
 									class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
-                    {errors.postalCode ? 'border-destructive ring-1 ring-destructive' : ''}"
+                    {errors.postalCode
+										? 'border-destructive ring-1 ring-destructive'
+										: missingFields.postalCode
+											? 'border-amber-400 ring-1 ring-amber-400'
+											: ''}"
 								/>
 								{#if errors.postalCode}<p class="text-xs text-destructive">
 										{errors.postalCode}
