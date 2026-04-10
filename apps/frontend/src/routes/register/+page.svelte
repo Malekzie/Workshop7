@@ -54,6 +54,7 @@
 	const stepOneFields = ['firstName', 'lastName', 'email', 'username', 'password'];
 	const stepTwoFields = ['phone', 'addressLine1', 'city', 'province', 'postalCode'];
 	let submitError = '';
+	let registrationSuccess = false;
 
 	function validateField(name, value) {
 		switch (name) {
@@ -110,6 +111,17 @@
 		if (touched[name]) {
 			errors[name] = validateField(name, fields[name]);
 		}
+	}
+
+	function formatPostalCode(value) {
+		const cleansed = value
+			.replace(/[^a-zA-Z0-9]/g, '')
+			.toUpperCase()
+			.substring(0, 6);
+		if (cleansed.length > 3) {
+			return cleansed.substring(0, 3) + ' ' + cleansed.substring(3);
+		}
+		return cleansed;
 	}
 
 	function validateStep(fieldNames) {
@@ -186,12 +198,8 @@
 			phone: payload.phone
 		};
 
-		const {
-			ok,
-			message,
-			employeeDiscountLinkEstablished,
-			employeeDiscountLinkMessage
-		} = await registerUser(registrationPayload);
+		const { ok, message, employeeDiscountLinkEstablished, employeeDiscountLinkMessage } =
+			await registerUser(registrationPayload);
 
 		if (!ok) {
 			errors.email = message ?? 'Registration failed.';
@@ -230,6 +238,8 @@
 			return;
 		}
 
+		registrationSuccess = true;
+		await new Promise((r) => setTimeout(r, 2000));
 		goto(resolve(getDefaultPostAuthRoute($user?.role)));
 	}
 </script>
@@ -457,7 +467,7 @@
 								onblur={() => handleBlur('addressLine1')}
 								oninput={() => handleInput('addressLine1')}
 								class="bg-surface-container-highest mt-1 w-full rounded-xl px-4 py-3 font-medium ring-1 ring-border transition
-									{errors.addressLine1 && touched.addressLine1 ? 'ring-2 ring-red-400' : ''}"
+        {errors.addressLine1 && touched.addressLine1 ? 'ring-2 ring-red-400' : ''}"
 							/>
 							{#if errors.addressLine1 && touched.addressLine1}
 								<p class="px-1 text-xs text-red-500">{errors.addressLine1}</p>
@@ -542,7 +552,10 @@
 								maxlength="7"
 								bind:value={fields.postalCode}
 								onblur={() => handleBlur('postalCode')}
-								oninput={() => handleInput('postalCode')}
+								oninput={(e) => {
+									fields.postalCode = formatPostalCode(e.target.value);
+									handleInput('postalCode');
+								}}
 								class="bg-surface-container-highest mt-1 w-full rounded-xl px-4 py-3 font-medium ring-1 ring-border transition
 									{errors.postalCode && touched.postalCode ? 'ring-2 ring-red-400' : ''}"
 							/>
@@ -551,6 +564,14 @@
 							{/if}
 						</div>
 					</div>
+
+					{#if registrationSuccess}
+						<div
+							class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
+						>
+							Account created! A welcome email has been sent to {fields.email}.
+						</div>
+					{/if}
 
 					<div class="flex items-center justify-between gap-3 pt-2">
 						<button

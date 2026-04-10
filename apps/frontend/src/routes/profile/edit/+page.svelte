@@ -168,6 +168,17 @@
 		return parts.join('');
 	}
 
+	function formatPostalCode(value) {
+		const cleaned = value
+			.replace(/[^a-zA-Z0-9]/g, '')
+			.toUpperCase()
+			.substring(0, 6);
+		if (cleaned.length > 3) {
+			return cleaned.substring(0, 3) + ' ' + cleaned.substring(3);
+		}
+		return cleaned;
+	}
+
 	async function handleSave(event) {
 		event.preventDefault();
 		if (!validate()) return;
@@ -476,7 +487,7 @@
 								type="text"
 								bind:value={fields.addressLine1}
 								class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
-									{errors.addressLine1 ? 'border-destructive ring-1 ring-destructive' : ''}"
+                {errors.addressLine1 ? 'border-destructive ring-1 ring-destructive' : ''}"
 							/>
 							{#if errors.addressLine1}<p class="text-xs text-destructive">
 									{errors.addressLine1}
@@ -510,7 +521,7 @@
 									type="text"
 									bind:value={fields.city}
 									class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
-										{errors.city ? 'border-destructive ring-1 ring-destructive' : ''}"
+                    {errors.city ? 'border-destructive ring-1 ring-destructive' : ''}"
 								/>
 								{#if errors.city}<p class="text-xs text-destructive">{errors.city}</p>{/if}
 							</div>
@@ -524,7 +535,7 @@
 									id="provinceInput"
 									bind:value={fields.province}
 									class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
-										{errors.province ? 'border-destructive ring-1 ring-destructive' : ''}"
+                    {errors.province ? 'border-destructive ring-1 ring-destructive' : ''}"
 								>
 									{#each provinces as p}
 										<option value={p.value}>{p.label}</option>
@@ -543,8 +554,11 @@
 									type="text"
 									maxlength="7"
 									bind:value={fields.postalCode}
+									oninput={(e) => {
+										fields.postalCode = formatPostalCode(e.target.value);
+									}}
 									class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
-										{errors.postalCode ? 'border-destructive ring-1 ring-destructive' : ''}"
+                    {errors.postalCode ? 'border-destructive ring-1 ring-destructive' : ''}"
 								/>
 								{#if errors.postalCode}<p class="text-xs text-destructive">
 										{errors.postalCode}
