@@ -62,13 +62,13 @@ function createCartStore() {
 					const qty = existing.quantity + item.quantity;
 					items = state.items.map((i) =>
 						i.productId === item.productId
-							? { ...i, quantity: qty, lineTotal: Math.ceil(i.unitPrice * qty * 100) / 100 }
+							? { ...i, quantity: qty, lineTotal: +(i.unitPrice * qty).toFixed(2) }
 							: i
 					);
 				} else {
 					items = [
 						...state.items,
-						{ ...item, lineTotal: Math.ceil(item.unitPrice * item.quantity * 100) / 100 }
+						{ ...item, lineTotal: +(item.unitPrice * item.quantity).toFixed(2) }
 					];
 				}
 				return persist(recalc(items));
@@ -83,7 +83,7 @@ function createCartStore() {
 				} else {
 					items = state.items.map((i) =>
 						i.productId === productId
-							? { ...i, quantity, lineTotal: Math.ceil(i.unitPrice * quantity * 100) / 100 }
+							? { ...i, quantity, lineTotal: +(i.unitPrice * quantity).toFixed(2) }
 							: i
 					);
 				}

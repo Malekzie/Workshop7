@@ -197,8 +197,8 @@ public class OrderService {
                 if (specialPid != null && specialPid.equals(p.getId())
                         && specialPct != null && specialPct.compareTo(BigDecimal.ZERO) > 0) {
                     BigDecimal factor = BigDecimal.ONE.subtract(
-                            specialPct.divide(BigDecimal.valueOf(100), 10, RoundingMode.CEILING));
-                    lineAfter = lineList.multiply(factor).setScale(2, RoundingMode.CEILING);
+                            specialPct.divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP));
+                    lineAfter = lineList.multiply(factor).setScale(2, RoundingMode.HALF_UP);
                     specialDiscount = specialDiscount.add(lineList.subtract(lineAfter));
                 }
                 afterSpecial = afterSpecial.add(lineAfter);
@@ -209,7 +209,7 @@ public class OrderService {
                 RewardTier tierForDiscount = rewardTierService.tierForBalance(pts).orElse(customer.getRewardTier());
                 if (tierForDiscount != null && tierForDiscount.getRewardTierDiscountRate() != null) {
                     tierDiscount = afterSpecial.multiply(tierForDiscount.getRewardTierDiscountRate())
-                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.CEILING);
+                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
                 }
             }
             if (tierDiscount.compareTo(afterSpecial) > 0) {
@@ -219,7 +219,7 @@ public class OrderService {
 
             if (!guestCheckout && employeeCustomerLinkService.isEligibleForEmployeeDiscount(customer.getId())) {
                 employeeDiscount = afterTier.multiply(EmployeeCustomerLinkService.EMPLOYEE_DISCOUNT_PERCENT)
-                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.CEILING);
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
             }
             if (employeeDiscount.compareTo(afterTier) > 0) {
                 employeeDiscount = afterTier;
@@ -230,7 +230,7 @@ public class OrderService {
         BigDecimal discount = tierDiscount.add(employeeDiscount);
         BigDecimal taxRatePercent = TAX_RATE_PERCENT;
         BigDecimal taxAmount = total.multiply(taxRatePercent)
-                .divide(BigDecimal.valueOf(100), 2, RoundingMode.CEILING);
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         BigDecimal deliveryFee = BigDecimal.ZERO;
         if (OrderMethod.delivery.equals(req.getOrderMethod())
                 && total.compareTo(DELIVERY_FREE_THRESHOLD) < 0) {

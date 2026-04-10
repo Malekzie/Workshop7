@@ -105,7 +105,7 @@ public class EmailService {
         BigDecimal tax = order.getOrderTaxAmount() != null
                 ? order.getOrderTaxAmount()
                 : subtotalAfterDiscount.multiply(OrderService.TAX_RATE_PERCENT)
-                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.CEILING);
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         BigDecimal deliveryFee = BigDecimal.ZERO;
         if (OrderMethod.delivery.equals(order.getOrderMethod())
                 && subtotalAfterDiscount.compareTo(DELIVERY_FREE_THRESHOLD) < 0) {

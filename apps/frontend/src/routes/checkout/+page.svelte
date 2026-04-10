@@ -1159,12 +1159,12 @@
 				{/if}
 				<div class="mt-1 flex justify-between text-sm text-muted-foreground">
 					<span>Est. tax (5%)</span>
-					<span>${(Math.ceil($cart.subtotal * 0.05 * 100) / 100).toFixed(2)}</span>
+					<span>${($cart.subtotal * 0.05).toFixed(2)}</span>
 				</div>
 				<hr class="my-3 border-border" />
 				<div class="flex justify-between text-sm font-medium text-foreground">
 					<span>Est. total</span>
-					<span>${($cart.subtotal + deliveryFee + Math.ceil($cart.subtotal * 0.05 * 100) / 100).toFixed(2)}</span>
+					<span>${($cart.subtotal + deliveryFee + $cart.subtotal * 0.05).toFixed(2)}</span>
 				</div>
 				<p class="mt-2 text-xs text-muted-foreground">* Final discounts applied at payment</p>
 			</section>
@@ -1214,12 +1214,12 @@
 					{/if}
 					<div class="flex justify-between text-muted-foreground">
 						<span>Tax (5%)</span>
-						<span>${Number(pendingTaxAmount ?? Math.ceil($cart.subtotal * 0.05 * 100) / 100).toFixed(2)}</span>
+						<span>${Number(pendingTaxAmount ?? $cart.subtotal * 0.05).toFixed(2)}</span>
 					</div>
 					<hr class="my-1 border-border" />
 					<div class="flex justify-between font-bold text-foreground">
 						<span>Total</span>
-						<span>${Number(pendingGrandTotal ?? ($cart.subtotal + deliveryFee + Math.ceil($cart.subtotal * 0.05 * 100) / 100)).toFixed(2)}</span>
+						<span>${Number(pendingGrandTotal ?? ($cart.subtotal + deliveryFee + $cart.subtotal * 0.05)).toFixed(2)}</span>
 					</div>
 				</div>
 			</div>

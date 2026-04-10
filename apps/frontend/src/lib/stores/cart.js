@@ -16,7 +16,7 @@ function createCart() {
 				const existing = c.items.find((i) => i.productId === product.id);
 				if (existing) {
 					existing.quantity += quantity;
-					existing.lineTotal = Math.ceil(existing.unitPrice * existing.quantity * 100) / 100;
+					existing.lineTotal = existing.unitPrice * existing.quantity;
 				} else {
 					c.items = [
 						...c.items,
@@ -26,7 +26,7 @@ function createCart() {
 							productImageUrl: product.imageUrl ?? null,
 							unitPrice: product.basePrice,
 							quantity,
-							lineTotal: Math.ceil(product.basePrice * quantity * 100) / 100
+							lineTotal: product.basePrice * quantity
 						}
 					];
 				}
@@ -43,7 +43,7 @@ function createCart() {
 					const item = cart.items.find((i) => i.productId === productId);
 					if (item) {
 						item.quantity = quantity;
-						item.lineTotal = Math.ceil(item.unitPrice * quantity * 100) / 100;
+						item.lineTotal = +(item.unitPrice * quantity).toFixed(2);
 					}
 				}
 				cart.subtotal = cart.items.reduce((sum, i) => sum + i.lineTotal, 0);
