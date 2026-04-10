@@ -555,17 +555,10 @@
 								maxlength="7"
 								value={fields.postalCode}
 								oninput={(e) => {
-									fields = {
-										...fields,
-										postalCode: formatCanadianPostalInput(e.currentTarget.value)
-									};
+									fields.postalCode = formatCanadianPostalInput(e.currentTarget.value);
 									handleInput('postalCode');
 								}}
 								onblur={() => handleBlur('postalCode')}
-								oninput={(e) => {
-									fields.postalCode = formatPostalCode(e.target.value);
-									handleInput('postalCode');
-								}}
 								class="bg-surface-container-highest mt-1 w-full rounded-xl px-4 py-3 font-medium ring-1 ring-border transition
 									{errors.postalCode && touched.postalCode ? 'ring-2 ring-red-400' : ''}"
 							/>
