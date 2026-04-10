@@ -10,4 +10,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Intege
 
     @EntityGraph(attributePaths = {"sender"})
     List<ChatMessage> findByThread_IdOrderBySentAtAsc(Integer threadId);
+
+    @EntityGraph(attributePaths = {"sender"})
+    List<ChatMessage> findByThread_IdAndThread_CustomerUser_UserIdOrderBySentAtAsc(Integer threadId, java.util.UUID customerUserId);
 }

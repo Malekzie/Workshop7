@@ -58,6 +58,10 @@ public class CacheConfig implements CachingConfigurer {
         cacheConfigurations.put("customer-by-user-id", defaultConfig.entryTtl(Duration.ofMinutes(30)));
         cacheConfigurations.put("employees",        defaultConfig.entryTtl(Duration.ofMinutes(30)));
         cacheConfigurations.put("current-users",    defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        cacheConfigurations.put("chat-open-thread", defaultConfig.entryTtl(Duration.ofSeconds(10)));
+        cacheConfigurations.put("chat-open-threads", defaultConfig.entryTtl(Duration.ofSeconds(5)));
+        cacheConfigurations.put("chat-open-thread-by-customer", defaultConfig.entryTtl(Duration.ofSeconds(10)));
+        cacheConfigurations.put("chat-messages",    defaultConfig.entryTtl(Duration.ofSeconds(3)));
         cacheConfigurations.put("reward-tiers",     defaultConfig.entryTtl(Duration.ofHours(6)));
         cacheConfigurations.put("reviews",          defaultConfig.entryTtl(Duration.ofMinutes(30)));
 

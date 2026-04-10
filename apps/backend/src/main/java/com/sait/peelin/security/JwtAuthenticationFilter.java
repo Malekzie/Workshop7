@@ -55,6 +55,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                 null,
                                 java.util.List.of(new SimpleGrantedAuthority("ROLE_" + user.getUserRole().name().toUpperCase()))
                         );
+                // Reuse the resolved user in this request so downstream current-user lookups avoid a second DB hit.
+                authToken.setDetails(user);
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         } catch (Exception e) {

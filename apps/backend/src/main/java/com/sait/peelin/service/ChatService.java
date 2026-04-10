@@ -12,6 +12,9 @@ import com.sait.peelin.model.UserRole;
 import com.sait.peelin.repository.ChatMessageRepository;
 import com.sait.peelin.repository.ChatThreadRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,18 +29,20 @@ public class ChatService {
 
     private final ChatThreadRepository chatThreadRepository;
     private final ChatMessageRepository chatMessageRepository;
+    private final ChatLookupCacheService chatLookupCacheService;
     private final CustomerLookupCacheService customerLookupCacheService;
     private final CurrentUserService currentUserService;
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "chat-open-threads", keyGenerator = "userIdKeyGenerator")
     public List<ChatThreadDto> openThreads() {
         User u = currentUserService.requireUser();
         if (u.getUserRole() == UserRole.admin || u.getUserRole() == UserRole.employee) {
             return chatThreadRepository.findByStatusOrderByUpdatedAtDesc("open").stream().map(this::threadDto).toList();
         }
         if (u.getUserRole() == UserRole.customer) {
-            return chatThreadRepository
-                    .findFirstByCustomerUser_UserIdAndStatusOrderByUpdatedAtDesc(u.getUserId(), "open")
+            return java.util.Optional.ofNullable(chatLookupCacheService.findOpenThreadIdForCustomer(u.getUserId()))
+                    .flatMap(chatThreadRepository::findById)
                     .map(this::threadDto)
                     .stream()
                     .toList();
@@ -46,24 +51,35 @@ public class ChatService {
     }
 
     @Transactional
+    @Cacheable(value = "chat-open-thread", keyGenerator = "userIdKeyGenerator")
     public ChatThreadDto getOrCreateOpenThreadForCustomer() {
         User u = currentUserService.requireUser();
         if (u.getUserRole() != UserRole.customer) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
-        return chatThreadRepository
-                .findFirstByCustomerUser_UserIdAndStatusOrderByUpdatedAtDesc(u.getUserId(), "open")
+        return java.util.Optional.ofNullable(chatLookupCacheService.findOpenThreadIdForCustomer(u.getUserId()))
+                .flatMap(chatThreadRepository::findById)
                 .map(this::threadDto)
-                .orElseGet(() -> threadDto(createThread(u)));
+                .orElseGet(() -> {
+                    ChatThread created = createThread(u);
+                    chatLookupCacheService.evictOpenThreadForCustomer(u.getUserId());
+                    return threadDto(created);
+                });
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "chat-open-thread", keyGenerator = "userIdKeyGenerator"),
+            @CacheEvict(value = "chat-open-threads", allEntries = true)
+    })
     public ChatThreadDto createThread() {
         User u = currentUserService.requireUser();
         if (u.getUserRole() != UserRole.customer) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
-        return threadDto(createThread(u));
+        ChatThread created = createThread(u);
+        chatLookupCacheService.evictOpenThreadForCustomer(u.getUserId());
+        return threadDto(created);
     }
 
     private ChatThread createThread(User customer) {
@@ -76,13 +92,33 @@ public class ChatService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "chat-messages",
+            key = "'thread:' + #threadId + ':' + T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName()"
+    )
     public List<ChatMessageDto> messages(Integer threadId) {
+        User u = currentUserService.requireUser();
+        if (u.getUserRole() == UserRole.customer) {
+            return chatMessageRepository
+                    .findByThread_IdAndThread_CustomerUser_UserIdOrderBySentAtAsc(threadId, u.getUserId())
+                    .stream()
+                    .map(this::msgDto)
+                    .toList();
+        }
         ChatThread t = chatThreadRepository.findById(threadId).orElseThrow(() -> new ResourceNotFoundException("Thread not found"));
         assertCanAccessThread(t);
         return chatMessageRepository.findByThread_IdOrderBySentAtAsc(threadId).stream().map(this::msgDto).toList();
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(
+                    value = "chat-messages",
+                    key = "'thread:' + #threadId + ':' + T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName()"
+            ),
+            @CacheEvict(value = "chat-open-thread", keyGenerator = "userIdKeyGenerator"),
+            @CacheEvict(value = "chat-open-threads", allEntries = true)
+    })
     public ChatMessageDto postMessage(Integer threadId, PostChatMessageRequest req) {
         ChatThread t = chatThreadRepository.findById(threadId).orElseThrow(() -> new ResourceNotFoundException("Thread not found"));
         assertCanAccessThread(t);
@@ -95,10 +131,14 @@ public class ChatService {
         m.setIsRead(false);
         t.setUpdatedAt(OffsetDateTime.now());
         chatThreadRepository.save(t);
+        if (t.getCustomerUser() != null && t.getCustomerUser().getUserId() != null) {
+            chatLookupCacheService.evictOpenThreadForCustomer(t.getCustomerUser().getUserId());
+        }
         return msgDto(chatMessageRepository.save(m));
     }
 
     @Transactional
+    @CacheEvict(value = "chat-open-threads", allEntries = true)
     public ChatThreadDto assignEmployee(Integer threadId) {
         User staff = currentUserService.requireUser();
         if (staff.getUserRole() != UserRole.employee && staff.getUserRole() != UserRole.admin) {
@@ -109,10 +149,17 @@ public class ChatService {
             t.setEmployeeUser(staff);
             t.setUpdatedAt(OffsetDateTime.now());
         }
+        if (t.getCustomerUser() != null && t.getCustomerUser().getUserId() != null) {
+            chatLookupCacheService.evictOpenThreadForCustomer(t.getCustomerUser().getUserId());
+        }
         return threadDto(chatThreadRepository.save(t));
     }
 
     @Transactional
+    @CacheEvict(
+            value = "chat-messages",
+            key = "'thread:' + #threadId + ':' + T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName()"
+    )
     public void markRead(Integer threadId) {
         chatThreadRepository.findById(threadId).orElseThrow(() -> new ResourceNotFoundException("Thread not found"));
         User viewer = currentUserService.requireUser();
@@ -144,8 +191,12 @@ public class ChatService {
     }
 
     private ChatThreadDto threadDto(ChatThread t) {
+        User actor = currentUserService.currentUserOrNull();
         User customerUser = t.getCustomerUser();
-        Customer customer = customerLookupCacheService.findByUserId(customerUser.getUserId());
+        // Customer hover/polling only needs thread identity; avoid extra customer-profile query in that path.
+        Customer customer = (actor != null && actor.getUserRole() == UserRole.customer)
+                ? null
+                : customerLookupCacheService.findByUserId(customerUser.getUserId());
         return new ChatThreadDto(
                 t.getId(),
                 customerUser.getUserId(),
