@@ -42,6 +42,7 @@ public class AuthService {
     private final CustomerService customerService;
     private final PasswordEncoder passwordEncoder;
     private final CurrentUserService currentUserService;
+    private final WelcomeEmailService welcomeEmailService;
 
     public AuthResponse login(LoginRequest request) {
         String email = Optional.ofNullable(request.getEmail())
@@ -120,6 +121,9 @@ public class AuthService {
             res.setGuestProfileCompletionMessage(
                     "You have previously checked out as a guest. Please complete the remaining information to finish your registration.");
         }
+
+        welcomeEmailService.sendWelcomeEmail(user);
+
         return res;
     }
 

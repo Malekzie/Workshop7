@@ -11,9 +11,13 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseCookie;
+import org.springframework.beans.factory.annotation.Value;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.List;
 
@@ -27,6 +31,9 @@ public class CustomerSelfController {
 
     private final CustomerService customerService;
     private final CustomerPreferenceService customerPreferenceService;
+
+    @Value("${app.cookie.secure:false}")
+    private boolean cookieSecure;
 
     @Operation(summary = "Get my profile", description = "Returns the full profile for the currently authenticated customer.")
     @ApiResponses({
@@ -61,10 +68,21 @@ public class CustomerSelfController {
             @ApiResponse(responseCode = "204", description = "Account deleted"),
             @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content)
     })
+
     @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteMe() {
+    public void deleteMe(HttpServletResponse response) {
         customerService.deleteMe();
+
+        // Clear the token cookie immediately
+        ResponseCookie cookie = ResponseCookie.from("token", "")
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
     @GetMapping("/preferences")

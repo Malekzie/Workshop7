@@ -11,13 +11,12 @@ import com.sait.peelin.model.Address;
 import com.sait.peelin.model.Customer;
 import com.sait.peelin.model.RewardTier;
 import com.sait.peelin.model.User;
-import com.sait.peelin.repository.AddressRepository;
-import com.sait.peelin.repository.CustomerRepository;
-import com.sait.peelin.repository.RewardTierRepository;
-import com.sait.peelin.repository.UserRepository;
+import com.sait.peelin.repository.*;
 import com.sait.peelin.support.GuestContactFiller;
 import com.sait.peelin.support.PhoneNumberFormatter;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
@@ -26,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.cache.Cache;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -42,6 +43,10 @@ public class CustomerService {
     private final UserRepository userRepository;
     private final ProfilePhotoStorageService profilePhotoStorageService;
     private final CurrentUserService currentUserService;
+    private final CustomerPreferenceRepository customerPreferenceRepository;
+    private final CacheManager cacheManager;
+    private static final Logger log = LoggerFactory.getLogger(CustomerService.class);
+
 
     @Transactional(readOnly = true)
     public List<CustomerDto> listAdmin(String search) {
@@ -585,13 +590,23 @@ public class CustomerService {
     }
 
     @Transactional
+    @CacheEvict(value = "customers", allEntries = true)
     public void deleteMe() {
         User u = currentUserService.requireUser();
         Customer c = customerRepository.findByUser_UserId(u.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No customer profile"));
 
+        customerPreferenceRepository.deleteAllByCustomerId(c.getId());
         customerRepository.delete(c);
         userRepository.delete(u);
+
+        // Force cache clear even if @CacheEvict fails
+        try {
+            Cache cache = cacheManager.getCache("customers");
+            if (cache != null) cache.clear();
+        } catch (Exception e) {
+            log.warn("Failed to manually clear customers cache: {}", e.getMessage());
+        }
     }
 
     @Transactional

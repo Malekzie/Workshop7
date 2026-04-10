@@ -21,8 +21,13 @@
 	onMount(async () => {
 		try {
 			profile = await getProfile();
-		} catch {
-			error = true;
+		} catch (e) {
+			if (e.status === 404) {
+				goto(resolve('/profile'));
+				return;
+			} else {
+				error = true;
+			}
 		} finally {
 			loading = false;
 		}

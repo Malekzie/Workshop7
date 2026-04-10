@@ -1,6 +1,7 @@
 <script>
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
+	import { Eye, EyeOff } from '@lucide/svelte';
 
 	let password = '';
 	let confirmPassword = '';
@@ -11,12 +12,17 @@
 	let loading = false;
 	let success = false;
 	let serverError = '';
+	let showPassword = false;
+	let showConfirm = false;
 
 	const token = $page.url.searchParams.get('token');
 
 	function validatePassword(value) {
 		if (!value.trim()) return 'Password is required.';
-		if (value.length < 8) return 'Password must be at least 8 characters.';
+		if (value.length < 8) return 'Must be at least 8 characters.';
+		if (!/[A-Z]/.test(value)) return 'Must include an uppercase letter.';
+		if (!/[0-9]/.test(value)) return 'Must include a number.';
+		if (!/[^a-zA-Z0-9]/.test(value)) return 'Must include a special character.';
 		return '';
 	}
 
@@ -93,26 +99,44 @@
 				</p>
 			{:else}
 				{#if serverError}
-					<p class="mb-4 text-center text-sm text-red-500">{serverError}</p>
+					<p
+						class="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-center text-sm text-red-800"
+					>
+						{serverError}
+					</p>
 				{/if}
 
-				<form class="space-y-6" on:submit={handleSubmit}>
+				<form class="space-y-6" onsubmit={handleSubmit}>
 					<div class="space-y-1.5">
 						<label for="passwordInput" class="text-on-surface-variant px-1 text-sm font-bold">
 							New Password
 						</label>
-						<input
-							id="passwordInput"
-							type="password"
-							placeholder="At least 8 characters"
-							bind:value={password}
-							on:blur={handlePasswordBlur}
-							on:input={() => {
-								if (touchedPassword) passwordError = validatePassword(password);
-							}}
-							class="bg-surface-container-highest mt-1 w-full rounded-xl px-6 py-3 font-medium ring-1 ring-border transition
-								{passwordError && touchedPassword ? 'ring-2 ring-red-400' : ''}"
-						/>
+						<div class="relative mt-1">
+							<input
+								id="passwordInput"
+								type={showPassword ? 'text' : 'password'}
+								placeholder="At least 8 characters"
+								bind:value={password}
+								onblur={handlePasswordBlur}
+								oninput={() => {
+									if (touchedPassword) passwordError = validatePassword(password);
+								}}
+								class="bg-surface-container-highest w-full rounded-xl px-4 py-3 pr-12 font-medium ring-1 ring-border transition
+									{passwordError && touchedPassword ? 'ring-2 ring-red-400' : ''}"
+							/>
+							<button
+								type="button"
+								onclick={() => (showPassword = !showPassword)}
+								class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition hover:text-foreground"
+								aria-label={showPassword ? 'Hide password' : 'Show password'}
+							>
+								{#if showPassword}
+									<EyeOff size={18} />
+								{:else}
+									<Eye size={18} />
+								{/if}
+							</button>
+						</div>
 						{#if passwordError && touchedPassword}
 							<p class="px-1 text-xs text-red-500">{passwordError}</p>
 						{/if}
@@ -122,18 +146,32 @@
 						<label for="confirmInput" class="text-on-surface-variant px-1 text-sm font-bold">
 							Confirm Password
 						</label>
-						<input
-							id="confirmInput"
-							type="password"
-							placeholder="Repeat your new password"
-							bind:value={confirmPassword}
-							on:blur={handleConfirmBlur}
-							on:input={() => {
-								if (touchedConfirm) confirmError = validateConfirm(confirmPassword);
-							}}
-							class="bg-surface-container-highest mt-1 w-full rounded-xl px-6 py-3 font-medium ring-1 ring-border transition
-								{confirmError && touchedConfirm ? 'ring-2 ring-red-400' : ''}"
-						/>
+						<div class="relative mt-1">
+							<input
+								id="confirmInput"
+								type={showConfirm ? 'text' : 'password'}
+								placeholder="Repeat your new password"
+								bind:value={confirmPassword}
+								onblur={handleConfirmBlur}
+								oninput={() => {
+									if (touchedConfirm) confirmError = validateConfirm(confirmPassword);
+								}}
+								class="bg-surface-container-highest w-full rounded-xl px-4 py-3 pr-12 font-medium ring-1 ring-border transition
+									{confirmError && touchedConfirm ? 'ring-2 ring-red-400' : ''}"
+							/>
+							<button
+								type="button"
+								onclick={() => (showConfirm = !showConfirm)}
+								class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition hover:text-foreground"
+								aria-label={showConfirm ? 'Hide password' : 'Show password'}
+							>
+								{#if showConfirm}
+									<EyeOff size={18} />
+								{:else}
+									<Eye size={18} />
+								{/if}
+							</button>
+						</div>
 						{#if confirmError && touchedConfirm}
 							<p class="px-1 text-xs text-red-500">{confirmError}</p>
 						{/if}

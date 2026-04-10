@@ -15,6 +15,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.nio.charset.StandardCharsets;
+import java.util.HexFormat;
 
 import java.io.IOException;
 import java.security.SecureRandom;
@@ -41,6 +45,17 @@ public class PasswordResetService {
 
     private static final int EXPIRY_HOURS = 1;
 
+    // hash the token
+    private String hashToken(String token) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Failed to hash token", e);
+        }
+    }
+
     @Transactional
     public void requestPasswordReset(String email) {
         Optional<User> userOpt = userRepository.findByUserEmail(email);
@@ -53,13 +68,12 @@ public class PasswordResetService {
         // Delete any existing tokens for this user
         tokenRepository.deleteAllByUserId(user.getUserId());
 
-        // Generate a secure random token
+        // Generate a random token
         String token = generateSecureToken();
 
-        // Save the token
         PasswordResetToken resetToken = new PasswordResetToken();
         resetToken.setUser(user);
-        resetToken.setToken(token);
+        resetToken.setToken(hashToken(token));
         resetToken.setExpiresAt(OffsetDateTime.now().plusHours(EXPIRY_HOURS));
         resetToken.setUsed(false);
         tokenRepository.save(resetToken);
@@ -70,7 +84,7 @@ public class PasswordResetService {
 
     @Transactional
     public void resetPassword(String token, String newPassword) {
-        PasswordResetToken resetToken = tokenRepository.findByToken(token)
+        PasswordResetToken resetToken = tokenRepository.findByToken(hashToken(token))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired reset token"));
 
         if (resetToken.getUsed()) {

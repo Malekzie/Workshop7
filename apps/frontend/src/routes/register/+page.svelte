@@ -190,6 +190,8 @@
 
 		if (!ok) {
 			errors.email = message ?? 'Registration failed.';
+			touched.email = true;
+			submitError = message ?? 'Registration failed. Please go back and check your details.';
 			return;
 		}
 

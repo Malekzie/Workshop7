@@ -15,7 +15,11 @@ export async function getProfile() {
 
 	if (!res) return;
 
-	if (!res.ok) throw new Error('Failed to fetch profile: ' + res.status);
+	if (!res.ok) {
+		const err = new Error('Failed to fetch profile: ' + res.status);
+		err.status = res.status;
+		throw err;
+	}
 
 	const data = await res.json();
 
@@ -32,6 +36,15 @@ export async function getProfile() {
 		...data,
 		loyaltyTier: data.rewardTierName ?? null
 	};
+}
+
+export async function deleteAccount() {
+	const res = await apiFetch(`${API}/customers/me`, {
+		method: 'DELETE'
+	});
+
+	if (!res) return;
+	if (!res.ok) throw new Error('Failed to delete account: ' + res.status);
 }
 
 export async function updateProfile(profileData) {

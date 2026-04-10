@@ -6,15 +6,15 @@
 	import { loginUser } from '$lib/services/auth.js';
 	import { user } from '$lib/stores/authStore';
 
-	let identifier = '';
-	let password = '';
+	let identifier = $state('');
+	let password = $state('');
 
-	let emailError = '';
-	let passwordError = '';
+	let emailError = $state('');
+	let passwordError = $state('');
 
-	let emailTouched = false;
-	let passwordTouched = false;
-	let showPassword = false;
+	let emailTouched = $state(false);
+	let passwordTouched = $state(false);
+	let showPassword = $state(false);
 
 	function validateIdentifier(value) {
 		if (!value.trim()) return 'Email or username is required.';

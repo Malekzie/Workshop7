@@ -124,9 +124,29 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                     customer.setCustomerPhone("OAUTH-" + finalProviderId.substring(0, Math.min(finalProviderId.length(), 14)));
                     customer.setCustomerRewardBalance(0);
                     customerRepository.save(customer);
+                    customerRepository.flush();
 
                     return newUser;
                 });
+
+        // Ensure customer record exists (e.g. after account deletion and re-login)
+        if (!customerRepository.existsByUser_UserId(user.getUserId())) {
+            RewardTier lowestTier = rewardTierRepository
+                    .findFirstByOrderByRewardTierMinPointsAsc()
+                    .orElseThrow(() -> new RuntimeException("No reward tiers configured"));
+
+            String[] nameParts = finalName.split(" ", 2);
+            Customer customer = new Customer();
+            customer.setUser(user);
+            customer.setRewardTier(lowestTier);
+            customer.setCustomerFirstName(nameParts[0]);
+            customer.setCustomerLastName(nameParts.length > 1 ? nameParts[1] : "");
+            customer.setCustomerEmail(finalEmail);
+            customer.setCustomerPhone("OAUTH-" + finalProviderId.substring(0, Math.min(finalProviderId.length(), 14)));
+            customer.setCustomerRewardBalance(0);
+            customerRepository.save(customer);
+            customerRepository.flush();
+        }
 
         // Generate JWT
         UserDetails userDetails = org.springframework.security.core.userdetails.User

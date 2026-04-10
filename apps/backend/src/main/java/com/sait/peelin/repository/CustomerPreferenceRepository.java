@@ -15,6 +15,8 @@ public interface CustomerPreferenceRepository extends JpaRepository<CustomerPref
     @Query("SELECT DISTINCT p FROM CustomerPreference p JOIN FETCH p.tag WHERE p.customer.id = :customerId")
     List<CustomerPreference> findByCustomer_IdWithTag(@Param("customerId") UUID customerId);
 
+    void deleteAllByCustomerId(UUID customerId);
+
     List<CustomerPreference> findByCustomer_Id(UUID customerId);
     void deleteByCustomer_Id(UUID customerId);
 }
