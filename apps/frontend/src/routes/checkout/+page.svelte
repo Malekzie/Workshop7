@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
-	import { get } from 'svelte/store';
 	import { cart } from '$lib/stores/cart';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
@@ -188,6 +187,7 @@
 	let scheduleDate = $state('');
 	let scheduleTime = $state('');
 	let bakeryHours = $state<BakeryHour[]>([]);
+	let bakeryHoursLoading = $state(false);
 	let availableTimeSlots = $state<string[]>([]);
 
 	// Custom delivery address override (logged-in customers)
@@ -206,13 +206,25 @@
 	let pendingOrderNumber = $state('');
 	let pendingClientSecret = $state('');
 	let pendingPaymentIntentId = $state('');
+	let pendingSubtotal = $state<number | null>(null);
+	let pendingDiscount = $state<number | null>(null);
+	let pendingDeliveryFee = $state<number | null>(null);
+	let pendingTaxAmount = $state<number | null>(null);
+	let pendingGrandTotal = $state<number | null>(null);
 	let paymentContainer = $state<HTMLDivElement | undefined>(undefined);
 	let stripePaymentLoading = $state(false);
 	let paymentError = $state('');
 
 	// ── Derived ──────────────────────────────────────────────────────────────────
 
+	const DELIVERY_FEE = 7;
+	const DELIVERY_FREE_THRESHOLD = 50;
+
 	const selectedBakery = $derived(bakeries.find((b) => b.id === selectedBakeryId) ?? null);
+
+	const deliveryFee = $derived(
+		orderMethod === 'delivery' && $cart.subtotal < DELIVERY_FREE_THRESHOLD ? DELIVERY_FEE : 0
+	);
 
 	const needsDeliveryForm = $derived(
 		orderMethod === 'delivery' && (isGuest || !customer?.addressId || useCustomAddress)
@@ -280,6 +292,94 @@
 		return d.toISOString().split('T')[0];
 	}
 
+	// ── Schedule helpers ─────────────────────────────────────────────────────────
+
+	function formatTimeHM(h: number, m: number): string {
+		const period = h >= 12 ? 'PM' : 'AM';
+		const display = h % 12 === 0 ? 12 : h % 12;
+		return `${display}:${String(m).padStart(2, '0')} ${period}`;
+	}
+
+	// Returns today's date (or tomorrow's if now+2h crosses midnight) as YYYY-MM-DD
+	function asapScheduleDate(): string {
+		const now = new Date();
+		let total = now.getHours() * 60 + now.getMinutes() + 120;
+		const rem = total % 30;
+		if (rem !== 0) total += 30 - rem;
+		const d = new Date(now);
+		d.setHours(0, 0, 0, 0);
+		d.setMinutes(total); // JS setMinutes handles midnight overflow automatically
+		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+	}
+
+	// ASAP estimated ready time: now + 2h rounded up to next 30-min boundary
+	function getAsapEstimateLabel(): string {
+		const now = new Date();
+		let total = now.getHours() * 60 + now.getMinutes() + 120;
+		const rem = total % 30;
+		if (rem !== 0) total += 30 - rem;
+		const overflows = total >= 24 * 60;
+		const h = Math.floor((total % (24 * 60)) / 60);
+		const m = total % 60;
+		return overflows ? `tomorrow at ${formatTimeHM(h, m)}` : formatTimeHM(h, m);
+	}
+
+	// Is the selected bakery open right now?
+	const isOpenNow = $derived.by((): boolean => {
+		if (!bakeryHours.length) return false;
+		const now = new Date();
+		const dtoDay = now.getDay() === 0 ? 7 : now.getDay();
+		const entry = bakeryHours.find((h) => h.dayOfWeek === dtoDay);
+		if (!entry || entry.closed) return false;
+		const [oh, om] = entry.openTime.split(':').map(Number);
+		const [ch, cm] = entry.closeTime.split(':').map(Number);
+		const nowMin = now.getHours() * 60 + now.getMinutes();
+		return nowMin >= oh * 60 + om && nowMin < ch * 60 + cm;
+	});
+
+	// Next time the bakery will open — used in closed-location notices
+	const nextOpenStr = $derived.by((): string | null => {
+		if (!bakeryHours.length) return null;
+		const now = new Date();
+		const nowMin = now.getHours() * 60 + now.getMinutes();
+		for (let offset = 0; offset <= 7; offset++) {
+			const d = new Date(now);
+			d.setDate(d.getDate() + offset);
+			const dtoDay = d.getDay() === 0 ? 7 : d.getDay();
+			const entry = bakeryHours.find((h) => h.dayOfWeek === dtoDay);
+			if (!entry || entry.closed) continue;
+			const [oh, om] = entry.openTime.split(':').map(Number);
+			// On the current day only use it if the open time hasn't passed yet
+			if (offset === 0 && oh * 60 + om <= nowMin) continue;
+			const timeStr = formatTimeHM(oh, om);
+			if (offset === 0) return `today at ${timeStr}`;
+			if (offset === 1) return `tomorrow at ${timeStr}`;
+			return `${d.toLocaleDateString('en-CA', { weekday: 'long' })} at ${timeStr}`;
+		}
+		return null;
+	});
+
+	// Notice shown when the selected scheduled date has no available time slots
+	const scheduledDayClosedNotice = $derived.by((): string | null => {
+		if (!scheduleEnabled || !scheduleDate || availableTimeSlots.length > 0) return null;
+		if (!bakeryHours.length) return null;
+		for (let offset = 1; offset <= 7; offset++) {
+			const d = new Date(scheduleDate + 'T12:00:00'); // noon avoids DST edge cases
+			d.setDate(d.getDate() + offset);
+			const dtoDay = d.getDay() === 0 ? 7 : d.getDay();
+			const entry = bakeryHours.find((h) => h.dayOfWeek === dtoDay);
+			if (!entry || entry.closed) continue;
+			const [oh, om] = entry.openTime.split(':').map(Number);
+			const timeStr = formatTimeHM(oh, om);
+			const dayLabel =
+				offset === 1
+					? 'tomorrow'
+					: d.toLocaleDateString('en-CA', { weekday: 'long' });
+			return `This location is closed on the selected day — it will open ${dayLabel} at ${timeStr}.`;
+		}
+		return 'This location appears to be closed for the near future.';
+	});
+
 	// ── Lifecycle ────────────────────────────────────────────────────────────────
 
 	onMount(async () => {
@@ -330,6 +430,8 @@
 	$effect(() => {
 		if (!selectedBakeryId) return;
 		const id = selectedBakeryId;
+		bakeryHours = [];
+		bakeryHoursLoading = true;
 		api
 			.get<BakeryHour[]>(`/bakeries/${id}/hours`)
 			.then((h) => {
@@ -337,10 +439,13 @@
 			})
 			.catch(() => {
 				bakeryHours = [];
+			})
+			.finally(() => {
+				bakeryHoursLoading = false;
 			});
 	});
 
-	// Rebuild time slots when date or hours change (30-minute intervals, Workshop 6 logic)
+	// Rebuild time slots when date or hours change (30-minute intervals)
 	$effect(() => {
 		if (!scheduleDate || bakeryHours.length === 0) {
 			availableTimeSlots = [];
@@ -394,6 +499,22 @@
 			scheduleTime = slots[0];
 		} else if (slots.length === 0) {
 			scheduleTime = '';
+		}
+	});
+
+	// Auto-fill date when "Schedule for later" is enabled; reset when disabled
+	$effect(() => {
+		if (!scheduleEnabled) {
+			scheduleDate = '';
+			scheduleTime = '';
+			return;
+		}
+		// Wait until bakery hours have loaded before setting the default date so
+		// the slot-building effect can immediately validate it
+		if (!bakeryHours.length) return;
+		// Only set the default if the user hasn't already picked a date
+		if (!scheduleDate) {
+			scheduleDate = asapScheduleDate();
 		}
 	});
 
@@ -494,12 +615,22 @@
 				orderNumber: string;
 				clientSecret: string;
 				paymentIntentId: string;
+				subtotal?: number;
+				discount?: number;
+				deliveryFee?: number;
+				taxAmount?: number;
+				grandTotal?: number;
 			}>('/orders', body);
 
 			pendingOrderId = session.orderId;
 			pendingOrderNumber = session.orderNumber;
 			pendingClientSecret = session.clientSecret;
 			pendingPaymentIntentId = session.paymentIntentId;
+			pendingSubtotal = session.subtotal ?? null;
+			pendingDiscount = session.discount ?? null;
+			pendingDeliveryFee = session.deliveryFee ?? null;
+			pendingTaxAmount = session.taxAmount ?? null;
+			pendingGrandTotal = session.grandTotal ?? null;
 
 			// Dev mode: no real Stripe configured — skip straight to confirmation
 			if (!stripePublishableKey || pendingClientSecret.startsWith('dev_pi_')) {
@@ -907,8 +1038,27 @@
 				</div>
 
 				{#if !scheduleEnabled}
-					<p class="mt-2 text-sm text-muted-foreground">Order will be prepared as soon as possible.</p>
+					<!-- ASAP mode -->
+					{#if bakeryHours.length > 0}
+						{#if isOpenNow}
+							<p class="mt-2 text-sm text-muted-foreground">
+								Order will be prepared as soon as possible — est. ready by
+								<span class="font-medium text-foreground">{getAsapEstimateLabel()}</span>.
+							</p>
+						{:else if nextOpenStr}
+							<div class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+								This location is currently closed — it will open <span class="font-medium">{nextOpenStr}</span>.
+							</div>
+						{:else}
+							<p class="mt-2 text-sm text-muted-foreground">
+								This location appears to be closed for the near future.
+							</p>
+						{/if}
+					{:else}
+						<p class="mt-2 text-sm text-muted-foreground">Order will be prepared as soon as possible.</p>
+					{/if}
 				{:else}
+					<!-- Scheduled mode -->
 					<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
 						<div class="flex flex-col gap-1">
 							<label for="schedDate" class="text-sm font-medium text-foreground">Date</label>
@@ -923,7 +1073,11 @@
 						</div>
 						<div class="flex flex-col gap-1">
 							<label for="schedTime" class="text-sm font-medium text-foreground">Time</label>
-							{#if availableTimeSlots.length > 0}
+							{#if bakeryHoursLoading}
+								<p class="rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+									Loading…
+								</p>
+							{:else if availableTimeSlots.length > 0}
 								<select
 									id="schedTime"
 									bind:value={scheduleTime}
@@ -935,7 +1089,7 @@
 								</select>
 							{:else if scheduleDate}
 								<p class="rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-									Closed on this day
+									No available slots
 								</p>
 							{:else}
 								<p class="rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
@@ -944,6 +1098,12 @@
 							{/if}
 						</div>
 					</div>
+
+					{#if scheduledDayClosedNotice}
+						<div class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+							{scheduledDayClosedNotice}
+						</div>
+					{/if}
 				{/if}
 			</section>
 
@@ -977,14 +1137,36 @@
 				{/each}
 				<hr class="my-3 border-border" />
 				<p class="text-xs text-muted-foreground">
-					Line totals use menu prices. Today&apos;s specials, loyalty tier, tax, and any employee discount are
-					applied on the server when you confirm.
+					Line totals use menu prices. Today&apos;s specials, loyalty tier, tax, and any employee
+					discount are applied on the server when you confirm.
 				</p>
 				<div class="mt-3 flex justify-between text-sm text-muted-foreground">
-					<span>Cart subtotal (list prices)</span>
+					<span>Subtotal</span>
 					<span>${$cart.subtotal.toFixed(2)}</span>
 				</div>
-				<p class="mt-2 text-xs text-muted-foreground">* Tax will be calculated at payment</p>
+				{#if orderMethod === 'delivery'}
+					<div class="mt-1 flex justify-between text-sm text-muted-foreground">
+						<span>Delivery fee</span>
+						{#if deliveryFee === 0}
+							<span class="font-medium text-green-600">Free</span>
+						{:else}
+							<span>${deliveryFee.toFixed(2)}</span>
+						{/if}
+					</div>
+					{#if deliveryFee > 0}
+						<p class="mt-0.5 text-xs text-muted-foreground">Free delivery on orders $50+</p>
+					{/if}
+				{/if}
+				<div class="mt-1 flex justify-between text-sm text-muted-foreground">
+					<span>Est. tax (5%)</span>
+					<span>${(Math.ceil($cart.subtotal * 0.05 * 100) / 100).toFixed(2)}</span>
+				</div>
+				<hr class="my-3 border-border" />
+				<div class="flex justify-between text-sm font-medium text-foreground">
+					<span>Est. total</span>
+					<span>${($cart.subtotal + deliveryFee + Math.ceil($cart.subtotal * 0.05 * 100) / 100).toFixed(2)}</span>
+				</div>
+				<p class="mt-2 text-xs text-muted-foreground">* Final discounts applied at payment</p>
 			</section>
 
 			{#if submitError}
@@ -1007,8 +1189,39 @@
 		<div class="flex flex-col gap-6">
 			<div class="rounded-xl border border-border bg-card p-6 shadow-sm">
 				<p class="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Order</p>
-				<p class="font-semibold text-foreground">#{pendingOrderNumber}</p>
-				<p class="mt-1 text-sm text-muted-foreground">Total: ${$cart.total.toFixed(2)}</p>
+				<p class="mb-4 font-semibold text-foreground">#{pendingOrderNumber}</p>
+				<div class="flex flex-col gap-1 text-sm">
+					<div class="flex justify-between text-muted-foreground">
+						<span>Subtotal</span>
+						<span>${(Number(pendingSubtotal ?? $cart.subtotal) + Number(pendingDiscount ?? 0)).toFixed(2)}</span>
+					</div>
+					{#if Number(pendingDiscount ?? 0) > 0}
+						<div class="flex justify-between text-muted-foreground">
+							<span>Discount</span>
+							<span>−${Number(pendingDiscount).toFixed(2)}</span>
+						</div>
+					{/if}
+					{#if orderMethod === 'delivery'}
+						{@const fee = pendingDeliveryFee ?? 0}
+						<div class="flex justify-between text-muted-foreground">
+							<span>Delivery fee</span>
+							{#if fee === 0}
+								<span class="font-medium text-green-600">Free</span>
+							{:else}
+								<span>${Number(fee).toFixed(2)}</span>
+							{/if}
+						</div>
+					{/if}
+					<div class="flex justify-between text-muted-foreground">
+						<span>Tax (5%)</span>
+						<span>${Number(pendingTaxAmount ?? Math.ceil($cart.subtotal * 0.05 * 100) / 100).toFixed(2)}</span>
+					</div>
+					<hr class="my-1 border-border" />
+					<div class="flex justify-between font-bold text-foreground">
+						<span>Total</span>
+						<span>${Number(pendingGrandTotal ?? ($cart.subtotal + deliveryFee + Math.ceil($cart.subtotal * 0.05 * 100) / 100)).toFixed(2)}</span>
+					</div>
+				</div>
 			</div>
 
 			<section class="rounded-xl border border-border bg-card p-6 shadow-sm">

@@ -16,7 +16,7 @@ function createCart() {
 				const existing = c.items.find((i) => i.productId === product.id);
 				if (existing) {
 					existing.quantity += quantity;
-					existing.lineTotal = existing.unitPrice * existing.quantity;
+					existing.lineTotal = Math.ceil(existing.unitPrice * existing.quantity * 100) / 100;
 				} else {
 					c.items = [
 						...c.items,
@@ -26,7 +26,7 @@ function createCart() {
 							productImageUrl: product.imageUrl ?? null,
 							unitPrice: product.basePrice,
 							quantity,
-							lineTotal: product.basePrice * quantity
+							lineTotal: Math.ceil(product.basePrice * quantity * 100) / 100
 						}
 					];
 				}
@@ -41,15 +41,22 @@ function createCart() {
 					cart.items = cart.items.filter((i) => i.productId !== productId);
 				} else {
 					const item = cart.items.find((i) => i.productId === productId);
-					if (item) item.quantity = quantity;
+					if (item) {
+						item.quantity = quantity;
+						item.lineTotal = Math.ceil(item.unitPrice * quantity * 100) / 100;
+					}
 				}
-				return cart;
+				cart.subtotal = cart.items.reduce((sum, i) => sum + i.lineTotal, 0);
+				cart.total = cart.subtotal - cart.discount;
+				return { ...cart };
 			});
 		},
 		removeItem(productId) {
 			update((cart) => {
 				cart.items = cart.items.filter((i) => i.productId !== productId);
-				return cart;
+				cart.subtotal = cart.items.reduce((sum, i) => sum + i.lineTotal, 0);
+				cart.total = cart.subtotal - cart.discount;
+				return { ...cart };
 			});
 		},
 		clear() {

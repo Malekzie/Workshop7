@@ -26,7 +26,8 @@ import java.util.Locale;
 public class EmailService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
-    private static final double TAX_RATE = 0.13;
+    private static final BigDecimal DELIVERY_FEE = new BigDecimal("7.00");
+    private static final BigDecimal DELIVERY_FREE_THRESHOLD = new BigDecimal("50.00");
     private static final DateTimeFormatter DT_FMT =
             DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy 'at' h:mm a O", Locale.CANADA);
     private static final NumberFormat CURRENCY = NumberFormat.getCurrencyInstance(Locale.CANADA);
@@ -101,10 +102,16 @@ public class EmailService {
         BigDecimal discount = order.getOrderDiscount() != null
                 ? order.getOrderDiscount() : BigDecimal.ZERO;
         BigDecimal listSubtotal = subtotalAfterDiscount.add(discount);
-        BigDecimal tax = subtotalAfterDiscount
-                .multiply(BigDecimal.valueOf(TAX_RATE))
-                .setScale(2, RoundingMode.HALF_UP);
-        BigDecimal grandTotal = subtotalAfterDiscount.add(tax);
+        BigDecimal tax = order.getOrderTaxAmount() != null
+                ? order.getOrderTaxAmount()
+                : subtotalAfterDiscount.multiply(OrderService.TAX_RATE_PERCENT)
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.CEILING);
+        BigDecimal deliveryFee = BigDecimal.ZERO;
+        if (OrderMethod.delivery.equals(order.getOrderMethod())
+                && subtotalAfterDiscount.compareTo(DELIVERY_FREE_THRESHOLD) < 0) {
+            deliveryFee = DELIVERY_FEE;
+        }
+        BigDecimal grandTotal = subtotalAfterDiscount.add(tax).add(deliveryFee);
 
         StringBuilder html = new StringBuilder();
         html.append("<!DOCTYPE html><html><head>")
@@ -189,8 +196,13 @@ public class EmailService {
                 .append(totalsRow("Discount", "\u2212" + fmt(discount), "#2e7d32", false));
         }
 
-        html.append(totalsRow("Subtotal", fmt(subtotalAfterDiscount), "#333", false))
-            .append(totalsRow("Tax (13%)", fmt(tax), "#555", false))
+        html.append(totalsRow("Subtotal", fmt(subtotalAfterDiscount), "#333", false));
+        if (deliveryFee.compareTo(BigDecimal.ZERO) > 0) {
+            html.append(totalsRow("Delivery fee", fmt(deliveryFee), "#555", false));
+        } else if (OrderMethod.delivery.equals(order.getOrderMethod())) {
+            html.append(totalsRow("Delivery fee", "Free", "#2e7d32", false));
+        }
+        html.append(totalsRow("Tax (5%)", fmt(tax), "#555", false))
             .append("<tr><td colspan='2' style='padding:4px 0;'>"
                 + "<hr style='border:none;border-top:2px solid #5c3d2e;margin:4px 0;'></td></tr>")
             .append(totalsRow("Total", fmt(grandTotal), "#5c3d2e", true))

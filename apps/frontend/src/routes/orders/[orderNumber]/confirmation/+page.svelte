@@ -19,6 +19,9 @@
 		placedAt: string;
 		orderTotal: number;
 		orderDiscount: number;
+		orderTaxAmount?: number;
+		orderGrandTotal?: number;
+		deliveryFee?: number;
 		items: OrderItem[];
 	}
 
@@ -124,15 +127,37 @@
 
 			<hr class="border-border" />
 
+			<div class="flex justify-between text-sm text-muted-foreground">
+				<span>Subtotal</span>
+				<span>${Number(order.orderTotal).toFixed(2)}</span>
+			</div>
 			{#if Number(order.orderDiscount) > 0}
-				<div class="flex justify-between text-sm text-accent">
+				<div class="flex justify-between text-sm text-muted-foreground">
 					<span>Discount</span>
 					<span>−${Number(order.orderDiscount).toFixed(2)}</span>
 				</div>
 			{/if}
+			{#if order.orderMethod === 'delivery'}
+				{@const fee = order.deliveryFee ?? 0}
+				<div class="flex justify-between text-sm text-muted-foreground">
+					<span>Delivery fee</span>
+					{#if fee === 0}
+						<span class="font-medium text-green-600">Free</span>
+					{:else}
+						<span>${Number(fee).toFixed(2)}</span>
+					{/if}
+				</div>
+			{/if}
+			{#if order.orderTaxAmount}
+				<div class="flex justify-between text-sm text-muted-foreground">
+					<span>Tax (13%)</span>
+					<span>${Number(order.orderTaxAmount).toFixed(2)}</span>
+				</div>
+			{/if}
+			<hr class="border-border" />
 			<div class="flex justify-between font-bold text-foreground">
 				<span>Total</span>
-				<span>${Number(order.orderTotal).toFixed(2)}</span>
+				<span>${Number(order.orderGrandTotal ?? order.orderTotal).toFixed(2)}</span>
 			</div>
 		</div>
 

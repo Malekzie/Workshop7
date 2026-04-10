@@ -30,7 +30,7 @@ public class StripeService {
 
         long amountCents = total
                 .multiply(BigDecimal.valueOf(100))
-                .setScale(0, RoundingMode.HALF_UP)
+                .setScale(0, RoundingMode.CEILING)
                 .longValue();
 
         PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()

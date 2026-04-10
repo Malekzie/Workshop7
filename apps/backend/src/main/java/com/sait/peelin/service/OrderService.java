@@ -56,6 +56,9 @@ public class OrderService {
     private final EmployeeCustomerLinkService employeeCustomerLinkService;
 
     private static final ZoneId DEFAULT_PRICING_ZONE = ZoneId.of("America/Edmonton");
+    private static final BigDecimal DELIVERY_FEE = new BigDecimal("7.00");
+    private static final BigDecimal DELIVERY_FREE_THRESHOLD = new BigDecimal("50.00");
+    static final BigDecimal TAX_RATE_PERCENT = new BigDecimal("5");
 
     @Transactional(readOnly = true)
     @Cacheable(value = "orders", keyGenerator = "userIdKeyGenerator")
@@ -194,8 +197,8 @@ public class OrderService {
                 if (specialPid != null && specialPid.equals(p.getId())
                         && specialPct != null && specialPct.compareTo(BigDecimal.ZERO) > 0) {
                     BigDecimal factor = BigDecimal.ONE.subtract(
-                            specialPct.divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP));
-                    lineAfter = lineList.multiply(factor).setScale(2, RoundingMode.HALF_UP);
+                            specialPct.divide(BigDecimal.valueOf(100), 10, RoundingMode.CEILING));
+                    lineAfter = lineList.multiply(factor).setScale(2, RoundingMode.CEILING);
                     specialDiscount = specialDiscount.add(lineList.subtract(lineAfter));
                 }
                 afterSpecial = afterSpecial.add(lineAfter);
@@ -206,7 +209,7 @@ public class OrderService {
                 RewardTier tierForDiscount = rewardTierService.tierForBalance(pts).orElse(customer.getRewardTier());
                 if (tierForDiscount != null && tierForDiscount.getRewardTierDiscountRate() != null) {
                     tierDiscount = afterSpecial.multiply(tierForDiscount.getRewardTierDiscountRate())
-                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.CEILING);
                 }
             }
             if (tierDiscount.compareTo(afterSpecial) > 0) {
@@ -216,7 +219,7 @@ public class OrderService {
 
             if (!guestCheckout && employeeCustomerLinkService.isEligibleForEmployeeDiscount(customer.getId())) {
                 employeeDiscount = afterTier.multiply(EmployeeCustomerLinkService.EMPLOYEE_DISCOUNT_PERCENT)
-                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.CEILING);
             }
             if (employeeDiscount.compareTo(afterTier) > 0) {
                 employeeDiscount = afterTier;
@@ -225,11 +228,15 @@ public class OrderService {
         }
 
         BigDecimal discount = tierDiscount.add(employeeDiscount);
-        BigDecimal taxRatePercent = resolveTaxRatePercent(
-                resolveTaxProvinceForCheckout(customer, address, bakery));
+        BigDecimal taxRatePercent = TAX_RATE_PERCENT;
         BigDecimal taxAmount = total.multiply(taxRatePercent)
-                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-        BigDecimal grandTotal = total.add(taxAmount);
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.CEILING);
+        BigDecimal deliveryFee = BigDecimal.ZERO;
+        if (OrderMethod.delivery.equals(req.getOrderMethod())
+                && total.compareTo(DELIVERY_FREE_THRESHOLD) < 0) {
+            deliveryFee = DELIVERY_FEE;
+        }
+        BigDecimal grandTotal = total.add(taxAmount).add(deliveryFee);
 
         Order order = new Order();
         order.setOrderNumber("ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
@@ -316,7 +323,7 @@ public class OrderService {
             recommendationService.evictRecommendations(customer.getId());
         }
 
-        return new CheckoutSessionResponse(order.getId(), order.getOrderNumber(), clientSecret, paymentIntentId);
+        return new CheckoutSessionResponse(order.getId(), order.getOrderNumber(), clientSecret, paymentIntentId, total, discount, deliveryFee, taxAmount, grandTotal);
     }
 
     /**
