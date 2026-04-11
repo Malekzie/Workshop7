@@ -48,9 +48,15 @@
 <!-- Location cards -->
 <div class="mx-auto max-w-5xl space-y-12 px-6 py-14">
 	{#if loading}
+		<div class="mb-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+			<div
+				class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"
+			></div>
+			Loading locations...
+		</div>
 		<div class="space-y-8">
-			{#each Array(2) as _, i (i)}
-				<Skeleton class="h-64 w-full rounded-2xl" />
+			{#each Array(3) as _, i (i)}
+				<Skeleton class="h-80 w-full rounded-2xl" />
 			{/each}
 		</div>
 	{:else if bakeries.length === 0}
@@ -99,12 +105,6 @@
 									>
 								</div>
 							</div>
-
-							<span
-								class="self-start rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground capitalize"
-							>
-								{bakery.status}
-							</span>
 						</div>
 					</div>
 

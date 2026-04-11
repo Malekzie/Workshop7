@@ -51,18 +51,14 @@
 		</a>
 
 		<!-- Desktop Nav -->
-		<div class="hidden items-center gap-8 md:flex">
-			<!-- Menu -->
-			<div class="relative">
-				<button
-					class="flex items-center gap-1 text-sm font-medium text-foreground transition-colors hover:cursor-pointer hover:text-primary"
-					aria-expanded={categoryOpen}
-					onclick={handleMenuClick}
-				>
-					Menu
-				</button>
-			</div>
-
+		<div class="hidden items-center gap-12 md:flex">
+			<button
+				class="flex items-center gap-1 text-sm font-medium text-foreground transition-colors hover:cursor-pointer hover:text-primary"
+				aria-expanded={categoryOpen}
+				onclick={handleMenuClick}
+			>
+				Menu
+			</button>
 			<a
 				href={resolve('/about')}
 				class="text-sm font-medium text-foreground transition-colors hover:text-primary">About</a
@@ -75,7 +71,7 @@
 		</div>
 
 		<!-- Right icons -->
-		<div class="hidden items-center gap-4 md:flex">
+		<div class="hidden items-center gap-6 md:flex">
 			<button
 				onclick={handleProfileClick}
 				aria-label="Account"
