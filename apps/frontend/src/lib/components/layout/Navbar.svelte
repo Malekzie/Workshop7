@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { ShoppingCart, User, Menu, X } from '@lucide/svelte';
 	import { isLoggedIn, user } from '$lib/stores/authStore';
+	import { page } from '$app/state';
 
 	interface Props {
 		cartCount?: number;
@@ -53,7 +54,8 @@
 		<!-- Desktop Nav -->
 		<div class="hidden items-center gap-12 md:flex">
 			<button
-				class="flex items-center gap-1 text-sm font-medium text-foreground transition-colors hover:cursor-pointer hover:text-primary"
+				class="flex items-center gap-1 text-sm font-medium transition-colors hover:cursor-pointer hover:text-primary
+        {page.url.pathname === '/menu' ? 'text-primary' : 'text-foreground'}"
 				aria-expanded={categoryOpen}
 				onclick={handleMenuClick}
 			>
@@ -61,12 +63,13 @@
 			</button>
 			<a
 				href={resolve('/about')}
-				class="text-sm font-medium text-foreground transition-colors hover:text-primary">About</a
+				class="text-sm font-medium transition-colors hover:text-primary
+        {page.url.pathname === '/about' ? 'text-primary' : 'text-foreground'}">About</a
 			>
 			<a
 				href={resolve('/locations')}
-				class="text-sm font-medium text-foreground transition-colors hover:text-primary"
-				>Locations</a
+				class="text-sm font-medium transition-colors hover:text-primary
+        {page.url.pathname === '/locations' ? 'text-primary' : 'text-foreground'}">Locations</a
 			>
 		</div>
 
@@ -75,14 +78,18 @@
 			<button
 				onclick={handleProfileClick}
 				aria-label="Account"
-				class="text-foreground transition-colors hover:cursor-pointer hover:text-primary"
+				class="transition-colors hover:cursor-pointer hover:text-primary
+        {page.url.pathname.startsWith('/profile') || page.url.pathname.startsWith('/staff')
+					? 'text-primary'
+					: 'text-foreground'}"
 			>
 				<User size={20} />
 			</button>
 			<button
 				onclick={handleCartClick}
 				aria-label="Cart ({cartCount} items)"
-				class="relative text-foreground transition-colors hover:text-primary"
+				class="relative transition-colors hover:text-primary
+        {page.url.pathname === '/cart' ? 'text-primary' : 'text-foreground'}"
 			>
 				<ShoppingCart size={20} />
 				{#if cartCount > 0}
@@ -114,26 +121,36 @@
 		<div class="flex flex-col gap-4 border-t border-border bg-background px-6 py-4 md:hidden">
 			<a
 				href={resolve('/menu')}
-				class="text-xs font-semibold tracking-widest text-foreground uppercase">Menu</a
+				class="text-xs font-semibold tracking-widest uppercase transition-colors
+        {page.url.pathname === '/menu' ? 'text-primary' : 'text-foreground'}">Menu</a
 			>
-
-			<hr class="border-border" />
-			<a href={resolve('/about')} class="text-sm text-foreground hover:text-primary">About</a>
-
-			<a href={resolve('/locations')} class="text-sm text-foreground hover:text-primary"
-				>Locations</a
+			<a
+				href={resolve('/about')}
+				class="text-sm transition-colors hover:text-primary
+        {page.url.pathname === '/about' ? 'text-primary' : 'text-foreground'}">About</a
+			>
+			<a
+				href={resolve('/locations')}
+				class="text-sm transition-colors hover:text-primary
+        {page.url.pathname === '/locations' ? 'text-primary' : 'text-foreground'}">Locations</a
 			>
 
 			<div class="flex gap-4 pt-2">
 				<button
 					onclick={handleProfileClick}
 					aria-label="Account"
-					class="text-foreground hover:text-primary"><User size={20} /></button
+					class="transition-colors hover:text-primary
+        {page.url.pathname.startsWith('/profile') || page.url.pathname.startsWith('/staff')
+						? 'text-primary'
+						: 'text-foreground'}"
 				>
+					<User size={20} />
+				</button>
 				<button
 					onclick={handleCartClick}
 					aria-label="Cart ({cartCount} items)"
-					class="relative text-foreground hover:text-primary"
+					class="relative transition-colors hover:text-primary
+        {page.url.pathname === '/cart' ? 'text-primary' : 'text-foreground'}"
 				>
 					<ShoppingCart size={20} />
 					{#if cartCount > 0}
