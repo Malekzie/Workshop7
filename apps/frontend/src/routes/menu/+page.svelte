@@ -66,7 +66,9 @@
 
 			const tagParam = $page.url.searchParams.get('tag');
 			if (tagParam && tags.some((t) => String(t.id) === tagParam)) {
-				activeTagId = tags.find((t) => String(t.id) === tagParam)?.id ?? null;
+				const byId = tags.find((t) => String(t.id) === tagParam);
+				const byName = tags.find((t) => t.name.toLowerCase() === tagParam.toLowerCase());
+				activeTagId = (byId ?? byName)?.id ?? null;
 			}
 
 			const searchParam = $page.url.searchParams.get('search');
