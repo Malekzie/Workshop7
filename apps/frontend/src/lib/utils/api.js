@@ -8,13 +8,13 @@ export async function apiFetch(url, options = {}) {
 	});
 
 	if (res.status === 401) {
-		const wasLoggedIn = !!get(user);
+		const body = await res.json().catch(() => ({}));
 		clearAuth();
-		if (wasLoggedIn) {
-			try {
-				await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' });
-			} catch {}
+		await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' });
+		if (body.reason === 'deactivated') {
 			window.location.href = '/deactivated';
+		} else if (body.reason === 'expired') {
+			window.location.href = '/login?reason=expired';
 		} else {
 			window.location.href = '/login';
 		}
