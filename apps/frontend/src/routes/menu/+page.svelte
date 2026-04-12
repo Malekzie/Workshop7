@@ -11,7 +11,10 @@
 	import { Search, X, ShoppingBag, Plus, Minus, Check } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { getProductReviews } from '$lib/services/review';
+	import { getProductReviews, createProductReview } from '$lib/services/review';
+	import { user } from '$lib/stores/authStore';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 
 	let activeTagId = $state(null);
 	let searchQuery = $state('');
@@ -20,6 +23,15 @@
 	let loading = $state(true);
 	let productReviews = $state([]);
 	let reviewsLoading = $state(false);
+
+	let reviewModal = $state(false);
+	let reviewRating = $state(0);
+	let reviewComment = $state('');
+	let reviewGuestName = $state('');
+	let reviewSubmitting = $state(false);
+	let reviewError = $state(null);
+	let reviewSuccess = $state(false);
+	let showAllReviews = $state(false);
 
 	// Sheet state
 	let sheetOpen = $state(false);
@@ -34,6 +46,7 @@
 		sheetOpen = true;
 		productReviews = [];
 		reviewsLoading = true;
+		showAllReviews = false;
 
 		try {
 			productReviews = await getProductReviews(product.id);
@@ -41,6 +54,52 @@
 			productReviews = [];
 		} finally {
 			reviewsLoading = false;
+		}
+	}
+
+	function openReviewModal() {
+		reviewRating = 0;
+		reviewComment = '';
+		reviewGuestName = '';
+		reviewError = null;
+		reviewSuccess = false;
+		reviewModal = true;
+		sheetOpen = false;
+	}
+
+	function closeReviewModal() {
+		reviewModal = false;
+	}
+
+	async function submitProductReview() {
+		if (reviewRating === 0) {
+			reviewError = 'Please select a star rating.';
+			return;
+		}
+		reviewSubmitting = true;
+		reviewError = null;
+		try {
+			const submitted = await createProductReview(
+				selectedProduct.id,
+				reviewRating,
+				reviewComment,
+				null,
+				reviewGuestName || null
+			);
+			const status = (submitted?.status ?? '').toLowerCase();
+			if (status === 'rejected') {
+				reviewError = submitted?.moderationMessage
+					? `Couldn't post review: ${submitted.moderationMessage}`
+					: "We couldn't post that review. Try different wording.";
+			} else {
+				reviewSuccess = true;
+				productReviews = await getProductReviews(selectedProduct.id);
+				setTimeout(() => closeReviewModal(), 1500);
+			}
+		} catch (e) {
+			reviewError = e.message ?? 'Failed to submit review.';
+		} finally {
+			reviewSubmitting = false;
 		}
 	}
 
@@ -326,10 +385,20 @@
 						<p class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
 							Customer Reviews
 						</p>
-						{#each productReviews as review (review.id)}
+						{#each showAllReviews ? productReviews : productReviews.slice(0, 3) as review (review.id)}
 							<div class="rounded-lg bg-muted/50 px-3 py-2">
 								<div class="flex items-center justify-between">
-									<p class="text-xs font-semibold text-foreground">{review.reviewerDisplayName}</p>
+									<div class="flex items-center gap-2">
+										<p class="text-xs font-semibold text-foreground">
+											{review.reviewerDisplayName}
+										</p>
+										{#if review.verifiedPurchase}
+											<span
+												class="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700"
+												>✓ Verified</span
+											>
+										{/if}
+									</div>
 									<p class="text-xs text-yellow-500">
 										{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
 									</p>
@@ -339,9 +408,25 @@
 								{/if}
 							</div>
 						{/each}
+						{#if productReviews.length > 3}
+							<button
+								onclick={() => (showAllReviews = !showAllReviews)}
+								class="text-xs font-semibold text-[#C25F1A] hover:underline"
+							>
+								{showAllReviews ? 'Show less' : `See all ${productReviews.length} reviews`}
+							</button>
+						{/if}
 					</div>
-					<Separator />
 				{/if}
+
+				<button
+					onclick={openReviewModal}
+					class="text-sm font-semibold text-[#C25F1A] hover:underline"
+				>
+					Leave a Review
+				</button>
+
+				<Separator />
 
 				<!-- Quantity -->
 				<div class="flex flex-col gap-2">
@@ -388,6 +473,64 @@
 		{/if}
 	</SheetContent>
 </Sheet>
+
+{#if reviewModal}
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+		<div class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
+			<h2 class="text-lg font-bold text-foreground">Review {selectedProduct?.name}</h2>
+
+			<div class="mt-4 flex gap-2">
+				{#each [1, 2, 3, 4, 5] as star (star)}
+					<button
+						onclick={() => (reviewRating = star)}
+						class="text-2xl transition-transform hover:scale-110 {reviewRating >= star
+							? 'text-yellow-400'
+							: 'text-muted-foreground/30'}">★</button
+					>
+				{/each}
+			</div>
+
+			{#if !$user}
+				<input
+					type="text"
+					placeholder="Your name (optional)"
+					bind:value={reviewGuestName}
+					class="mt-4 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#C25F1A]"
+				/>
+			{/if}
+
+			<textarea
+				bind:value={reviewComment}
+				placeholder="Leave a comment (optional)"
+				rows="3"
+				disabled={reviewSubmitting}
+				class="mt-3 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#C25F1A]"
+			></textarea>
+
+			{#if reviewError}
+				<p class="mt-2 text-xs text-destructive">{reviewError}</p>
+			{/if}
+			{#if reviewSuccess}
+				<p class="mt-2 text-xs text-green-600">✓ Thanks! Your review was posted.</p>
+			{/if}
+
+			<div class="mt-4 flex justify-end gap-3">
+				<button
+					onclick={closeReviewModal}
+					disabled={reviewSubmitting}
+					class="rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
+					>Cancel</button
+				>
+				<button
+					onclick={submitProductReview}
+					disabled={reviewSubmitting || reviewSuccess}
+					class="rounded-full bg-[#C25F1A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#C25F1A]/90 disabled:opacity-50"
+					>{reviewSubmitting ? 'Submitting...' : 'Submit'}</button
+				>
+			</div>
+		</div>
+	</div>
+{/if}
 
 <style>
 	.product-card {
