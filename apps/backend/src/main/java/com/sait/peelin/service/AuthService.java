@@ -82,9 +82,6 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "username or email required");
         }
 
-        User user = Optional.ofNullable(userLookupCacheService.findActiveByLoginIdentifier(email))
-                .orElseThrow();
-
         List<User> candidates = userRepository.findAllActiveByLoginPrincipal(email);
         List<User> passwordMatches = new ArrayList<>();
         for (User u : candidates) {
@@ -98,7 +95,7 @@ public class AuthService {
             throw new BadCredentialsException("Bad credentials");
         }
         if (passwordMatches.size() == 1) {
-            user = passwordMatches.getFirst();
+            User user = passwordMatches.getFirst();
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(user.getUsername(), rawPassword));
             return buildAuthResponse(user, mintJwtForUser(user));
