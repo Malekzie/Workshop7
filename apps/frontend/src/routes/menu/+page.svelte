@@ -133,6 +133,30 @@
 				</button>
 			{/if}
 		</div>
+
+		<!-- Mobile tag strip -->
+		<div class="mt-4 flex gap-2 overflow-x-auto pb-1 md:hidden" style="scrollbar-width: none;">
+			<button
+				onclick={() => (activeTagId = null)}
+				class="shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors
+            {activeTagId === null
+					? 'bg-[#C25F1A] text-white'
+					: 'border border-border bg-white text-foreground/70 hover:text-foreground'}"
+			>
+				All
+			</button>
+			{#each tags as tag (tag.id)}
+				<button
+					onclick={() => (activeTagId = tag.id)}
+					class="shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors
+                {activeTagId === tag.id
+						? 'bg-[#C25F1A] text-white'
+						: 'border border-border bg-white text-foreground/70 hover:text-foreground'}"
+				>
+					{tag.name}
+				</button>
+			{/each}
+		</div>
 	</header>
 
 	<!-- Body -->
@@ -194,7 +218,7 @@
 			{/if}
 
 			{#if loading}
-				<div class="grid grid-cols-2 gap-5 lg:grid-cols-3">
+				<div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
 					{#each Array.from({ length: 6 }), i (i)}
 						<div class="flex flex-col overflow-hidden rounded-xl border border-border bg-white">
 							<Skeleton class="h-48 w-full rounded-none" />
@@ -228,7 +252,7 @@
 					</button>
 				</div>
 			{:else}
-				<div class="grid grid-cols-2 gap-5 lg:grid-cols-3">
+				<div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
 					{#each filtered as product, i (product.id)}
 						<div class="product-card" style="animation-delay: {Math.min(i * 50, 350)}ms">
 							<ProductCard {product} onselect={openSheet} />

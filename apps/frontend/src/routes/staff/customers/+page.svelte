@@ -130,15 +130,15 @@
 						<p class="px-6 py-8 text-center text-sm text-muted-foreground">No customers found</p>
 					{:else}
 						{#each filteredCustomers as c (c.id)}
-							<div class="flex items-center justify-between px-5 py-3">
-								<div>
-									<p class="text-sm font-medium text-foreground">
+							<div class="flex items-center justify-between gap-3 px-5 py-3">
+								<div class="min-w-0">
+									<p class="truncate text-sm font-medium text-foreground">
 										{c.firstName ?? ''}
 										{c.lastName ?? ''}
 									</p>
-									<p class="text-xs text-muted-foreground">{c.email ?? '—'}</p>
+									<p class="truncate text-xs text-muted-foreground">{c.email ?? '—'}</p>
 								</div>
-								<div class="flex items-center gap-3">
+								<div class="flex shrink-0 items-center gap-3">
 									{#if c.photoApprovalPending}
 										<Badge variant="destructive" class="text-xs">Photo pending</Badge>
 									{/if}
@@ -162,7 +162,7 @@
 			<div class="space-y-3">
 				{#each pendingPhotos as c (c.id)}
 					<div
-						class="flex items-center justify-between rounded-xl border border-border bg-card px-5 py-4"
+						class="flex flex-col gap-3 rounded-xl border border-border bg-card px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
 					>
 						<div class="flex items-center gap-4">
 							{#if c.profilePhotoPath}

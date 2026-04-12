@@ -103,7 +103,7 @@
 			<p class="text-sm text-destructive">Customer not found.</p>
 		{:else}
 			<div class="space-y-4 rounded-xl border border-border bg-card p-6">
-				<div class="flex items-start justify-between">
+				<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 					<h1 class="text-xl font-bold text-foreground">
 						{customer.firstName ?? ''}
 						{customer.lastName ?? ''}
@@ -130,7 +130,7 @@
 							handleSave();
 						}}
 					>
-						<div class="grid grid-cols-2 gap-3">
+						<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 							<Input bind:value={draft.firstName} placeholder="First name" />
 							<Input bind:value={draft.lastName} placeholder="Last name" />
 							<Input bind:value={draft.phone} placeholder="Phone" />
@@ -155,7 +155,7 @@
 					</form>
 				{:else}
 					<Separator />
-					<dl class="grid grid-cols-2 gap-4 text-sm">
+					<dl class="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
 						<div>
 							<dt class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
 								Email

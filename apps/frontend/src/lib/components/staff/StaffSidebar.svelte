@@ -43,6 +43,34 @@
 	}
 </script>
 
+<!-- Mobile top nav -->
+<nav
+	class="flex items-center gap-1 overflow-x-auto border-b border-border bg-card px-4 py-2 md:hidden"
+	style="scrollbar-width: none;"
+>
+	{#each navLinks as link (link.href)}
+		{@const active =
+			page.url.pathname === link.href || page.url.pathname.startsWith(link.href + '/')}
+		<a
+			href={resolve(link.href)}
+			class="flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors
+				{active
+				? 'bg-primary text-primary-foreground'
+				: 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+		>
+			<link.icon class="h-4 w-4 shrink-0" />
+			{link.label}
+		</a>
+	{/each}
+	<button
+		onclick={handleLogout}
+		class="flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
+	>
+		<LogOut class="h-4 w-4 shrink-0" />
+		Log out
+	</button>
+</nav>
+
 <aside
 	class="hidden h-full w-64 shrink-0 flex-col overflow-y-auto border-r border-border bg-card md:flex"
 >
