@@ -24,7 +24,7 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
     );
 
     /** Product-only reviews: {@code order} is null (excludes post-order / location reviews that reuse line-item product). */
-    @Query("SELECT AVG(r.reviewRating) FROM Review r WHERE r.product.id = :productId AND r.reviewStatus = 'approved' AND r.order IS NULL")
+    @Query("SELECT AVG(r.reviewRating) FROM Review r WHERE r.product.id = :productId AND r.reviewStatus = 'approved'")
     Optional<Double> averageRatingForProduct(@Param("productId") Integer productId);
 
     /** Location / service reviews only: tied to an order. Excludes product-detail reviews for the same bakery. */
@@ -38,6 +38,13 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
             Integer productId,
             ReviewStatus reviewStatus
     );
+
+    List<Review> findByProduct_IdAndReviewStatus(Integer productId, ReviewStatus status);
+
+
+
+    boolean existsByCustomer_IdAndProduct_IdAndOrder_IdAndReviewStatusIn(
+            UUID customerId, Integer productId, UUID orderId, List<ReviewStatus> statuses);
 
     boolean existsByOrder_IdAndCustomer_IdAndReviewStatus(UUID orderId, UUID customerId, ReviewStatus reviewStatus);
 

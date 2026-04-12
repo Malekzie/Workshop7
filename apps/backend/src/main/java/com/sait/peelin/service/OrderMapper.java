@@ -97,8 +97,18 @@ public final class OrderMapper {
     private static OrderItemDto itemDto(OrderItem i, UUID customerId, ReviewRepository reviewRepository) {
         boolean productReviewSubmitted = false;
         Integer productId = i.getProduct() != null ? i.getProduct().getId() : null;
+        UUID orderId = i.getOrder() != null ? i.getOrder().getId() : null;
         if (customerId != null && productId != null && reviewRepository != null) {
-            productReviewSubmitted = reviewRepository.existsByCustomer_IdAndProduct_IdAndOrderIsNull(customerId, productId);
+            if (orderId != null) {
+                productReviewSubmitted = reviewRepository.existsByCustomer_IdAndProduct_IdAndOrder_IdAndReviewStatusIn(
+                        customerId, productId, orderId, List.of(
+                                com.sait.peelin.model.ReviewStatus.approved,
+                                com.sait.peelin.model.ReviewStatus.pending,
+                                com.sait.peelin.model.ReviewStatus.rejected
+                        ));
+            } else {
+                productReviewSubmitted = reviewRepository.existsByCustomer_IdAndProduct_IdAndOrderIsNull(customerId, productId);
+            }
         }
         return new OrderItemDto(
                 i.getId(),

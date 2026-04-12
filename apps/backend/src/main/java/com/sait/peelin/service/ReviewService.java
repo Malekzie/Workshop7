@@ -49,7 +49,7 @@ public class ReviewService {
     @Transactional(readOnly = true)
     @Cacheable(value = "reviews", key = "'product:' + #productId")
     public List<ReviewDto> forProduct(Integer productId) {
-        return reviewRepository.findByProduct_IdAndReviewStatusAndOrderIsNull(productId, ReviewStatus.approved)
+        return reviewRepository.findByProduct_IdAndReviewStatus(productId, ReviewStatus.approved)
                 .stream()
                 .map(this::toDto)
                 .toList();
@@ -102,9 +102,18 @@ public class ReviewService {
         if (!orderItemRepository.existsPurchasedByCustomer(customer.getId(), productId)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You can only review products you have purchased");
         }
-        if (reviewRepository.existsByCustomer_IdAndProduct_IdAndOrderIsNullAndReviewStatusIn(
-                customer.getId(), productId, BLOCKING_REVIEW_STATUSES)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "You already submitted a review for this product");
+
+        UUID orderId = req.getOrderId();
+        if (orderId != null) {
+            if (reviewRepository.existsByCustomer_IdAndProduct_IdAndOrder_IdAndReviewStatusIn(
+                    customer.getId(), productId, orderId, BLOCKING_REVIEW_STATUSES)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "You already reviewed this product for this order");
+            }
+        } else {
+            if (reviewRepository.existsByCustomer_IdAndProduct_IdAndOrderIsNullAndReviewStatusIn(
+                    customer.getId(), productId, BLOCKING_REVIEW_STATUSES)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "You already submitted a review for this product");
+            }
         }
 
         Bakery bakery = resolveBakeryForProductReview(customer.getId(), productId);
@@ -127,6 +136,11 @@ public class ReviewService {
         r.setBakery(bakery);
         r.setReviewStatus(ReviewStatus.approved);
         r.setReviewApprovalDate(OffsetDateTime.now());
+
+        if (orderId != null) {
+            Order order = orderRepository.findById(orderId).orElse(null);
+            r.setOrder(order);
+        }
 
         Review saved = saveReviewOrConflict(r, "You already submitted a review for this product");
         return toDto(saved);

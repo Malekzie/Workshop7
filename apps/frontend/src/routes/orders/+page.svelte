@@ -181,7 +181,12 @@
 				}
 				submitted = await createOrderReview(activeModal.orderId, reviewRating, reviewComment);
 			} else {
-				submitted = await createProductReview(activeModal.productId, reviewRating, reviewComment);
+				submitted = await createProductReview(
+					activeModal.productId,
+					reviewRating,
+					reviewComment,
+					activeModal.orderId
+				);
 			}
 
 			const st = (submitted?.status ?? '').toLowerCase();
@@ -406,12 +411,18 @@
 									{/if}
 
 									{#if orderHasAnyReviewableSlot(order)}
-										<div class="mt-4 border-t border-border pt-4">
+										<div class="mt-4 flex items-center gap-3 border-t border-border pt-4">
 											<button
 												onclick={() => openReviewPicker(order)}
 												class="rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
 											>
 												Leave a Review
+											</button>
+											<button
+												onclick={() => toggle(order.id)}
+												class="rounded-full bg-[#C25F1A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#C25F1A]/90"
+											>
+												Done
 											</button>
 										</div>
 									{/if}
