@@ -46,9 +46,7 @@
 					class="shrink-0 text-emerald-900 dark:text-emerald-200"
 					aria-hidden="true"
 				>
-					<path
-						d="M12 2l2.4 7.4h7.6l-6 4.6 2.3 7-6.3-4.6-6.3 4.6 2.3-7-6-4.6h7.6L12 2z"
-					/>
+					<path d="M12 2l2.4 7.4h7.6l-6 4.6 2.3 7-6.3-4.6-6.3 4.6 2.3-7-6-4.6h7.6L12 2z" />
 				</svg>
 				<span class="text-sm font-bold tracking-tight text-emerald-950 dark:text-emerald-50"
 					>AI-powered recommendations</span
@@ -64,19 +62,23 @@
 			</p>
 
 			{#if loading}
-				<div class="-mx-1 flex gap-3 overflow-x-auto pb-2 [scrollbar-width:thin]">
+				<div class="flex flex-col gap-2">
 					{#each Array(4) as _, i (i)}
 						<Skeleton
-							class="h-28 min-w-[148px] shrink-0 rounded-xl border border-emerald-300/70 bg-emerald-200/50 dark:border-emerald-700/50 dark:bg-emerald-900/40"
+							class="h-10 w-full rounded-xl border border-emerald-300/70 bg-emerald-200/50 dark:border-emerald-700/50 dark:bg-emerald-900/40"
 						/>
 					{/each}
 				</div>
 			{:else if error}
-				<p class="rounded-xl border border-emerald-400/50 bg-white/70 px-3 py-4 text-sm text-emerald-950/85 dark:border-emerald-700/50 dark:bg-emerald-900/35 dark:text-emerald-100/85">
+				<p
+					class="rounded-xl border border-emerald-400/50 bg-white/70 px-3 py-4 text-sm text-emerald-950/85 dark:border-emerald-700/50 dark:bg-emerald-900/35 dark:text-emerald-100/85"
+				>
 					Could not load recommendations.
 				</p>
 			{:else if needsPreferences}
-				<p class="rounded-xl border border-emerald-400/50 bg-white/70 px-3 py-4 text-sm text-emerald-950/90 dark:border-emerald-700/50 dark:bg-emerald-900/35 dark:text-emerald-100/90">
+				<p
+					class="rounded-xl border border-emerald-400/50 bg-white/70 px-3 py-4 text-sm text-emerald-950/90 dark:border-emerald-700/50 dark:bg-emerald-900/35 dark:text-emerald-100/90"
+				>
 					Set your taste preferences first, then we can suggest products tailored to you.
 				</p>
 				<Button
@@ -87,37 +89,33 @@
 					Edit preferences
 				</Button>
 			{:else if recommendations.length === 0}
-				<p class="rounded-xl border border-emerald-400/50 bg-white/70 px-3 py-4 text-sm text-emerald-950/90 dark:border-emerald-700/50 dark:bg-emerald-900/35 dark:text-emerald-100/90">
+				<p
+					class="rounded-xl border border-emerald-400/50 bg-white/70 px-3 py-4 text-sm text-emerald-950/90 dark:border-emerald-700/50 dark:bg-emerald-900/35 dark:text-emerald-100/90"
+				>
 					No recommendations yet. Order something to get started!
 				</p>
 			{:else}
-				<div
-					class="-mx-1 flex gap-3 overflow-x-auto pb-2 [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-500/50"
-				>
+				<div class="flex flex-col gap-2">
 					{#each recommendations as rec (rec.productId)}
 						<a
 							href={resolve(`/menu?search=${encodeURIComponent(rec.productName ?? '')}`)}
-							class="group flex min-w-[148px] max-w-[180px] shrink-0 flex-col justify-between rounded-xl border border-emerald-500/70 bg-emerald-50/95 p-3 shadow-sm transition hover:border-emerald-600 hover:shadow-md dark:border-emerald-600/55 dark:bg-emerald-900/40 dark:hover:border-emerald-500"
+							class="group flex w-full items-center justify-between rounded-xl border border-emerald-500/70 bg-emerald-50/95 px-4 py-3 shadow-sm transition hover:border-emerald-600 hover:shadow-md dark:border-emerald-600/55 dark:bg-emerald-900/40 dark:hover:border-emerald-500"
 						>
-							<p
-								class="text-sm font-semibold leading-snug text-emerald-950 dark:text-emerald-50"
-							>
+							<p class="text-sm leading-snug font-semibold text-emerald-950 dark:text-emerald-50">
 								{rec.productName}
 							</p>
-							<div class="mt-3 flex items-center justify-end">
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									width="14"
-									height="14"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-									class="text-emerald-600 opacity-75 transition-opacity group-hover:opacity-100 dark:text-emerald-400"
-								>
-									<path d="M5 12h14M12 5l7 7-7 7" />
-								</svg>
-							</div>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="14"
+								height="14"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								class="shrink-0 text-emerald-600 opacity-75 transition-opacity group-hover:opacity-100 dark:text-emerald-400"
+							>
+								<path d="M5 12h14M12 5l7 7-7 7" />
+							</svg>
 						</a>
 					{/each}
 				</div>
@@ -139,9 +137,7 @@
 				>
 					Disclaimer
 				</p>
-				<p
-					class="mt-1 text-[10px] leading-snug text-emerald-800/90 dark:text-emerald-300/85"
-				>
+				<p class="mt-1 text-[10px] leading-snug text-emerald-800/90 dark:text-emerald-300/85">
 					Suggestions use AI and may be inaccurate. Not dietary or medical advice.
 				</p>
 			</div>
