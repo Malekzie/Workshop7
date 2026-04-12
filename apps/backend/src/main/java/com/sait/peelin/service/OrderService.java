@@ -455,7 +455,9 @@ public class OrderService {
         if (bakeryAddr != null && hasProvince(bakeryAddr)) {
             return bakeryAddr.getAddressProvince();
         }
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Province is required for tax calculation");
+        // Default to Alberta when no province is determinable (staff-created orders, incomplete data)
+        log.warn("No province found for order (customer={}, bakery={}); defaulting to AB", customer.getId(), bakery.getId());
+        return "AB";
     }
 
     private static boolean hasProvince(Address address) {
