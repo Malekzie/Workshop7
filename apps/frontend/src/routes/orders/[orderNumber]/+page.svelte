@@ -67,7 +67,9 @@
 	fetchOrder();
 
 	function statusIndex(status: string): number {
-		return STATUS_STEPS.indexOf(status);
+		const i = STATUS_STEPS.indexOf(status);
+		// Unknown / legacy values: show from first step so UI still makes sense
+		return i < 0 ? 0 : i;
 	}
 
 	function isCancelled(status: string): boolean {
@@ -108,29 +110,48 @@
 			</div>
 
 			{#if !isCancelled(order.status)}
-				<div class="flex items-center gap-0 overflow-x-auto pb-2">
-					{#each STATUS_STEPS as step, i (i)}
-						{@const active = i <= statusIndex(order.status)}
-						<div class="flex flex-shrink-0 flex-col items-center">
+				{@const idx = statusIndex(order.status)}
+				<!-- Horizontal: equal flex columns + thin connectors so the row fits without horizontal scroll -->
+				<div class="mt-2 w-full min-w-0" role="list" aria-label="Order status progress">
+					<div class="flex w-full min-w-0 items-start">
+						{#each STATUS_STEPS as step, i (i)}
+							{@const active = i <= idx}
+							{@const current = i === idx}
 							<div
-								class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold transition-colors {active
-									? 'bg-primary text-primary-foreground'
-									: 'bg-muted text-muted-foreground'}"
+								class="flex min-w-0 flex-1 basis-0 flex-col items-center gap-0.5 px-0.5"
+								role="listitem"
 							>
-								{i + 1}
+								<div
+									class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold transition-colors sm:h-6 sm:w-6 sm:text-[10px] {active
+										? 'bg-primary text-primary-foreground'
+										: 'bg-muted text-muted-foreground'}"
+									aria-current={current ? 'step' : undefined}
+								>
+									{i + 1}
+								</div>
+								<p
+									title={statusLabel(step)}
+									class="w-full text-center text-[7px] leading-tight break-words text-balance hyphens-auto sm:text-[8px] {current
+										? 'font-semibold text-foreground'
+										: active
+											? 'font-medium text-foreground/85'
+											: 'text-muted-foreground'}"
+								>
+									{statusLabel(step)}
+								</p>
 							</div>
-							<p class="mt-1 w-16 text-center text-[10px] leading-tight text-muted-foreground">
-								{statusLabel(step)}
-							</p>
-						</div>
-						{#if i < STATUS_STEPS.length - 1}
-							<div
-								class="mb-5 h-0.5 min-w-4 flex-1 transition-colors {i < statusIndex(order.status)
-									? 'bg-primary'
-									: 'bg-border'}"
-							></div>
-						{/if}
-					{/each}
+							{#if i < STATUS_STEPS.length - 1}
+								<div
+									class="flex min-w-0 flex-1 basis-0 items-center self-stretch pt-[9px] sm:pt-[11px]"
+									aria-hidden="true"
+								>
+									<div
+										class="h-0.5 w-full min-w-[2px] rounded-full {i < idx ? 'bg-primary' : 'bg-border'}"
+									></div>
+								</div>
+							{/if}
+						{/each}
+					</div>
 				</div>
 			{:else}
 				<p class="text-sm font-semibold text-destructive capitalize">{statusLabel(order.status)}</p>

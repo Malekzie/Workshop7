@@ -46,10 +46,6 @@
 				href={resolve('/locations')}
 				class="text-sm text-foreground transition-colors hover:text-primary">Locations</a
 			>
-			<a
-				href={resolve('/support')}
-				class="text-sm text-foreground transition-colors hover:text-primary">Support</a
-			>
 		</div>
 
 		<!-- Contact -->
