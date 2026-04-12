@@ -41,6 +41,7 @@ public class ReviewService {
     private final CurrentUserService currentUserService;
     private final ReviewModerationService reviewModerationService;
     private final RewardTierRepository rewardTierRepository;
+    private final BakeryRepository bakeryRepository;
 
     @Transactional(readOnly = true)
     @Cacheable(value = "reviews", key = "'product:' + #productId")
@@ -96,10 +97,6 @@ public class ReviewService {
         if (isAuthenticated) {
             customer = customerRepository.findByUser_UserId(u.getUserId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile required"));
-
-            if (!orderItemRepository.existsPurchasedByCustomer(customer.getId(), productId)) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You can only review products you have purchased");
-            }
 
             UUID orderId = req.getOrderId();
             if (orderId != null) {
@@ -316,7 +313,10 @@ public class ReviewService {
             moderationMessage = shortenForClientMessage(r.getModerationRejectionReason().trim());
         }
 
-        boolean verifiedPurchase = r.getCustomer() != null && r.getCustomer().getUser() != null;
+        boolean verifiedAccount = r.getCustomer() != null && r.getCustomer().getUser() != null;
+        boolean verifiedPurchase = verifiedAccount
+                && r.getProduct() != null
+                && orderItemRepository.existsPurchasedByCustomer(r.getCustomer().getId(), r.getProduct().getId());
 
         return new ReviewDto(
                 r.getId(),
@@ -324,7 +324,7 @@ public class ReviewService {
                 r.getOrder() != null ? r.getOrder().getId() : null,
                 bakeryId,
                 bakeryName,
-                r.getProduct().getId(),
+                r.getProduct() != null ? r.getProduct().getId() : null,
                 r.getEmployee() != null ? r.getEmployee().getId() : null,
                 r.getReviewRating(),
                 r.getReviewComment(),
@@ -333,7 +333,8 @@ public class ReviewService {
                 r.getReviewApprovalDate(),
                 reviewerDisplayName(r.getCustomer()),
                 moderationMessage,
-                verifiedPurchase
+                verifiedPurchase,
+                verifiedAccount
         );
     }
 
@@ -425,5 +426,58 @@ public class ReviewService {
         guest.setCustomerPhone(com.sait.peelin.support.GuestContactFiller.allocateSyntheticPhoneDigits());
 
         return customerRepository.save(guest);
+    }
+
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "reviews", allEntries = true)
+    })
+    public ReviewDto createForBakery(Integer bakeryId, ReviewCreateRequest req) {
+        User u = currentUserService.currentUserOrNull();
+
+        Bakery bakery = bakeryRepository.findById(bakeryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Bakery not found"));
+
+        Customer customer;
+        boolean isAuthenticated = u != null && u.getUserRole() == UserRole.customer;
+
+        if (isAuthenticated) {
+            customer = customerRepository.findByUser_UserId(u.getUserId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile required"));
+        } else {
+            customer = resolveOrCreateAnonymousReviewer(req.getGuestName());
+        }
+
+        String comment = req.getComment();
+        if (StringUtils.hasText(comment)) {
+            var mod = reviewModerationService.moderateReview(comment, ReviewModerationService.ModerationKind.BAKERY_SERVICE);
+            if (!mod.approved()) {
+                Review rejected = new Review();
+                rejected.setCustomer(customer);
+                rejected.setBakery(bakery);
+                rejected.setOrder(null);
+                rejected.setProduct(null);
+                rejected.setReviewRating(req.getRating());
+                rejected.setReviewComment(req.getComment());
+                rejected.setReviewSubmittedDate(OffsetDateTime.now());
+                rejected.setReviewStatus(ReviewStatus.rejected);
+                rejected.setModerationRejectionReason(moderationReasonOrDefault(mod.reason()));
+                return toDto(reviewRepository.save(rejected));
+            }
+        }
+
+        Review r = new Review();
+        r.setCustomer(customer);
+        r.setBakery(bakery);
+        r.setOrder(null);
+        r.setProduct(null);
+        r.setReviewRating(req.getRating());
+        r.setReviewComment(req.getComment());
+        r.setReviewSubmittedDate(OffsetDateTime.now());
+        r.setReviewStatus(ReviewStatus.approved);
+        r.setReviewApprovalDate(OffsetDateTime.now());
+
+        Review saved = saveReviewOrConflict(r, "You already submitted a review for this bakery");
+        return toDto(saved);
     }
 }

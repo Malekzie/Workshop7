@@ -26,5 +26,6 @@ public record ReviewDto(
          * Rejected moderation outcomes are persisted for one-attempt review policy.
          */
         String moderationMessage,
-        boolean verifiedPurchase
+        boolean verifiedPurchase,
+        boolean verifiedAccount
 ) {}

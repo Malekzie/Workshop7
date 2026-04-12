@@ -392,10 +392,16 @@
 										<p class="text-xs font-semibold text-foreground">
 											{review.reviewerDisplayName}
 										</p>
+										{#if review.verifiedAccount}
+											<span
+												class="rounded-full bg-blue-100 px-1.5 py-0.5 text-[9px] font-semibold text-blue-700"
+												>✓ Verified</span
+											>
+										{/if}
 										{#if review.verifiedPurchase}
 											<span
-												class="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700"
-												>✓ Verified</span
+												class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold text-amber-700"
+												>✓ Purchased</span
 											>
 										{/if}
 									</div>
