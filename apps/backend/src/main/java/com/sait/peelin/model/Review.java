@@ -38,8 +38,7 @@ public class Review {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id")
     private Order order;
-
-    @NotNull
+    
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "bakery_id", nullable = false)
     private Bakery bakery;

@@ -5,12 +5,7 @@ import com.sait.peelin.dto.v1.ReviewDto;
 import com.sait.peelin.dto.v1.ReviewStatusPatchRequest;
 import com.sait.peelin.exception.ResourceNotFoundException;
 import com.sait.peelin.model.*;
-import com.sait.peelin.repository.CustomerRepository;
-import com.sait.peelin.repository.EmployeeRepository;
-import com.sait.peelin.repository.OrderRepository;
-import com.sait.peelin.repository.OrderItemRepository;
-import com.sait.peelin.repository.ProductRepository;
-import com.sait.peelin.repository.ReviewRepository;
+import com.sait.peelin.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -45,6 +40,7 @@ public class ReviewService {
     private final EmployeeRepository employeeRepository;
     private final CurrentUserService currentUserService;
     private final ReviewModerationService reviewModerationService;
+    private final RewardTierRepository rewardTierRepository;
 
     @Transactional(readOnly = true)
     @Cacheable(value = "reviews", key = "'product:' + #productId")
@@ -91,29 +87,35 @@ public class ReviewService {
             @CacheEvict(value = "orders", allEntries = true)
     })
     public ReviewDto create(Integer productId, ReviewCreateRequest req) {
-        User u = currentUserService.requireUser();
-        if (u.getUserRole() != UserRole.customer) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-        Customer customer = customerRepository.findByUser_UserId(u.getUserId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile required"));
-        Product product = productRepository.findById(productId).orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+        User u = currentUserService.currentUserOrNull();
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
-        if (!orderItemRepository.existsPurchasedByCustomer(customer.getId(), productId)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You can only review products you have purchased");
-        }
+        Customer customer;
+        boolean isAuthenticated = u != null && u.getUserRole() == UserRole.customer;
 
-        UUID orderId = req.getOrderId();
-        if (orderId != null) {
-            if (reviewRepository.existsByCustomer_IdAndProduct_IdAndOrder_IdAndReviewStatusIn(
-                    customer.getId(), productId, orderId, BLOCKING_REVIEW_STATUSES)) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "You already reviewed this product for this order");
+        if (isAuthenticated) {
+            customer = customerRepository.findByUser_UserId(u.getUserId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile required"));
+
+            if (!orderItemRepository.existsPurchasedByCustomer(customer.getId(), productId)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You can only review products you have purchased");
+            }
+
+            UUID orderId = req.getOrderId();
+            if (orderId != null) {
+                if (reviewRepository.existsByCustomer_IdAndProduct_IdAndOrder_IdAndReviewStatusIn(
+                        customer.getId(), productId, orderId, BLOCKING_REVIEW_STATUSES)) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "You already reviewed this product for this order");
+                }
+            } else {
+                if (reviewRepository.existsByCustomer_IdAndProduct_IdAndOrderIsNullAndReviewStatusIn(
+                        customer.getId(), productId, BLOCKING_REVIEW_STATUSES)) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "You already submitted a review for this product");
+                }
             }
         } else {
-            if (reviewRepository.existsByCustomer_IdAndProduct_IdAndOrderIsNullAndReviewStatusIn(
-                    customer.getId(), productId, BLOCKING_REVIEW_STATUSES)) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "You already submitted a review for this product");
-            }
+            customer = resolveOrCreateAnonymousReviewer(req.getGuestName());
         }
 
         Bakery bakery = resolveBakeryForProductReview(customer.getId(), productId);
@@ -137,8 +139,8 @@ public class ReviewService {
         r.setReviewStatus(ReviewStatus.approved);
         r.setReviewApprovalDate(OffsetDateTime.now());
 
-        if (orderId != null) {
-            Order order = orderRepository.findById(orderId).orElse(null);
+        if (isAuthenticated && req.getOrderId() != null) {
+            Order order = orderRepository.findById(req.getOrderId()).orElse(null);
             r.setOrder(order);
         }
 
@@ -315,6 +317,8 @@ public class ReviewService {
             moderationMessage = shortenForClientMessage(r.getModerationRejectionReason().trim());
         }
 
+        boolean verifiedPurchase = r.getCustomer() != null && r.getCustomer().getUser() != null;
+
         return new ReviewDto(
                 r.getId(),
                 r.getCustomer().getId(),
@@ -329,7 +333,8 @@ public class ReviewService {
                 r.getReviewSubmittedDate(),
                 r.getReviewApprovalDate(),
                 reviewerDisplayName(r.getCustomer()),
-                moderationMessage
+                moderationMessage,
+                verifiedPurchase
         );
     }
 
@@ -378,7 +383,7 @@ public class ReviewService {
                 return order.getBakery();
             }
         }
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No purchased bakery found for this product");
+        return null;
     }
 
     private static boolean hasFullName(Customer customer) {
@@ -395,5 +400,31 @@ public class ReviewService {
             return t;
         }
         return t.substring(0, MODERATION_MESSAGE_CLIENT_MAX_LEN - 1).trim() + "…";
+    }
+
+    private Customer resolveOrCreateAnonymousReviewer(String guestName) {
+        RewardTier lowestTier = rewardTierRepository.findFirstByOrderByRewardTierMinPointsAsc()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No reward tiers configured"));
+
+        Customer guest = new Customer();
+        guest.setRewardTier(lowestTier);
+        guest.setCustomerRewardBalance(0);
+        guest.setGuestExpiryDate(java.time.LocalDate.now().plusYears(1));
+
+        if (StringUtils.hasText(guestName)) {
+            String[] parts = guestName.trim().split("\\s+", 2);
+            guest.setCustomerFirstName(parts[0]);
+            if (parts.length > 1) {
+                guest.setCustomerLastName(parts[1]);
+            }
+        } else {
+            guest.setCustomerFirstName("Anonymous");
+        }
+
+        guest.setCustomerEmail(com.sait.peelin.support.GuestContactFiller.syntheticEmailForPhoneDigits(
+                com.sait.peelin.support.GuestContactFiller.allocateSyntheticPhoneDigits()));
+        guest.setCustomerPhone(com.sait.peelin.support.GuestContactFiller.allocateSyntheticPhoneDigits());
+
+        return customerRepository.save(guest);
     }
 }
