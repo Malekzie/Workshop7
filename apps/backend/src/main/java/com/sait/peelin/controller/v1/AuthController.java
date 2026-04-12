@@ -163,4 +163,10 @@ public class AuthController {
                 + "&userId=" + URLEncoder.encode(String.valueOf(auth.getUserId()), StandardCharsets.UTF_8);
         response.sendRedirect(frontendUrl + "/auth/callback?" + q);
     }
+
+    @GetMapping("/reset-password/validate")
+    public ResponseEntity<Void> validateResetToken(@RequestParam String token) {
+        passwordResetService.validateToken(token);
+        return ResponseEntity.ok().build();
+    }
 }
