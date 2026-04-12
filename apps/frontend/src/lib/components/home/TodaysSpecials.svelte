@@ -44,12 +44,12 @@
 	});
 </script>
 
-<section class="bg-[#F5EFE6] px-6 py-16">
+<section class="bg-muted/40 px-6 py-16">
 	<div class="mx-auto max-w-7xl">
-		<p class="mb-1 text-[11px] font-semibold tracking-[0.2em] text-[#C25F1A] uppercase">
+		<p class="mb-1 text-[11px] font-semibold tracking-[0.2em] text-primary uppercase">
 			Out of the oven
 		</p>
-		<h2 class="mb-2 text-3xl font-black tracking-tight text-[#2C1A0E]">Today's special</h2>
+		<h2 class="mb-2 text-3xl font-black tracking-tight text-foreground">Today's special</h2>
 		<p class="mb-8 text-sm text-muted-foreground">Our featured product for today's date.</p>
 
 		{#if loading}

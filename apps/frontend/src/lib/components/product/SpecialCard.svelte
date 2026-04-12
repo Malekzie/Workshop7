@@ -60,7 +60,7 @@
 			<button
 				onclick={addToCart}
 				class="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold text-primary-foreground transition-all duration-300
-					{added ? 'bg-[#8A9E7F]' : 'bg-primary hover:opacity-90'}"
+					{added ? 'bg-emerald-600' : 'bg-primary hover:opacity-90'}"
 			>
 				<ShoppingCart size={13} />
 				{added ? 'Added!' : 'Add to Order'}

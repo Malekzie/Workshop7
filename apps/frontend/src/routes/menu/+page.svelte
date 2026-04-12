@@ -169,13 +169,13 @@
 	const activeTagName = $derived(tags.find((t) => t.id === activeTagId)?.name ?? null);
 </script>
 
-<div class="min-h-screen bg-[#FAF7F2]">
+<div class="min-h-screen bg-background">
 	<!-- Page header -->
-	<header class="border-b border-border/60 bg-[#FAF7F2] px-6 pt-14 pb-10 text-center">
-		<p class="mb-3 text-[11px] font-semibold tracking-[0.2em] text-[#C25F1A] uppercase">
+	<header class="border-b border-border/60 bg-background px-6 pt-14 pb-10 text-center">
+		<p class="mb-3 text-[11px] font-semibold tracking-[0.2em] text-primary uppercase">
 			Peelin' Good Bakery
 		</p>
-		<h1 class="text-5xl font-black tracking-tight text-[#2C1A0E] sm:text-6xl">Our Menu</h1>
+		<h1 class="text-5xl font-black tracking-tight text-foreground sm:text-6xl">Our Menu</h1>
 		<p class="mt-3 text-sm text-muted-foreground">Fresh from the oven, crafted with care</p>
 
 		<!-- Search -->
@@ -187,7 +187,7 @@
 				type="text"
 				placeholder="Search breads, pastries, cakes..."
 				bind:value={searchQuery}
-				class="rounded-full bg-white pr-10 pl-10 shadow-sm focus-visible:ring-[#C25F1A]"
+				class="rounded-full bg-card pr-10 pl-10 shadow-sm focus-visible:ring-ring"
 			/>
 			{#if searchQuery}
 				<button
@@ -206,8 +206,8 @@
 				onclick={() => (activeTagId = null)}
 				class="shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors
             {activeTagId === null
-					? 'bg-[#C25F1A] text-white'
-					: 'border border-border bg-white text-foreground/70 hover:text-foreground'}"
+					? 'bg-primary text-primary-foreground'
+					: 'border border-border bg-card text-foreground/70 hover:text-foreground'}"
 			>
 				All
 			</button>
@@ -216,8 +216,8 @@
 					onclick={() => (activeTagId = tag.id)}
 					class="shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors
                 {activeTagId === tag.id
-						? 'bg-[#C25F1A] text-white'
-						: 'border border-border bg-white text-foreground/70 hover:text-foreground'}"
+						? 'bg-primary text-primary-foreground'
+						: 'border border-border bg-card text-foreground/70 hover:text-foreground'}"
 				>
 					{tag.name}
 				</button>
@@ -238,8 +238,8 @@
 						onclick={() => (activeTagId = null)}
 						class="rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors
 							{activeTagId === null
-							? 'bg-[#C25F1A] text-white'
-							: 'text-foreground/70 hover:bg-black/5 hover:text-foreground'}"
+							? 'bg-primary text-primary-foreground'
+							: 'text-foreground/70 hover:bg-muted hover:text-foreground'}"
 					>
 						All items
 					</button>
@@ -248,8 +248,8 @@
 							onclick={() => (activeTagId = tag.id)}
 							class="rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors
 								{activeTagId === tag.id
-								? 'bg-[#C25F1A] text-white'
-								: 'text-foreground/70 hover:bg-black/5 hover:text-foreground'}"
+								? 'bg-primary text-primary-foreground'
+								: 'text-foreground/70 hover:bg-muted hover:text-foreground'}"
 						>
 							{tag.name}
 						</button>
@@ -286,7 +286,7 @@
 			{#if loading}
 				<div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
 					{#each Array.from({ length: 6 }), i (i)}
-						<div class="flex flex-col overflow-hidden rounded-xl border border-border bg-white">
+						<div class="flex flex-col overflow-hidden rounded-xl border border-border bg-card">
 							<Skeleton class="h-48 w-full rounded-none" />
 							<div class="flex flex-col gap-3 p-4">
 								<Skeleton class="h-4 w-3/4 rounded" />
@@ -300,8 +300,8 @@
 				</div>
 			{:else if filtered.length === 0}
 				<div class="flex flex-col items-center justify-center py-24 text-center">
-					<div class="flex h-16 w-16 items-center justify-center rounded-full bg-[#C25F1A]/10">
-						<Search class="h-7 w-7 text-[#C25F1A]" />
+					<div class="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+						<Search class="h-7 w-7 text-primary" />
 					</div>
 					<h2 class="mt-4 text-lg font-semibold text-foreground">Nothing found</h2>
 					<p class="mt-1 text-sm text-muted-foreground">
@@ -312,7 +312,7 @@
 							activeTagId = null;
 							searchQuery = '';
 						}}
-						class="mt-5 rounded-full bg-[#C25F1A] px-5 py-2 text-sm font-semibold text-white hover:bg-[#C25F1A]/90"
+						class="mt-5 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
 					>
 						Show all items
 					</button>
@@ -335,7 +335,7 @@
 	<SheetContent side="right" class="flex w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-md">
 		{#if selectedProduct}
 			<!-- Image -->
-			<div class="relative h-64 w-full shrink-0 bg-[#F5EFE6]">
+			<div class="relative h-64 w-full shrink-0 bg-muted">
 				{#if selectedProduct.imageUrl}
 					<img
 						src={selectedProduct.imageUrl}
@@ -344,7 +344,7 @@
 					/>
 				{:else}
 					<div class="flex h-full w-full items-center justify-center">
-						<ShoppingBag class="h-14 w-14 text-[#C25F1A]/25" />
+						<ShoppingBag class="h-14 w-14 text-primary/25" />
 					</div>
 				{/if}
 			</div>
@@ -352,10 +352,10 @@
 			<!-- Details -->
 			<div class="flex flex-1 flex-col gap-5 p-6">
 				<SheetHeader class="gap-1 text-left">
-					<SheetTitle class="text-2xl font-bold text-[#2C1A0E]">
+					<SheetTitle class="text-2xl font-bold text-foreground">
 						{selectedProduct.name}
 					</SheetTitle>
-					<p class="text-xl font-bold text-[#C25F1A]">{sheetPrice}</p>
+					<p class="text-xl font-bold text-primary">{sheetPrice}</p>
 				</SheetHeader>
 
 				{#if selectedProduct.description}
@@ -370,7 +370,7 @@
 							{@const tagName = tags.find((t) => t.id === tagId)?.name}
 							{#if tagName}
 								<span
-									class="rounded-full bg-[#F5EFE6] px-3 py-1 text-xs font-semibold text-[#C25F1A]"
+									class="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-primary"
 								>
 									{tagName}
 								</span>
@@ -424,7 +424,7 @@
 						{#if productReviews.length > 3}
 							<button
 								onclick={() => (showAllReviews = !showAllReviews)}
-								class="text-xs font-semibold text-[#C25F1A] hover:underline"
+								class="text-xs font-semibold text-primary hover:underline"
 							>
 								{showAllReviews ? 'Show less' : `See all ${productReviews.length} reviews`}
 							</button>
@@ -434,7 +434,7 @@
 
 				<button
 					onclick={openReviewModal}
-					class="text-sm font-semibold text-[#C25F1A] hover:underline"
+					class="text-sm font-semibold text-primary hover:underline"
 				>
 					Leave a Review
 				</button>
@@ -472,7 +472,7 @@
 				<Button
 					onclick={addSelectedToCart}
 					class="mt-auto h-12 w-full gap-2 text-sm font-semibold transition-all duration-300
-						{sheetAdded ? 'bg-[#8A9E7F] hover:bg-[#8A9E7F]' : 'bg-[#C25F1A] hover:bg-[#C25F1A]/90'}"
+						{sheetAdded ? 'bg-emerald-600 hover:bg-emerald-600' : 'bg-primary hover:bg-primary/90'}"
 				>
 					{#if sheetAdded}
 						<Check class="h-4 w-4" />
@@ -508,7 +508,7 @@
 					type="text"
 					placeholder="Your name (optional)"
 					bind:value={reviewGuestName}
-					class="mt-4 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#C25F1A]"
+					class="mt-4 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
 				/>
 			{/if}
 
@@ -517,14 +517,16 @@
 				placeholder="Leave a comment (optional)"
 				rows="3"
 				disabled={reviewSubmitting}
-				class="mt-3 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#C25F1A]"
+				class="mt-3 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
 			></textarea>
 
 			{#if reviewError}
 				<p class="mt-2 text-xs text-destructive">{reviewError}</p>
 			{/if}
 			{#if reviewSuccess}
-				<p class="mt-2 text-xs text-green-600">✓ Thanks! Your review was posted.</p>
+				<p class="mt-2 text-xs text-emerald-600 dark:text-emerald-400">
+					✓ Thanks! Your review was posted.
+				</p>
 			{/if}
 
 			<div class="mt-4 flex justify-end gap-3">
@@ -537,7 +539,7 @@
 				<button
 					onclick={submitProductReview}
 					disabled={reviewSubmitting}
-					class="rounded-full bg-[#C25F1A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#C25F1A]/90 disabled:opacity-50"
+					class="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
 					>{reviewSubmitting ? 'Submitting...' : 'Submit'}</button
 				>
 			</div>

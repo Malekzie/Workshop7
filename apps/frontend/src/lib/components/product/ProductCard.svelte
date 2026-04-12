@@ -34,10 +34,10 @@
 	tabindex="0"
 	onclick={() => onselect(product)}
 	onkeydown={(e) => e.key === 'Enter' && onselect(product)}
-	class="group flex cursor-pointer flex-col overflow-hidden border-border bg-white pt-0 pb-0.5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
+	class="group flex cursor-pointer flex-col overflow-hidden border-border bg-card pt-0 pb-0.5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
 >
 	<!-- Image -->
-	<div class="relative h-48 shrink-0 overflow-hidden bg-[#F5EFE6]">
+	<div class="relative h-48 shrink-0 overflow-hidden bg-muted">
 		{#if product.imageUrl}
 			<img
 				src={product.imageUrl}
@@ -46,7 +46,7 @@
 			/>
 		{:else}
 			<div class="flex h-full w-full items-center justify-center">
-				<ShoppingBag class="h-10 w-10 text-[#C25F1A]/30" />
+				<ShoppingBag class="h-10 w-10 text-primary/30" />
 			</div>
 		{/if}
 	</div>
@@ -54,13 +54,13 @@
 	<!-- Content -->
 	<CardContent class="flex flex-1 flex-col gap-3 p-4">
 		<div class="flex-1">
-			<h2 class="text-sm leading-snug font-bold text-[#2C1A0E]">{product.name}</h2>
+			<h2 class="text-sm leading-snug font-bold text-foreground">{product.name}</h2>
 			{#if product.description}
 				<p class="mt-1 line-clamp-2 text-xs text-muted-foreground">{product.description}</p>
 			{/if}
 		</div>
 
-		<p class="text-lg font-bold text-[#C25F1A]">{price}</p>
+		<p class="text-lg font-bold text-primary">{price}</p>
 
 		<!-- Stepper + Add — clicks here don't open the sheet -->
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -93,7 +93,7 @@
 			<Button
 				onclick={addToCart}
 				class="flex-1 gap-1.5 text-xs transition-all duration-300
-					{added ? 'bg-[#8A9E7F] hover:bg-[#8A9E7F]' : 'bg-[#C25F1A] hover:bg-[#C25F1A]/90'}"
+					{added ? 'bg-emerald-600 hover:bg-emerald-600' : 'bg-primary hover:bg-primary/90'}"
 			>
 				{#if added}
 					<Check class="h-3.5 w-3.5" />

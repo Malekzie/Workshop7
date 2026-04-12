@@ -2,7 +2,7 @@
 	import { resolve } from '$app/paths';
 </script>
 
-<section class="bg-[#FAF7F2] px-6 py-20">
+<section class="bg-background px-6 py-20">
 	<div class="mx-auto grid max-w-7xl grid-cols-1 items-center gap-16 md:grid-cols-2">
 		<div class="overflow-hidden rounded-xl border border-border">
 			<img
@@ -14,12 +14,12 @@
 
 		<!-- Text -->
 		<div class="flex flex-col gap-4">
-			<p class="text-[11px] font-semibold tracking-[0.2em] text-[#C25F1A] uppercase">About us</p>
+			<p class="text-[11px] font-semibold tracking-[0.2em] text-primary uppercase">About us</p>
 
-			<h2 class="text-4xl leading-tight font-black tracking-tight text-[#2C1A0E]">
+			<h2 class="text-4xl leading-tight font-black tracking-tight text-foreground">
 				Baked fresh.<br />
 				Made with
-				<span class="text-[#C25F1A]">care.</span>
+				<span class="text-primary">care.</span>
 			</h2>
 
 			<p class="text-sm leading-relaxed text-muted-foreground">
@@ -35,7 +35,7 @@
 
 			<a
 				href={resolve('/about')}
-				class="mt-1 self-start text-sm font-semibold text-[#C25F1A] underline decoration-[#C25F1A]/40 underline-offset-4 hover:decoration-[#C25F1A]"
+				class="mt-1 self-start text-sm font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary"
 			>
 				Learn more about us →
 			</a>

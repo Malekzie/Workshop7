@@ -3,7 +3,12 @@
 	import { onMount } from 'svelte';
 	import { getTags } from '$lib/services/tags';
 
-	let tags = $state([]);
+	interface FooterTag {
+		id: string;
+		name: string;
+	}
+
+	let tags = $state<FooterTag[]>([]);
 
 	onMount(async () => {
 		tags = await getTags().catch(() => []);

@@ -4,6 +4,9 @@
 	import { ShoppingCart, User, Menu, X } from '@lucide/svelte';
 	import { isLoggedIn, user } from '$lib/stores/authStore';
 	import { page } from '$app/state';
+	import { SunIcon, MoonIcon } from '@lucide/svelte';
+	import { toggleMode } from 'mode-watcher';
+	import { Button } from '$lib/components/ui/button/index';
 
 	interface Props {
 		cartCount?: number;
@@ -38,8 +41,6 @@
 	function handleMenuClick() {
 		goto(resolve('/menu'));
 	}
-
-	const isStaffUser = $derived($user?.role === 'admin' || $user?.role === 'employee');
 </script>
 
 <svelte:window onclick={handleClickOutside} />
@@ -75,6 +76,15 @@
 
 		<!-- Right icons -->
 		<div class="hidden items-center gap-6 md:flex">
+			<Button onclick={toggleMode} variant="outline" size="icon">
+				<SunIcon
+					class="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all! dark:scale-0 dark:-rotate-90"
+				/>
+				<MoonIcon
+					class="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all! dark:scale-100 dark:rotate-0"
+				/>
+				<span class="sr-only">Toggle Theme</span>
+			</Button>
 			<button
 				onclick={handleProfileClick}
 				aria-label="Account"

@@ -148,3 +148,21 @@
 button {
 	cursor: pointer;
 }
+
+@layer utilities {
+	/* Legacy palette compatibility for dark mode while components migrate to semantic tokens. */
+	.dark .bg-\[\#FAF7F2\],
+	.dark .bg-\[\#F5EFE6\],
+	.dark .bg-\[\#f6efe7\] {
+		background-color: var(--background);
+	}
+
+	.dark .text-\[\#2C1A0E\] {
+		color: var(--foreground);
+	}
+
+	.dark .text-\[\#C25F1A\],
+	.dark .text-\[\#d67d54\] {
+		color: var(--primary);
+	}
+}
