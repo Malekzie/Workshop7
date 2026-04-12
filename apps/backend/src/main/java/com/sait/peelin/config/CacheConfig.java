@@ -31,7 +31,6 @@ public class CacheConfig implements CachingConfigurer {
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
         ObjectMapper mapper = new ObjectMapper();
         mapper.findAndRegisterModules();
-        // Include type info so cached objects can be deserialized back to their correct DTO class
         mapper.activateDefaultTyping(
                 BasicPolymorphicTypeValidator.builder()
                         .allowIfBaseType(Object.class)
@@ -45,20 +44,19 @@ public class CacheConfig implements CachingConfigurer {
                         new GenericJackson2JsonRedisSerializer(mapper)));
 
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
-        cacheConfigurations.put("tags",             defaultConfig.entryTtl(Duration.ofHours(6)));
-        cacheConfigurations.put("products",         defaultConfig.entryTtl(Duration.ofHours(2)));
-        cacheConfigurations.put("bakeries",         defaultConfig.entryTtl(Duration.ofHours(3)));
-        // Renamed from product-specials: old Redis entries used a different JSON shape than current typing.
+        cacheConfigurations.put("tags", defaultConfig.entryTtl(Duration.ofHours(6)));
+        cacheConfigurations.put("products", defaultConfig.entryTtl(Duration.ofHours(2)));
+        cacheConfigurations.put("bakeries", defaultConfig.entryTtl(Duration.ofHours(3)));
         cacheConfigurations.put("product-specials-v2", defaultConfig.entryTtl(Duration.ofHours(6)));
-        cacheConfigurations.put("orders",           defaultConfig.entryTtl(Duration.ofMinutes(15)));
-        cacheConfigurations.put("rewards",          defaultConfig.entryTtl(Duration.ofMinutes(30)));
-        cacheConfigurations.put("analytics",        defaultConfig.entryTtl(Duration.ofHours(2)));
-        cacheConfigurations.put("dashboard",        defaultConfig.entryTtl(Duration.ofMinutes(30)));
-        cacheConfigurations.put("customers",        defaultConfig.entryTtl(Duration.ofMinutes(30)));
-        cacheConfigurations.put("employees",        defaultConfig.entryTtl(Duration.ofMinutes(30)));
-        cacheConfigurations.put("current-users",    defaultConfig.entryTtl(Duration.ofMinutes(15)));
-        cacheConfigurations.put("reward-tiers",     defaultConfig.entryTtl(Duration.ofHours(6)));
-        cacheConfigurations.put("reviews",          defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("orders", defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        cacheConfigurations.put("rewards", defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("analytics", defaultConfig.entryTtl(Duration.ofHours(2)));
+        cacheConfigurations.put("dashboard", defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("customers", defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("employees", defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("current-users", defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        cacheConfigurations.put("reward-tiers", defaultConfig.entryTtl(Duration.ofHours(6)));
+        cacheConfigurations.put("reviews", defaultConfig.entryTtl(Duration.ofMinutes(30)));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
@@ -71,10 +69,26 @@ public class CacheConfig implements CachingConfigurer {
         return new SimpleCacheErrorHandler() {
             @Override
             public void handleCacheGetError(RuntimeException e, Cache cache, Object key) {
-                // Stale or cross-version Redis payloads may not deserialize; source load repopulates cache.
-                if (log.isDebugEnabled()) {
-                    log.debug("Cache read failed for '{}::{}', using source: {}", cache.getName(), key, e.getMessage());
-                }
+                log.warn("Cache GET failed for '{}::{}' - using source. Cause: {}",
+                        cache.getName(), key, e.getMessage());
+            }
+
+            @Override
+            public void handleCachePutError(RuntimeException e, Cache cache, Object key, Object value) {
+                log.warn("Cache PUT failed for '{}::{}' - continuing without cache. Cause: {}",
+                        cache.getName(), key, e.getMessage());
+            }
+
+            @Override
+            public void handleCacheEvictError(RuntimeException e, Cache cache, Object key) {
+                log.warn("Cache EVICT failed for '{}::{}' - continuing. Cause: {}",
+                        cache.getName(), key, e.getMessage());
+            }
+
+            @Override
+            public void handleCacheClearError(RuntimeException e, Cache cache) {
+                log.warn("Cache CLEAR failed for '{}' - continuing. Cause: {}",
+                        cache.getName(), e.getMessage());
             }
         };
     }
