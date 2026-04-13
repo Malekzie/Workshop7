@@ -1,12 +1,7 @@
-import { redirect, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
-// Page-level guard (not layout) so /guest/checkout remains accessible without auth.
-export const load: PageServerLoad = async ({ locals, url, fetch }) => {
-	if (!locals.user) {
-		redirect(303, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
-	}
-
+export const load: PageServerLoad = async ({ locals, fetch }) => {
 	const [bakeriesRes, stripeRes] = await Promise.all([
 		fetch('/api/v1/bakeries'),
 		fetch('/api/v1/stripe/config').catch(() => null)
@@ -22,13 +17,15 @@ export const load: PageServerLoad = async ({ locals, url, fetch }) => {
 	]);
 
 	let customer = null;
-	const customerRes = await fetch('/api/v1/customers/me');
-	if (customerRes.ok) {
-		customer = await customerRes.json().catch(() => null);
+	if (locals.user) {
+		const customerRes = await fetch('/api/v1/customers/me');
+		if (customerRes.ok) {
+			customer = await customerRes.json().catch(() => null);
+		}
 	}
 
 	return {
-		user: locals.user,
+		user: locals.user ?? null,
 		bakeries: bakeries ?? [],
 		stripePublishableKey: (stripeConfig?.publishableKey as string) ?? '',
 		customer

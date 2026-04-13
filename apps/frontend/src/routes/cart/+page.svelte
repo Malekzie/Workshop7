@@ -11,7 +11,7 @@
 
 	const isUserSignedIn = $derived($user || data.user);
 
-	const checkoutHref = $derived(isUserSignedIn ? '/checkout' : '/guest/checkout');
+	const checkoutHref = '/checkout';
 </script>
 
 <main class="mx-auto max-w-4xl px-6 py-16">
