@@ -1,23 +1,24 @@
 <script>
 	import ProductCard from '$lib/components/product/ProductCard.svelte';
-	import { Skeleton } from '$lib/components/ui/skeleton';
+	import MenuHeader from '$lib/components/menu/MenuHeader.svelte';
+	import MenuSidebarFilters from '$lib/components/menu/MenuSidebarFilters.svelte';
+	import MenuResultsSummary from '$lib/components/menu/MenuResultsSummary.svelte';
+	import MenuLoadingGrid from '$lib/components/menu/MenuLoadingGrid.svelte';
+	import MenuEmptyState from '$lib/components/menu/MenuEmptyState.svelte';
+	import MenuProductSheet from '$lib/components/menu/MenuProductSheet.svelte';
+	import MenuReviewModal from '$lib/components/menu/MenuReviewModal.svelte';
+	import ReviewSubmissionOverlay from '$lib/components/review/ReviewSubmissionOverlay.svelte';
 	import { Separator } from '$lib/components/ui/separator';
-	import { Input } from '$lib/components/ui/input';
-	import { Button } from '$lib/components/ui/button';
-	import { Sheet, SheetContent, SheetHeader, SheetTitle } from '$lib/components/ui/sheet';
 	import { cart } from '$lib/stores/cart';
 	import { getProducts } from '$lib/services/products';
 	import { getTags } from '$lib/services/tags';
-	import { Search, X, ShoppingBag, Plus, Minus, Check } from '@lucide/svelte';
-	import { onMount } from 'svelte';
-	import { page } from '$app/stores';
 	import { getProductReviews, createProductReview } from '$lib/services/review';
-	import ReviewSubmissionOverlay from '$lib/components/review/ReviewSubmissionOverlay.svelte';
 	import { user } from '$lib/stores/authStore';
-	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import { truncateModerationMessage } from '$lib/utils/reviewMessage';
-	import { formatPriceCad } from '$lib/utils/money';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
+	import { resolve } from '$app/paths';
+	import { onMount } from 'svelte';
 
 	let activeTagId = $state(null);
 	let searchQuery = $state('');
@@ -34,13 +35,12 @@
 	let reviewSubmitting = $state(false);
 	let reviewError = $state(null);
 	let reviewSuccess = $state(false);
-	let showAllReviews = $state(false);
 
-	// Sheet state
 	let sheetOpen = $state(false);
 	let selectedProduct = $state(null);
 	let sheetQty = $state(1);
 	let sheetAdded = $state(false);
+	let showAllReviews = $state(false);
 
 	async function openSheet(product) {
 		selectedProduct = product;
@@ -75,13 +75,15 @@
 	}
 
 	async function submitProductReview() {
-		if (reviewRating === 0) {
+		if (reviewRating === 0 || !selectedProduct) {
 			reviewError = 'Please select a star rating.';
 			return;
 		}
+
 		reviewSubmitting = true;
 		reviewError = null;
 		reviewSuccess = false;
+
 		try {
 			const submitted = await createProductReview(
 				selectedProduct.id,
@@ -90,6 +92,7 @@
 				null,
 				reviewGuestName || null
 			);
+
 			const status = (submitted?.status ?? '').toLowerCase();
 			if (status === 'rejected') {
 				const short = truncateModerationMessage(submitted?.moderationMessage);
@@ -101,8 +104,8 @@
 				productReviews = await getProductReviews(selectedProduct.id);
 				setTimeout(() => closeReviewModal(), 1500);
 			}
-		} catch (e) {
-			reviewError = e.message ?? 'Failed to submit review.';
+		} catch (error) {
+			reviewError = error?.message ?? 'Failed to submit review.';
 		} finally {
 			reviewSubmitting = false;
 		}
@@ -110,30 +113,27 @@
 
 	function addSelectedToCart() {
 		if (!selectedProduct) return;
-		cart.addItem(selectedProduct, sheetQty);
+
+		cart.addItem({
+			productId: selectedProduct.id,
+			productName: selectedProduct.name,
+			productImageUrl: selectedProduct.imageUrl ?? null,
+			unitPrice: selectedProduct.basePrice,
+			quantity: sheetQty
+		});
 		sheetAdded = true;
 		sheetQty = 1;
 		setTimeout(() => (sheetAdded = false), 1400);
 	}
-
-	const sheetPrice = $derived(
-		selectedProduct
-			? formatPriceCad(
-					typeof selectedProduct.basePrice === 'number'
-						? selectedProduct.basePrice
-						: parseFloat(selectedProduct.basePrice)
-				)
-			: ''
-	);
 
 	onMount(async () => {
 		try {
 			[products, tags] = await Promise.all([getProducts(), getTags()]);
 
 			const tagParam = $page.url.searchParams.get('tag');
-			if (tagParam && tags.some((t) => String(t.id) === tagParam)) {
-				const byId = tags.find((t) => String(t.id) === tagParam);
-				const byName = tags.find((t) => t.name.toLowerCase() === tagParam.toLowerCase());
+			if (tagParam && tags.some((tag) => String(tag.id) === tagParam)) {
+				const byId = tags.find((tag) => String(tag.id) === tagParam);
+				const byName = tags.find((tag) => tag.name.toLowerCase() === tagParam.toLowerCase());
 				activeTagId = (byId ?? byName)?.id ?? null;
 			}
 
@@ -144,181 +144,60 @@
 
 			const productParam = $page.url.searchParams.get('product');
 			if (productParam) {
-				const product = products.find((p) => String(p.id) === productParam);
+				const product = products.find((item) => String(item.id) === productParam);
 				if (product) openSheet(product);
 			}
-		} catch (e) {
-			console.error('Failed to load menu:', e);
+		} catch (error) {
+			console.error('Failed to load menu:', error);
 		} finally {
 			loading = false;
 		}
 	});
 
 	const filtered = $derived(
-		products.filter((p) => {
-			const matchesTag = activeTagId === null || p.tagIds?.includes(activeTagId);
-			const q = searchQuery.toLowerCase();
+		products.filter((product) => {
+			const matchesTag = activeTagId === null || product.tagIds?.includes(activeTagId);
+			const query = searchQuery.toLowerCase();
 			const matchesSearch =
-				!q ||
-				(p.name ?? '').toLowerCase().includes(q) ||
-				(p.description ?? '').toLowerCase().includes(q);
+				!query ||
+				(product.name ?? '').toLowerCase().includes(query) ||
+				(product.description ?? '').toLowerCase().includes(query);
 			return matchesTag && matchesSearch;
 		})
 	);
 
-	const activeTagName = $derived(tags.find((t) => t.id === activeTagId)?.name ?? null);
+	const activeTagName = $derived(tags.find((tag) => tag.id === activeTagId)?.name ?? null);
 </script>
 
 <div class="min-h-screen bg-background">
-	<!-- Page header -->
-	<header class="border-b border-border/60 bg-background px-6 pt-14 pb-10 text-center">
-		<p class="mb-3 text-[11px] font-semibold tracking-[0.2em] text-primary uppercase">
-			Peelin' Good Bakery
-		</p>
-		<h1 class="text-5xl font-black tracking-tight text-foreground sm:text-6xl">Our Menu</h1>
-		<p class="mt-3 text-sm text-muted-foreground">Fresh from the oven, crafted with care</p>
+	<MenuHeader bind:activeTagId bind:searchQuery {tags} />
 
-		<!-- Search -->
-		<div class="relative mx-auto mt-8 max-w-md">
-			<Search
-				class="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-			/>
-			<Input
-				type="text"
-				placeholder="Search breads, pastries, cakes..."
-				bind:value={searchQuery}
-				class="rounded-full bg-card pr-10 pl-10 shadow-sm focus-visible:ring-ring"
-			/>
-			{#if searchQuery}
-				<button
-					onclick={() => (searchQuery = '')}
-					class="absolute top-1/2 right-3.5 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-					aria-label="Clear search"
-				>
-					<X class="h-4 w-4" />
-				</button>
-			{/if}
-		</div>
-
-		<!-- Mobile tag strip -->
-		<div class="mt-4 flex gap-2 overflow-x-auto pb-1 md:hidden" style="scrollbar-width: none;">
-			<button
-				onclick={() => (activeTagId = null)}
-				class="shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors
-            {activeTagId === null
-					? 'bg-primary text-primary-foreground'
-					: 'border border-border bg-card text-foreground/70 hover:text-foreground'}"
-			>
-				All
-			</button>
-			{#each tags as tag (tag.id)}
-				<button
-					onclick={() => (activeTagId = tag.id)}
-					class="shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors
-                {activeTagId === tag.id
-						? 'bg-primary text-primary-foreground'
-						: 'border border-border bg-card text-foreground/70 hover:text-foreground'}"
-				>
-					{tag.name}
-				</button>
-			{/each}
-		</div>
-	</header>
-
-	<!-- Body -->
 	<div class="mx-auto flex max-w-7xl gap-0">
-		<!-- Sidebar -->
-		<aside class="hidden w-52 shrink-0 md:block">
-			<div class="sticky top-6 px-4 py-8">
-				<p class="mb-3 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-					Categories
-				</p>
-				<div class="flex flex-col gap-0.5">
-					<button
-						onclick={() => (activeTagId = null)}
-						class="rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors
-							{activeTagId === null
-							? 'bg-primary text-primary-foreground'
-							: 'text-foreground/70 hover:bg-muted hover:text-foreground'}"
-					>
-						All items
-					</button>
-					{#each tags as tag (tag.id)}
-						<button
-							onclick={() => (activeTagId = tag.id)}
-							class="rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors
-								{activeTagId === tag.id
-								? 'bg-primary text-primary-foreground'
-								: 'text-foreground/70 hover:bg-muted hover:text-foreground'}"
-						>
-							{tag.name}
-						</button>
-					{/each}
-				</div>
-			</div>
-		</aside>
-
+		<MenuSidebarFilters bind:activeTagId {tags} />
 		<Separator orientation="vertical" class="hidden md:block" />
 
-		<!-- Main -->
 		<main class="flex-1 px-6 py-8">
-			{#if activeTagName || searchQuery}
-				<div class="mb-5 flex items-center gap-2 text-sm text-muted-foreground">
-					<span>
-						{filtered.length} result{filtered.length !== 1 ? 's' : ''}
-						{#if activeTagName}
-							in <span class="font-medium text-foreground">{activeTagName}</span>{/if}
-						{#if searchQuery}
-							for <span class="font-medium text-foreground">"{searchQuery}"</span>{/if}
-					</span>
-					<button
-						onclick={() => {
-							activeTagId = null;
-							searchQuery = '';
-						}}
-						class="ml-1 flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs hover:bg-muted"
-					>
-						<X class="h-3 w-3" /> Clear
-					</button>
-				</div>
-			{/if}
+			<MenuResultsSummary
+				resultCount={filtered.length}
+				{activeTagName}
+				{searchQuery}
+				onClear={() => {
+					activeTagId = null;
+					searchQuery = '';
+				}}
+			/>
 
 			{#if loading}
-				<div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
-					{#each Array.from({ length: 6 }), i (i)}
-						<div class="flex flex-col overflow-hidden rounded-xl border border-border bg-card">
-							<Skeleton class="h-48 w-full rounded-none" />
-							<div class="flex flex-col gap-3 p-4">
-								<Skeleton class="h-4 w-3/4 rounded" />
-								<Skeleton class="h-3 w-full rounded" />
-								<Skeleton class="h-3 w-2/3 rounded" />
-								<Skeleton class="h-5 w-16 rounded" />
-								<Skeleton class="h-8 w-full rounded-full" />
-							</div>
-						</div>
-					{/each}
-				</div>
+				<MenuLoadingGrid />
 			{:else if filtered.length === 0}
-				<div class="flex flex-col items-center justify-center py-24 text-center">
-					<div class="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-						<Search class="h-7 w-7 text-primary" />
-					</div>
-					<h2 class="mt-4 text-lg font-semibold text-foreground">Nothing found</h2>
-					<p class="mt-1 text-sm text-muted-foreground">
-						Try a different search or browse all categories.
-					</p>
-					<button
-						onclick={() => {
-							activeTagId = null;
-							searchQuery = '';
-						}}
-						class="mt-5 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-					>
-						Show all items
-					</button>
-				</div>
+				<MenuEmptyState
+					onReset={() => {
+						activeTagId = null;
+						searchQuery = '';
+					}}
+				/>
 			{:else}
-				<div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+				<div class="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
 					{#each filtered as product, i (product.id)}
 						<div class="product-card" style="animation-delay: {Math.min(i * 50, 350)}ms">
 							<ProductCard {product} onselect={openSheet} />
@@ -330,222 +209,32 @@
 	</div>
 </div>
 
-<!-- Product detail sheet -->
-<Sheet bind:open={sheetOpen}>
-	<SheetContent side="right" class="flex w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-md">
-		{#if selectedProduct}
-			<!-- Image -->
-			<div class="relative h-64 w-full shrink-0 bg-muted">
-				{#if selectedProduct.imageUrl}
-					<img
-						src={selectedProduct.imageUrl}
-						alt={selectedProduct.name}
-						class="h-full w-full object-cover"
-					/>
-				{:else}
-					<div class="flex h-full w-full items-center justify-center">
-						<ShoppingBag class="h-14 w-14 text-primary/25" />
-					</div>
-				{/if}
-			</div>
+<MenuProductSheet
+	bind:open={sheetOpen}
+	product={selectedProduct}
+	{tags}
+	{productReviews}
+	{reviewsLoading}
+	bind:sheetQty
+	{sheetAdded}
+	bind:showAllReviews
+	onOpenReviewModal={openReviewModal}
+	onAddToCart={addSelectedToCart}
+/>
 
-			<!-- Details -->
-			<div class="flex flex-1 flex-col gap-5 p-6">
-				<SheetHeader class="gap-1 text-left">
-					<SheetTitle class="text-2xl font-bold text-foreground">
-						{selectedProduct.name}
-					</SheetTitle>
-					<p class="text-xl font-bold text-primary">{sheetPrice}</p>
-				</SheetHeader>
-
-				{#if selectedProduct.description}
-					<p class="text-sm leading-relaxed text-muted-foreground">
-						{selectedProduct.description}
-					</p>
-				{/if}
-
-				{#if selectedProduct.tagIds && selectedProduct.tagIds.length > 0}
-					<div class="flex flex-wrap gap-2">
-						{#each selectedProduct.tagIds as tagId (tagId)}
-							{@const tagName = tags.find((t) => t.id === tagId)?.name}
-							{#if tagName}
-								<span
-									class="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-primary"
-								>
-									{tagName}
-								</span>
-							{/if}
-						{/each}
-					</div>
-				{/if}
-
-				<Separator />
-
-				<!-- Reviews -->
-				{#if reviewsLoading}
-					<div class="space-y-2">
-						<Skeleton class="h-4 w-24 rounded" />
-						<Skeleton class="h-12 w-full rounded" />
-					</div>
-				{:else if productReviews.length > 0}
-					<div class="space-y-3">
-						<p class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-							Customer Reviews
-						</p>
-						{#each showAllReviews ? productReviews : productReviews.slice(0, 3) as review (review.id)}
-							<div class="rounded-lg bg-muted/50 px-3 py-2">
-								<div class="flex items-center justify-between">
-									<div class="flex items-center gap-2">
-										<p class="text-xs font-semibold text-foreground">
-											{review.reviewerDisplayName}
-										</p>
-										{#if review.verifiedAccount}
-											<span
-												class="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-800"
-												>✓ Verified</span
-											>
-										{/if}
-										{#if review.verifiedPurchase}
-											<span
-												class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold text-amber-700"
-												>✓ Purchased</span
-											>
-										{/if}
-									</div>
-									<p class="text-xs text-yellow-500">
-										{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
-									</p>
-								</div>
-								{#if review.comment}
-									<p class="mt-1 text-xs text-muted-foreground">{review.comment}</p>
-								{/if}
-							</div>
-						{/each}
-						{#if productReviews.length > 3}
-							<button
-								onclick={() => (showAllReviews = !showAllReviews)}
-								class="text-xs font-semibold text-primary hover:underline"
-							>
-								{showAllReviews ? 'Show less' : `See all ${productReviews.length} reviews`}
-							</button>
-						{/if}
-					</div>
-				{/if}
-
-				<button
-					onclick={openReviewModal}
-					class="text-sm font-semibold text-primary hover:underline"
-				>
-					Leave a Review
-				</button>
-
-				<Separator />
-
-				<!-- Quantity -->
-				<div class="flex flex-col gap-2">
-					<p class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-						Quantity
-					</p>
-					<div class="flex items-center gap-3">
-						<div class="flex items-center rounded-full border border-border bg-background">
-							<button
-								onclick={() => {
-									if (sheetQty > 1) sheetQty -= 1;
-								}}
-								class="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-muted"
-								aria-label="Decrease"
-							>
-								<Minus class="h-4 w-4" />
-							</button>
-							<span class="w-8 text-center text-sm font-semibold">{sheetQty}</span>
-							<button
-								onclick={() => (sheetQty += 1)}
-								class="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-muted"
-								aria-label="Increase"
-							>
-								<Plus class="h-4 w-4" />
-							</button>
-						</div>
-					</div>
-				</div>
-
-				<Button
-					onclick={addSelectedToCart}
-					class="mt-auto h-12 w-full gap-2 text-sm font-semibold transition-all duration-300
-						{sheetAdded ? 'bg-emerald-600 hover:bg-emerald-600' : 'bg-primary hover:bg-primary/90'}"
-				>
-					{#if sheetAdded}
-						<Check class="h-4 w-4" />
-						Added to cart
-					{:else}
-						<ShoppingBag class="h-4 w-4" />
-						Add to cart: {sheetPrice}
-					{/if}
-				</Button>
-			</div>
-		{/if}
-	</SheetContent>
-</Sheet>
-
-{#if reviewModal}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-		<div class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
-			<h2 class="text-lg font-bold text-foreground">Review {selectedProduct?.name}</h2>
-
-			<div class="mt-4 flex gap-2">
-				{#each [1, 2, 3, 4, 5] as star (star)}
-					<button
-						onclick={() => (reviewRating = star)}
-						class="text-2xl transition-transform hover:scale-110 {reviewRating >= star
-							? 'text-yellow-400'
-							: 'text-muted-foreground/30'}">★</button
-					>
-				{/each}
-			</div>
-
-			{#if !$user}
-				<input
-					type="text"
-					placeholder="Your name (optional)"
-					bind:value={reviewGuestName}
-					class="mt-4 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-				/>
-			{/if}
-
-			<textarea
-				bind:value={reviewComment}
-				placeholder="Leave a comment (optional)"
-				rows="3"
-				disabled={reviewSubmitting}
-				class="mt-3 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-			></textarea>
-
-			{#if reviewError}
-				<p class="mt-2 text-xs text-destructive">{reviewError}</p>
-			{/if}
-			{#if reviewSuccess}
-				<p class="mt-2 text-xs text-emerald-600 dark:text-emerald-400">
-					✓ Thanks! Your review was posted.
-				</p>
-			{/if}
-
-			<div class="mt-4 flex justify-end gap-3">
-				<button
-					onclick={closeReviewModal}
-					disabled={reviewSubmitting}
-					class="rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
-					>Cancel</button
-				>
-				<button
-					onclick={submitProductReview}
-					disabled={reviewSubmitting}
-					class="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-					>{reviewSubmitting ? 'Submitting...' : 'Submit'}</button
-				>
-			</div>
-		</div>
-	</div>
-{/if}
+<MenuReviewModal
+	bind:open={reviewModal}
+	productName={selectedProduct?.name ?? ''}
+	isLoggedIn={Boolean($user)}
+	bind:rating={reviewRating}
+	bind:comment={reviewComment}
+	bind:guestName={reviewGuestName}
+	bind:submitting={reviewSubmitting}
+	bind:error={reviewError}
+	bind:success={reviewSuccess}
+	onClose={closeReviewModal}
+	onSubmit={submitProductReview}
+/>
 
 <ReviewSubmissionOverlay visible={reviewSubmitting} />
 
@@ -559,6 +248,7 @@
 			opacity: 0;
 			transform: translateY(14px);
 		}
+
 		to {
 			opacity: 1;
 			transform: translateY(0);

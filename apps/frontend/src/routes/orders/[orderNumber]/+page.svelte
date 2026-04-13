@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { api } from '$lib/api';
+	import { api } from '$lib/utils/apiClient';
 	import { getProducts } from '$lib/services/products';
 	import { ShoppingBag } from '@lucide/svelte';
 	import { formatDiscountCad, formatPriceCad } from '$lib/utils/money';
@@ -105,7 +105,9 @@
 					</p>
 					<p class="font-semibold text-foreground">#{order.orderNumber}</p>
 				</div>
-				<span class="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-foreground capitalize">
+				<span
+					class="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-foreground capitalize"
+				>
 					{statusLabel(order.status)}
 				</span>
 			</div>
@@ -132,7 +134,7 @@
 								</div>
 								<p
 									title={statusLabel(step)}
-									class="w-full text-center text-[7px] leading-tight break-words text-balance hyphens-auto sm:text-[8px] {current
+									class="w-full text-center text-[7px] leading-tight text-balance break-words hyphens-auto sm:text-[8px] {current
 										? 'font-semibold text-foreground'
 										: active
 											? 'font-medium text-foreground/85'
@@ -147,7 +149,9 @@
 									aria-hidden="true"
 								>
 									<div
-										class="h-0.5 w-full min-w-[2px] rounded-full {i < idx ? 'bg-primary' : 'bg-border'}"
+										class="h-0.5 w-full min-w-[2px] rounded-full {i < idx
+											? 'bg-primary'
+											: 'bg-border'}"
 									></div>
 								</div>
 							{/if}
@@ -190,15 +194,17 @@
 							class="h-12 w-12 shrink-0 rounded-md object-cover"
 						/>
 					{:else}
-						<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-[#F5EFE6]">
-							<ShoppingBag class="h-5 w-5 text-[#C25F1A]/40" />
+						<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-muted">
+							<ShoppingBag class="h-5 w-5 text-primary/40" />
 						</div>
 					{/if}
 					<div class="min-w-0 flex-1">
 						<p class="truncate text-sm font-medium text-foreground">{item.productName}</p>
 						<p class="text-xs text-muted-foreground">Qty {item.quantity}</p>
 					</div>
-					<span class="shrink-0 text-sm font-semibold text-foreground">{formatPriceCad(item.lineTotal)}</span>
+					<span class="shrink-0 text-sm font-semibold text-foreground"
+						>{formatPriceCad(item.lineTotal)}</span
+					>
 				</a>
 			{/each}
 

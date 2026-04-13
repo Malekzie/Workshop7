@@ -122,7 +122,7 @@
 							</Avatar>
 							{#if profile.photoApprovalPending}
 								<div
-									class="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap text-white"
+									class="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap text-amber-950"
 								>
 									Pending approval
 								</div>

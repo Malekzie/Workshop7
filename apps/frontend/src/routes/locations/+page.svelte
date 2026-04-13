@@ -102,7 +102,7 @@
 </script>
 
 <!-- Hero -->
-<div class="border-b border-border bg-[#FAF7F2] px-6 py-16 text-center">
+<div class="border-b border-border bg-background px-6 py-16 text-center">
 	<p class="mb-2 text-xs font-semibold tracking-[0.2em] text-primary uppercase">Find us</p>
 	<h1 class="font-headline text-4xl font-black tracking-tight text-foreground">Our Locations</h1>
 	<p class="mx-auto mt-3 max-w-sm text-sm text-muted-foreground">
@@ -176,7 +176,7 @@
 										)}"
 										target="_blank"
 										rel="noopener noreferrer"
-										class="mt-2 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white hover:opacity-90"
+										class="mt-2 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90"
 									>
 										<MapPin size={12} />
 										Get directions
@@ -286,7 +286,9 @@
 				<p class="mt-2 text-xs text-destructive">{reviewError}</p>
 			{/if}
 			{#if reviewSuccess}
-				<p class="mt-2 text-xs text-green-600">✓ Thanks! Your review was posted.</p>
+				<p class="mt-2 text-xs text-emerald-600 dark:text-emerald-400">
+					✓ Thanks! Your review was posted.
+				</p>
 			{/if}
 
 			<div class="mt-4 flex justify-end gap-3">

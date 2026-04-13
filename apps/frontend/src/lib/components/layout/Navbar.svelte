@@ -54,28 +54,36 @@
 
 		<!-- Desktop Nav -->
 		<div class="hidden items-center gap-12 md:flex">
-			<button
+			<Button
 				class="flex items-center gap-1 text-sm font-medium transition-colors hover:cursor-pointer hover:text-primary
-        {page.url.pathname === '/menu' ? 'text-primary' : 'text-foreground'}"
+        		{page.url.pathname === '/menu' ? 'text-primary' : 'text-foreground'}"
 				aria-expanded={categoryOpen}
 				onclick={handleMenuClick}
+				variant="ghost"
 			>
 				Menu
-			</button>
-			<a
+			</Button>
+			<Button
 				href={resolve('/about')}
 				class="text-sm font-medium transition-colors hover:text-primary
-        {page.url.pathname === '/about' ? 'text-primary' : 'text-foreground'}">About</a
+        		{page.url.pathname === '/about' ? 'text-primary' : 'text-foreground'}"
+				variant="ghost"
 			>
-			<a
+				About
+			</Button>
+			<Button
 				href={resolve('/locations')}
 				class="text-sm font-medium transition-colors hover:text-primary
-        {page.url.pathname === '/locations' ? 'text-primary' : 'text-foreground'}">Locations</a
+        		{page.url.pathname === '/locations' ? 'text-primary' : 'text-foreground'}"
+				variant="ghost"
 			>
+				Locations
+			</Button>
 		</div>
 
 		<!-- Right icons -->
 		<div class="hidden items-center gap-6 md:flex">
+			<!-- Dark Mode Buttons -->
 			<Button onclick={toggleMode} variant="outline" size="icon">
 				<SunIcon
 					class="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all! dark:scale-0 dark:-rotate-90"
@@ -85,21 +93,23 @@
 				/>
 				<span class="sr-only">Toggle Theme</span>
 			</Button>
-			<button
+			<Button
 				onclick={handleProfileClick}
 				aria-label="Account"
 				class="transition-colors hover:cursor-pointer hover:text-primary
-        {page.url.pathname.startsWith('/profile') || page.url.pathname.startsWith('/staff')
+        		{page.url.pathname.startsWith('/profile') || page.url.pathname.startsWith('/staff')
 					? 'text-primary'
 					: 'text-foreground'}"
+				variant="outline"
 			>
 				<User size={20} />
-			</button>
-			<button
+			</Button>
+			<Button
 				onclick={handleCartClick}
 				aria-label="Cart ({cartCount} items)"
 				class="relative transition-colors hover:text-primary
-        {page.url.pathname === '/cart' ? 'text-primary' : 'text-foreground'}"
+        		{page.url.pathname === '/cart' ? 'text-primary' : 'text-foreground'}"
+				variant="outline"
 			>
 				<ShoppingCart size={20} />
 				{#if cartCount > 0}
@@ -109,11 +119,11 @@
 						{cartCount}
 					</span>
 				{/if}
-			</button>
+			</Button>
 		</div>
 
 		<!-- Mobile hamburger -->
-		<button
+		<Button
 			aria-label={menuOpen ? 'Close menu' : 'Open menu'}
 			class="text-foreground md:hidden"
 			onclick={() => (menuOpen = !menuOpen)}
@@ -123,7 +133,7 @@
 			{:else}
 				<Menu size={22} />
 			{/if}
-		</button>
+		</Button>
 	</div>
 
 	<!-- Mobile menu -->
@@ -146,7 +156,7 @@
 			>
 
 			<div class="flex gap-4 pt-2">
-				<button
+				<Button
 					onclick={handleProfileClick}
 					aria-label="Account"
 					class="transition-colors hover:text-primary
@@ -155,8 +165,8 @@
 						: 'text-foreground'}"
 				>
 					<User size={20} />
-				</button>
-				<button
+				</Button>
+				<Button
 					onclick={handleCartClick}
 					aria-label="Cart ({cartCount} items)"
 					class="relative transition-colors hover:text-primary
@@ -170,7 +180,7 @@
 							{cartCount}
 						</span>
 					{/if}
-				</button>
+				</Button>
 			</div>
 		</div>
 	{/if}

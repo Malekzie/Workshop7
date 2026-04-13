@@ -18,7 +18,13 @@
 
 	function addToCart(e) {
 		e.stopPropagation();
-		cart.addItem(product, quantity);
+		cart.addItem({
+			productId: product.id,
+			productName: product.name,
+			productImageUrl: product.imageUrl ?? null,
+			unitPrice: product.basePrice,
+			quantity
+		});
 		added = true;
 		quantity = 1;
 		setTimeout(() => (added = false), 1400);
@@ -37,7 +43,7 @@
 	class="group flex cursor-pointer flex-col overflow-hidden border-border bg-card pt-0 pb-0.5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
 >
 	<!-- Image -->
-	<div class="relative h-48 shrink-0 overflow-hidden bg-muted">
+	<div class="relative h-32 shrink-0 overflow-hidden bg-muted sm:h-48">
 		{#if product.imageUrl}
 			<img
 				src={product.imageUrl}
@@ -56,7 +62,7 @@
 		<div class="flex-1">
 			<h2 class="text-sm leading-snug font-bold text-foreground">{product.name}</h2>
 			{#if product.description}
-				<p class="mt-1 line-clamp-2 text-xs text-muted-foreground">{product.description}</p>
+				<p class="mt-1 hidden line-clamp-2 text-xs text-muted-foreground sm:block">{product.description}</p>
 			{/if}
 		</div>
 
@@ -66,7 +72,7 @@
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="flex items-center gap-2" onclick={stepperClick}>
-			<div class="flex items-center rounded-full border border-border bg-background">
+			<div class="hidden items-center rounded-full border border-border bg-background sm:flex">
 				<button
 					onclick={(e) => {
 						e.stopPropagation();

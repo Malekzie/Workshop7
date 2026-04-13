@@ -21,7 +21,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/stores';
-	import { formatCanadianPostalInput } from '$lib/canadianPostalCode';
+	import { formatCanadianPostalInput } from '$lib/utils/canadianPostalCode';
 
 	const reason = $derived($page.url.searchParams.get('reason'));
 
@@ -703,9 +703,13 @@
 
 				{#if success}
 					{#if fields.username.trim() !== profile.username}
-						<p class="text-sm text-green-600">Username changed. Redirecting to login...</p>
+						<p class="text-sm text-emerald-600 dark:text-emerald-400">
+							Username changed. Redirecting to login...
+						</p>
 					{:else}
-						<p class="text-sm text-green-600">Profile updated successfully! Redirecting...</p>
+						<p class="text-sm text-emerald-600 dark:text-emerald-400">
+							Profile updated successfully! Redirecting...
+						</p>
 					{/if}
 				{/if}
 
@@ -725,7 +729,7 @@
 					Temporarily deactivate your account. You can reactivate it by contacting support.
 				</p>
 				<Button
-					class="mt-4 bg-amber-500 text-white hover:cursor-pointer hover:bg-amber-600"
+					class="mt-4 bg-amber-500 text-amber-950 hover:cursor-pointer hover:bg-amber-600"
 					onclick={() => (showDeactivateConfirm = true)}
 				>
 					Deactivate Account
@@ -774,7 +778,7 @@
 							}}>Cancel</Button
 						>
 						<Button
-							class="bg-amber-500 text-white hover:bg-amber-600"
+							class="bg-amber-500 text-amber-950 hover:bg-amber-600"
 							disabled={deactivating}
 							onclick={handleDeactivate}
 						>
@@ -796,7 +800,7 @@
 					<div class="mt-6 flex justify-end gap-3">
 						<Button variant="outline" onclick={() => (showDeleteConfirm = false)}>Cancel</Button>
 						<Button
-							class="bg-red-500 text-white hover:bg-red-600"
+							class="bg-red-500 text-red-50 hover:bg-red-600"
 							disabled={deleting}
 							onclick={handleDelete}
 						>

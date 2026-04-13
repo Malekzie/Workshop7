@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { cart } from '$lib/stores/cart';
 	import * as Sentry from '@sentry/sveltekit';
-	import { formatCanadianPostalInput } from '$lib/canadianPostalCode';
+	import { formatCanadianPostalInput } from '$lib/utils/canadianPostalCode';
 	import { formatPriceCad } from '$lib/utils/money';
 
 	const ORDERS_API = '/api/v1/orders';

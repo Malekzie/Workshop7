@@ -11,16 +11,13 @@
 	let added = $state(false);
 
 	function addToCart() {
-		cart.addItem(
-			{
-				id: productId,
-				name,
-				description,
-				basePrice: finalPrice,
-				imageUrl
-			},
-			1
-		);
+		cart.addItem({
+			productId,
+			productName: name,
+			productImageUrl: imageUrl ?? null,
+			unitPrice: finalPrice,
+			quantity: 1
+		});
 		added = true;
 		setTimeout(() => (added = false), 1400);
 	}

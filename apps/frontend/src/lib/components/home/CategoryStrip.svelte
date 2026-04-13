@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { getTags } from '$lib/services/tags';
+	import { Button } from '$lib/components/ui/button/index';
 
 	interface Category {
 		name: string;
@@ -37,9 +38,10 @@
 			{:else}
 				<div class="grid grid-cols-2 gap-4 md:grid-cols-4">
 					{#each categories as cat (cat.id)}
-						<a
+						<Button
 							href={resolve(`/menu?tag=${cat.id}`)}
 							class="group relative flex flex-col gap-1 bg-card px-6 py-7 transition-colors hover:cursor-pointer hover:bg-muted/60"
+							variant="ghost"
 						>
 							{#if cat.badge}
 								<span
@@ -54,7 +56,7 @@
 								class="absolute top-5 right-4 text-primary opacity-0 transition-opacity group-hover:opacity-100"
 								>→</span
 							>
-						</a>
+						</Button>
 					{/each}
 				</div>
 			{/if}

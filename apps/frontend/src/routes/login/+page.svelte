@@ -104,18 +104,20 @@
 
 <main class="flex min-h-screen">
 	<!-- Left Pane -->
-	<section class="relative hidden items-center justify-center bg-[#f6efe7] px-16 lg:flex lg:w-1/2">
-		<div class="absolute inset-0 bg-[radial-gradient(circle_at_top,#f3e2cf,transparent_60%)]"></div>
+	<section class="relative hidden items-center justify-center bg-muted/30 px-16 lg:flex lg:w-1/2">
+		<div
+			class="absolute inset-0 bg-[radial-gradient(circle_at_top,oklch(0.93_0.03_70),transparent_60%)] dark:opacity-35"
+		></div>
 
 		<!-- Content -->
-		<div class="relative z-10 max-w-md space-y-6 text-neutral-800">
+		<div class="relative z-10 max-w-md space-y-6 text-foreground">
 			<h1 class="text-5xl font-bold tracking-tight">Peelin' Good</h1>
 
 			<h2 class="text-2xl leading-snug font-semibold">
 				Fresh from our <span class="text-primary">hearth</span> to your home.
 			</h2>
 
-			<p class="text-sm text-neutral-600">
+			<p class="text-sm text-muted-foreground">
 				Hand-kneaded, slow-proved, and crafted with care. Sign in to see our handmade baked goods.
 			</p>
 		</div>
@@ -148,14 +150,14 @@
 			<div class="grid gap-3 sm:grid-cols-2">
 				<a
 					href={resolve('/oauth2/authorization/google')}
-					class="flex items-center justify-center gap-3 rounded-full border border-border bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm transition hover:cursor-pointer hover:bg-gray-50 hover:shadow-md active:scale-[0.98]"
+					class="flex items-center justify-center gap-3 rounded-full border border-border bg-card px-4 py-3 text-sm font-semibold text-foreground shadow-sm transition hover:cursor-pointer hover:bg-muted hover:shadow-md active:scale-[0.98]"
 				>
 					<img src="/images/google_logo.svg" alt="Google" class="h-5 w-5" />
 					Google
 				</a>
 				<a
 					href={resolve('/oauth2/authorization/microsoft')}
-					class="flex items-center justify-center gap-3 rounded-full border border-border bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm transition hover:cursor-pointer hover:bg-gray-50 hover:shadow-md active:scale-[0.98]"
+					class="flex items-center justify-center gap-3 rounded-full border border-border bg-card px-4 py-3 text-sm font-semibold text-foreground shadow-sm transition hover:cursor-pointer hover:bg-muted hover:shadow-md active:scale-[0.98]"
 				>
 					<img src="/images/microsoft-icon.svg" alt="Microsoft" class="h-5 w-5" />
 					Microsoft
@@ -293,7 +295,7 @@
 			}}
 		>
 			<div
-				class="bg-card w-full max-w-md rounded-2xl border border-border p-6 shadow-lg"
+				class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="role-choice-title"

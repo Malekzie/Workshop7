@@ -5,7 +5,7 @@
 	import { goto } from '$app/navigation';
 	import { user } from '$lib/stores/authStore';
 	import { Eye, EyeOff } from '@lucide/svelte';
-	import { formatCanadianPostalInput } from '$lib/canadianPostalCode';
+	import { formatCanadianPostalInput } from '$lib/utils/canadianPostalCode';
 
 	let fields = {
 		firstName: '',

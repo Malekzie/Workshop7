@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { api } from '$lib/api';
+	import { api } from '$lib/utils/apiClient';
 	import { getProducts } from '$lib/services/products';
 	import { ShoppingBag } from '@lucide/svelte';
 	import { formatDiscountCad, formatPriceCad } from '$lib/utils/money';
@@ -69,8 +69,7 @@
 		<div class="mb-10 flex flex-col items-center gap-2 text-center">
 			<h1 class="font-serif text-4xl font-bold text-foreground">Order Confirmed!</h1>
 			<p class="text-muted-foreground">
-				Your order <span class="font-semibold text-foreground">#{order.orderNumber}</span> has been
-				placed.
+				Your order <span class="font-semibold text-foreground">#{order.orderNumber}</span> has been placed.
 			</p>
 		</div>
 
@@ -113,15 +112,17 @@
 								class="h-12 w-12 shrink-0 rounded-md object-cover"
 							/>
 						{:else}
-							<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-[#F5EFE6]">
-								<ShoppingBag class="h-5 w-5 text-[#C25F1A]/40" />
+							<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-muted">
+								<ShoppingBag class="h-5 w-5 text-primary/40" />
 							</div>
 						{/if}
 						<div class="min-w-0 flex-1">
 							<p class="truncate text-sm font-medium text-foreground">{item.productName}</p>
 							<p class="text-xs text-muted-foreground">Qty {item.quantity}</p>
 						</div>
-						<span class="shrink-0 text-sm font-semibold text-foreground">{formatPriceCad(item.lineTotal)}</span>
+						<span class="shrink-0 text-sm font-semibold text-foreground"
+							>{formatPriceCad(item.lineTotal)}</span
+						>
 					</a>
 				{/each}
 			</div>

@@ -5,8 +5,8 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { isLoggedIn } from '$lib/stores/authStore';
-	import { api } from '$lib/api';
-	import { formatCanadianPostalInput } from '$lib/canadianPostalCode';
+	import { api } from '$lib/utils/apiClient';
+	import { formatCanadianPostalInput } from '$lib/utils/canadianPostalCode';
 	import { formatDiscountCad, formatPriceCad } from '$lib/utils/money';
 
 	// ── Types ────────────────────────────────────────────────────────────────────

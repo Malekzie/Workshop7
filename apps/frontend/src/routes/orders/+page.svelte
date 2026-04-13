@@ -368,9 +368,9 @@
 														/>
 													{:else}
 														<div
-															class="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-[#F5EFE6]"
+															class="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-muted"
 														>
-															<ShoppingBag class="h-5 w-5 text-[#C25F1A]/40" />
+															<ShoppingBag class="h-5 w-5 text-primary/40" />
 														</div>
 													{/if}
 													<div class="min-w-0">
@@ -414,7 +414,7 @@
 											</button>
 											<button
 												onclick={() => toggle(order.id)}
-												class="rounded-full bg-[#C25F1A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#C25F1A]/90"
+												class="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
 											>
 												Done
 											</button>

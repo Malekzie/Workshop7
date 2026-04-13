@@ -24,12 +24,14 @@
 				href={resolve('/menu')}
 				class="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
 				size="default"
+				variant="outline"
 			>
 				Browse the menu
 			</Button>
 			<Button
 				href={resolve('/about')}
 				class="rounded-full border border-border px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+				variant="outline"
 			>
 				Our story
 			</Button>
