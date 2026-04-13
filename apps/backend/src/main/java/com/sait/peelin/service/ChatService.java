@@ -26,6 +26,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ChatService {
 
+    public record ThreadRef(Integer value) {
+    }
+
+    public record MessageDraft(String rawText) {
+    }
+
     private static final int MAX_MESSAGE_LENGTH = 2000;
     private static final String STATUS_OPEN = "open";
 
@@ -61,54 +67,54 @@ public class ChatService {
     }
 
     @Transactional(readOnly = true)
-    public List<ChatMessageDto> messages(Integer threadId) {
-        ChatThread thread = requireThread(threadId);
+    public List<ChatMessageDto> messages(ThreadRef threadRef) {
+        ChatThread thread = requireThread(threadRef);
         User user = currentUserService.requireUser();
         return messages(thread, user);
     }
 
     @Transactional(readOnly = true)
-    public List<ChatMessageDto> messages(Integer threadId, User user) {
-        ChatThread thread = requireThread(threadId);
+    public List<ChatMessageDto> messages(ThreadRef threadRef, User user) {
+        ChatThread thread = requireThread(threadRef);
         return messages(thread, user);
     }
 
     @Transactional
-    public ChatMessageDto postMessage(Integer threadId, PostChatMessageRequest req) {
-        ChatThread thread = requireThread(threadId);
+    public ChatMessageDto postMessage(ThreadRef threadRef, PostChatMessageRequest req) {
+        ChatThread thread = requireThread(threadRef);
         User sender = currentUserService.requireUser();
-        return postMessage(thread, req.getText(), sender);
+        return postMessage(thread, new MessageDraft(req.getText()), sender);
     }
 
     @Transactional
-    public ChatMessageDto postMessage(Integer threadId, String rawText, User sender) {
-        ChatThread thread = requireThread(threadId);
-        return postMessage(thread, rawText, sender);
+    public ChatMessageDto postMessage(ThreadRef threadRef, MessageDraft draft, User sender) {
+        ChatThread thread = requireThread(threadRef);
+        return postMessage(thread, draft, sender);
     }
 
     @Transactional
-    public ChatThreadDto assignEmployee(Integer threadId) {
+    public ChatThreadDto assignEmployee(ThreadRef threadRef) {
         User staff = currentUserService.requireUser();
-        ChatThread thread = requireThread(threadId);
+        ChatThread thread = requireThread(threadRef);
         return assignEmployee(thread, staff);
     }
 
     @Transactional
-    public boolean markRead(Integer threadId) {
+    public boolean markRead(ThreadRef threadRef) {
         User viewer = currentUserService.requireUser();
-        ChatThread thread = requireThread(threadId);
+        ChatThread thread = requireThread(threadRef);
         return markRead(thread, viewer);
     }
 
     @Transactional
-    public boolean markRead(Integer threadId, User viewer) {
-        ChatThread thread = requireThread(threadId);
+    public boolean markRead(ThreadRef threadRef, User viewer) {
+        ChatThread thread = requireThread(threadRef);
         return markRead(thread, viewer);
     }
 
     @Transactional(readOnly = true)
-    public void assertUserCanAccessThread(Integer threadId, User user) {
-        ChatThread thread = requireThread(threadId);
+    public void assertUserCanAccessThread(ThreadRef threadRef, User user) {
+        ChatThread thread = requireThread(threadRef);
         assertUserCanAccessThread(thread, user);
     }
 
@@ -121,11 +127,11 @@ public class ChatService {
                 .toList();
     }
 
-    private ChatMessageDto postMessage(ChatThread thread, String rawText, User sender) {
+    private ChatMessageDto postMessage(ChatThread thread, MessageDraft draft, User sender) {
         assertUserCanAccessThread(thread, sender);
         assertThreadOpen(thread);
 
-        String text = normalizeAndValidateMessageText(rawText);
+        String text = normalizeAndValidateMessageText(draft);
 
         if (isStaff(sender) && thread.getEmployeeUser() == null) {
             thread.setEmployeeUser(sender);
@@ -179,7 +185,12 @@ public class ChatService {
         return true;
     }
 
-    private ChatThread requireThread(Integer threadId) {
+    private ChatThread requireThread(ThreadRef threadRef) {
+        Integer threadId = threadRef != null ? threadRef.value() : null;
+        if (threadId == null) {
+            throw new ResourceNotFoundException("Thread not found");
+        }
+
         return chatThreadRepository.findById(threadId)
                 .orElseThrow(() -> new ResourceNotFoundException("Thread not found"));
     }
@@ -215,7 +226,8 @@ public class ChatService {
         }
     }
 
-    private String normalizeAndValidateMessageText(String rawText) {
+    private String normalizeAndValidateMessageText(MessageDraft draft) {
+        String rawText = draft != null ? draft.rawText() : null;
         String text = rawText == null ? "" : rawText.trim();
 
         if (text.isBlank()) {
