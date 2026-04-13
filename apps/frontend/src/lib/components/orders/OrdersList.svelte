@@ -3,7 +3,6 @@
 	 * Main orders list container with loading, error, and empty states
 	 * Composes OrderCard and OrderDetailsPanel components for each order
 	 */
-	import ProfileSidebar from '$lib/components/profile/ProfileSidebar.svelte';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { resolve } from '$app/paths';
 	import { orderHasAnyReviewableSlot } from '$lib/utils/OrdersHelper';
@@ -22,12 +21,7 @@
 	} = $props();
 </script>
 
-<div
-	class="flex h-[calc(100dvh-var(--app-navbar-height))] flex-col overflow-hidden bg-background md:flex-row"
->
-	<ProfileSidebar />
-
-	<main class="flex-1 overflow-y-auto p-8 lg:p-10">
+<main class="flex-1 overflow-y-auto p-8 lg:p-10">
 		<div class="mx-auto max-w-4xl space-y-6">
 			<div>
 				<h1 class="text-2xl font-bold tracking-tight text-foreground">Order History</h1>
@@ -74,4 +68,3 @@
 			{/if}
 		</div>
 	</main>
-</div>

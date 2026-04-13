@@ -50,7 +50,7 @@
 		{/if}
 
 		<a
-			href={resolve(`/orders/${order.orderNumber}`)}
+			href={resolve(`/profile/orders/${order.orderNumber}`)}
 			class="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
 		>
 			View tracking →

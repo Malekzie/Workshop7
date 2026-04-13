@@ -20,7 +20,7 @@
 
 	const allNavLinks = [
 		{ label: 'Profile', href: '/profile', icon: User, roles: null },
-		{ label: 'Order History', href: '/orders', icon: ShoppingBag, roles: ['customer'] },
+		{ label: 'Order History', href: '/profile/orders', icon: ShoppingBag, roles: ['customer'] },
 		{
 			label: 'Preferences',
 			href: '/profile/preferences',

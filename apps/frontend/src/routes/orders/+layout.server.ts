@@ -1,6 +1,6 @@
 import type { LayoutServerLoad } from './$types';
 
-// No auth guard here — /orders/[number]/confirmation must be accessible to guests.
+// No auth guard here — /orders/[number]/confirmation must be accessible to guests (post-checkout).
 // Individual pages guard themselves where auth is required.
 export const load: LayoutServerLoad = ({ locals }) => {
 	return { user: locals.user };
