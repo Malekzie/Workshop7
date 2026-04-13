@@ -128,12 +128,12 @@
 			}
 
 			const session = (await res.json()) as { orderId?: string; orderNumber?: string };
-			const orderId = session.orderId;
-			if (!orderId) {
-				throw new Error('Order placed but no order id returned.');
+			const orderNumber = session.orderNumber;
+			if (!orderNumber) {
+				throw new Error('Order placed but no order number returned.');
 			}
 			cart.clear();
-			goto(resolve(`/orders/${orderId}/confirmation`));
+			goto(resolve(`/orders/${orderNumber}/confirmation`));
 		} catch (err: unknown) {
 			Sentry.withScope((scope) => {
 				scope.setTag('action', 'GUEST_CHECKOUT_FAILED');
