@@ -167,7 +167,7 @@
 
 		<div class="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
 			<a
-				href={resolve(`/profile/orders/${order.orderNumber}`)}
+				href={resolve(`/guest/orders/${order.orderNumber}`)}
 				class="rounded-lg border border-border px-6 py-3 text-center text-sm font-medium text-foreground transition-colors hover:bg-muted"
 			>
 				Track Order

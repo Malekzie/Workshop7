@@ -6,7 +6,6 @@
 	import { get } from 'svelte/store';
 	import { isLoggedIn } from '$lib/stores/authStore';
 	import { api } from '$lib/utils/apiClient';
-	import { formatDiscountCad, formatPriceCad } from '$lib/utils/money';
 	import {
 		validateField,
 		generateTimeSlots,
@@ -19,10 +18,12 @@
 		type CustomerProfile,
 		type ErrorKey
 	} from '$lib/services/checkout';
+	import CheckoutContact from '$lib/components/checkout/CheckoutContact.svelte';
 	import CheckoutGuestContact from '$lib/components/checkout/CheckoutGuestContact.svelte';
 	import CheckoutDeliveryAddress from '$lib/components/checkout/CheckoutDeliveryAddress.svelte';
 	import CheckoutFulfillment from '$lib/components/checkout/CheckoutFulfillment.svelte';
 	import CheckoutSchedule from '$lib/components/checkout/CheckoutSchedule.svelte';
+	import CheckoutOrderNotes from '$lib/components/checkout/CheckoutOrderNotes.svelte';
 	import CheckoutSummary from '$lib/components/checkout/CheckoutSummary.svelte';
 	import CheckoutPayment from '$lib/components/checkout/CheckoutPayment.svelte';
 
@@ -74,9 +75,8 @@
 		deliveryPostal: false
 	});
 
-	function handleBlur(name: ErrorKey) {
-		touched[name] = true;
-		errors[name] = validateField(name, {
+	function currentValues() {
+		return {
 			guestFirstName,
 			guestLastName,
 			guestEmail,
@@ -86,22 +86,17 @@
 			deliveryCity,
 			deliveryProvince,
 			deliveryPostal
-		});
+		};
+	}
+
+	function handleBlur(name: ErrorKey) {
+		touched[name] = true;
+		errors[name] = validateField(name, currentValues());
 	}
 
 	function handleInput(name: ErrorKey) {
 		if (touched[name]) {
-			errors[name] = validateField(name, {
-				guestFirstName,
-				guestLastName,
-				guestEmail,
-				guestPhone,
-				deliveryLine1,
-				deliveryLine2,
-				deliveryCity,
-				deliveryProvince,
-				deliveryPostal
-			});
+			errors[name] = validateField(name, currentValues());
 		}
 	}
 
@@ -110,17 +105,7 @@
 		const fields: ErrorKey[] = ['guestFirstName', 'guestLastName', 'guestEmail', 'guestPhone'];
 		fields.forEach((f) => {
 			touched[f] = true;
-			errors[f] = validateField(f, {
-				guestFirstName,
-				guestLastName,
-				guestEmail,
-				guestPhone,
-				deliveryLine1,
-				deliveryLine2,
-				deliveryCity,
-				deliveryProvince,
-				deliveryPostal
-			});
+			errors[f] = validateField(f, currentValues());
 		});
 		return !fields.some((f) => errors[f]);
 	}
@@ -135,17 +120,7 @@
 		];
 		fields.forEach((f) => {
 			touched[f] = true;
-			errors[f] = validateField(f, {
-				guestFirstName,
-				guestLastName,
-				guestEmail,
-				guestPhone,
-				deliveryLine1,
-				deliveryLine2,
-				deliveryCity,
-				deliveryProvince,
-				deliveryPostal
-			});
+			errors[f] = validateField(f, currentValues());
 		});
 		return !fields.some((f) => errors[f]);
 	}
@@ -192,16 +167,11 @@
 	let pendingDeliveryFee = $state<number | null>(null);
 	let pendingTaxAmount = $state<number | null>(null);
 	let pendingGrandTotal = $state<number | null>(null);
-	let paymentContainer = $state<HTMLDivElement | undefined>(undefined);
-	let stripePaymentLoading = $state(false);
-	let paymentError = $state('');
 
 	// ── Derived ──────────────────────────────────────────────────────────────────
 
 	const DELIVERY_FEE = 7;
 	const DELIVERY_FREE_THRESHOLD = 50;
-
-	const selectedBakery = $derived(bakeries.find((b) => b.id === selectedBakeryId) ?? null);
 
 	const deliveryFee = $derived(
 		orderMethod === 'delivery' && $cart.subtotal < DELIVERY_FREE_THRESHOLD ? DELIVERY_FEE : 0
@@ -212,7 +182,6 @@
 	);
 
 	const hasScheduledAt = $derived(scheduleEnabled && !!scheduleDate && !!scheduleTime);
-
 	const scheduledAtIso = $derived(hasScheduledAt ? `${scheduleDate}T${scheduleTime}:00Z` : null);
 
 	// ── Lifecycle ────────────────────────────────────────────────────────────────
@@ -223,7 +192,6 @@
 			return;
 		}
 
-		// Request geolocation — silently ignore if denied
 		if (typeof navigator !== 'undefined' && navigator.geolocation) {
 			navigator.geolocation.getCurrentPosition(
 				(pos) => {
@@ -253,18 +221,14 @@
 		}
 	});
 
-	// Re-sort bakeries when geolocation updates
 	$effect(() => {
 		if (userLat !== null && userLng !== null && bakeries.length > 0) {
 			const sorted = sortedBakeries(bakeries, userLat, userLng);
 			bakeries = sorted;
-			if (!selectedBakeryId) {
-				selectedBakeryId = sorted[0]?.id ?? null;
-			}
+			if (!selectedBakeryId) selectedBakeryId = sorted[0]?.id ?? null;
 		}
 	});
 
-	// Fetch bakery hours whenever the selected bakery changes
 	$effect(() => {
 		if (!selectedBakeryId) return;
 		const id = selectedBakeryId;
@@ -283,7 +247,6 @@
 			});
 	});
 
-	// Rebuild time slots when date or hours change (30-minute intervals)
 	$effect(() => {
 		const slots = generateTimeSlots(scheduleDate, bakeryHours);
 		availableTimeSlots = slots;
@@ -294,20 +257,14 @@
 		}
 	});
 
-	// Auto-fill date when "Schedule for later" is enabled; reset when disabled
 	$effect(() => {
 		if (!scheduleEnabled) {
 			scheduleDate = '';
 			scheduleTime = '';
 			return;
 		}
-		// Wait until bakery hours have loaded before setting the default date so
-		// the slot-building effect can immediately validate it
 		if (!bakeryHours.length) return;
-		// Only set the default if the user hasn't already picked a date
-		if (!scheduleDate) {
-			scheduleDate = asapScheduleDate();
-		}
+		if (!scheduleDate) scheduleDate = asapScheduleDate();
 	});
 
 	// ── Submit ───────────────────────────────────────────────────────────────────
@@ -369,9 +326,7 @@
 			};
 
 			if (orderMethod === 'delivery') {
-				if (isGuest) {
-					// Guest: address goes in the guest object
-				} else if (useCustomAddress) {
+				if (!isGuest && useCustomAddress) {
 					body.deliveryAddress = {
 						line1: deliveryLine1,
 						line2: deliveryLine2 || undefined,
@@ -379,7 +334,7 @@
 						province: deliveryProvince,
 						postalCode: deliveryPostal
 					};
-				} else if (customer?.addressId) {
+				} else if (!isGuest && customer?.addressId) {
 					body.addressId = customer.addressId;
 				}
 			}
@@ -424,15 +379,12 @@
 			pendingTaxAmount = session.taxAmount ?? null;
 			pendingGrandTotal = session.grandTotal ?? null;
 
-			// Stripe must be configured to process payments
 			if (!stripePublishableKey) {
 				submitError = 'Payment processing is not available. Stripe is not configured.';
 				return;
 			}
 
 			phase = 'payment';
-			// Give Svelte a tick to render the payment container before mounting
-			setTimeout(mountStripeElement, 50);
 		} catch (err) {
 			submitError = err instanceof Error ? err.message : 'Unexpected error. Please try again.';
 		} finally {
@@ -440,71 +392,9 @@
 		}
 	}
 
-	// ── Stripe ───────────────────────────────────────────────────────────────────
-
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	let stripeInstance: any = null;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	let stripeElements: any = null;
-
-	async function mountStripeElement() {
-		if (!paymentContainer || !stripePublishableKey || !pendingClientSecret) return;
-		stripePaymentLoading = true;
-
-		// Dynamically load Stripe.js if not already present
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		if (!(window as any).Stripe) {
-			await new Promise<void>((res, rej) => {
-				const s = document.createElement('script');
-				s.src = 'https://js.stripe.com/v3/';
-				s.onload = () => res();
-				s.onerror = () => rej(new Error('Failed to load Stripe.js'));
-				document.head.appendChild(s);
-			});
-		}
-
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		stripeInstance = (window as any).Stripe(stripePublishableKey);
-		stripeElements = stripeInstance.elements({ clientSecret: pendingClientSecret });
-		const paymentElement = stripeElements.create('payment');
-		paymentElement.mount(paymentContainer);
-		stripePaymentLoading = false;
-	}
-
-	async function pay() {
-		if (!stripeInstance || !stripeElements) return;
-		stripePaymentLoading = true;
-		paymentError = '';
-
-		const returnUrl = `${window.location.origin}/orders/${pendingOrderNumber}/confirmation`;
-
-		const { error } = await stripeInstance.confirmPayment({
-			elements: stripeElements,
-			redirect: 'if_required',
-			confirmParams: { return_url: returnUrl }
-		});
-
-		if (error) {
-			paymentError = error.message ?? 'Payment failed. Please try again.';
-			stripePaymentLoading = false;
-			return;
-		}
-
-		// Notify the backend the payment succeeded (webhook may also do this, but belt-and-suspenders)
-		try {
-			await api.post(`/orders/${pendingOrderId}/confirm-stripe-payment`, {
-				paymentIntentId: pendingPaymentIntentId
-			});
-		} catch (err) {
-			// Surface fulfillment errors — webhook will also handle this if the request fails
-			paymentError =
-				err instanceof Error ? err.message : 'Could not confirm payment. Please contact support.';
-			stripePaymentLoading = false;
-			return;
-		}
-
+	function handlePaymentSuccess(orderNumber: string) {
 		cart.clear();
-		goto(resolve(`/orders/${pendingOrderNumber}/confirmation`));
+		goto(resolve(`/guest/orders/${orderNumber}/confirmation`));
 	}
 </script>
 
@@ -534,7 +424,6 @@
 			}}
 			class="flex flex-col gap-8"
 		>
-			<!-- ── Contact ─────────────────────────────────────────────────── -->
 			{#if isGuest}
 				<CheckoutGuestContact
 					bind:firstName={guestFirstName}
@@ -548,30 +437,9 @@
 					onPhoneInput={() => {}}
 				/>
 			{:else if customer}
-				<section class="rounded-xl border border-border bg-card p-6 shadow-sm">
-					<h2 class="mb-3 text-lg font-semibold text-foreground">Contact</h2>
-					<div class="flex items-center justify-between">
-						<div>
-							{#if customer.firstName || customer.lastName}
-								<p class="font-medium text-foreground">
-									{[customer.firstName, customer.lastName].filter(Boolean).join(' ')}
-								</p>
-							{/if}
-							{#if customer.email}
-								<p class="text-sm text-muted-foreground">{customer.email}</p>
-							{/if}
-							{#if customer.phone}
-								<p class="text-sm text-muted-foreground">{customer.phone}</p>
-							{/if}
-						</div>
-						<a href={resolve('/profile')} class="text-xs text-primary hover:underline"
-							>Edit profile</a
-						>
-					</div>
-				</section>
+				<CheckoutContact {customer} />
 			{/if}
 
-			<!-- ── Fulfillment ─────────────────────────────────────────────── -->
 			<CheckoutFulfillment
 				{bakeries}
 				bind:selectedBakeryId
@@ -598,7 +466,6 @@
 				}}
 			/>
 
-			<!-- ── Delivery Address ────────────────────────────────────────── -->
 			{#if needsDeliveryForm}
 				<section class="rounded-xl border border-border bg-card p-6 shadow-sm">
 					<h2 class="mb-4 text-lg font-semibold text-foreground">Delivery Address</h2>
@@ -617,7 +484,6 @@
 				</section>
 			{/if}
 
-			<!-- ── Schedule ────────────────────────────────────────────────── -->
 			<CheckoutSchedule
 				bind:scheduleEnabled
 				bind:scheduleDate
@@ -630,18 +496,8 @@
 				onTimeChange={() => {}}
 			/>
 
-			<!-- ── Order Notes ─────────────────────────────────────────────── -->
-			<section class="rounded-xl border border-border bg-card p-6 shadow-sm">
-				<h2 class="mb-4 text-lg font-semibold text-foreground">Order Notes</h2>
-				<textarea
-					bind:value={orderComment}
-					rows={3}
-					placeholder="Allergies, special requests…"
-					class="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
-				></textarea>
-			</section>
+			<CheckoutOrderNotes bind:value={orderComment} />
 
-			<!-- ── Summary ─────────────────────────────────────────────────── -->
 			<CheckoutSummary
 				items={$cart.items}
 				subtotal={$cart.subtotal}
@@ -667,19 +523,19 @@
 			</button>
 		</form>
 	{:else}
-		<!-- ── Payment phase ────────────────────────────────────────────── -->
 		<CheckoutPayment
 			orderNumber={pendingOrderNumber}
+			orderId={pendingOrderId}
+			publishableKey={stripePublishableKey}
+			clientSecret={pendingClientSecret}
+			paymentIntentId={pendingPaymentIntentId}
 			subtotal={Number(pendingSubtotal ?? $cart.subtotal)}
 			discount={pendingDiscount}
 			deliveryFee={pendingDeliveryFee}
 			taxAmount={pendingTaxAmount}
 			grandTotal={pendingGrandTotal}
 			{orderMethod}
-			paymentLoading={stripePaymentLoading}
-			{paymentError}
-			bind:paymentContainer
-			onPay={pay}
+			onSuccess={handlePaymentSuccess}
 			onBack={() => (phase = 'form')}
 		/>
 	{/if}

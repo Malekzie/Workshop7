@@ -276,7 +276,7 @@
 					</div>
 					<button
 						type="button"
-						onclick={() => goto(resolve('/checkout/guest'))}
+						onclick={() => goto(resolve('/guest/checkout'))}
 						class="w-full rounded-full border border-border py-4 text-base font-semibold text-foreground transition hover:bg-muted"
 					>
 						Continue as guest
