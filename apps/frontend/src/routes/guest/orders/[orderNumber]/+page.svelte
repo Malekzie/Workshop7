@@ -3,4 +3,4 @@
 	import OrderTracking from '$lib/components/orders/OrderTracking.svelte';
 </script>
 
-<OrderTracking orderNumber={page.params.orderNumber} />
+<OrderTracking orderNumber={page.params.orderNumber ?? ''} />

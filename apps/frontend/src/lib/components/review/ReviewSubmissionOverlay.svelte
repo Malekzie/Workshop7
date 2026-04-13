@@ -5,7 +5,7 @@
 
 {#if visible}
 	<div
-		class="fixed inset-0 z-[180] flex items-center justify-center bg-black/50 p-6"
+		class="fixed inset-0 z-180 flex items-center justify-center bg-black/50 p-6"
 		role="status"
 		aria-live="polite"
 		aria-busy="true"

@@ -2,22 +2,19 @@
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { cart } from '$lib/stores/cart';
-	import { onMount } from 'svelte';
-	import { get } from 'svelte/store';
-	import { isLoggedIn } from '$lib/stores/authStore';
+	import { onMount, untrack } from 'svelte';
 	import { api } from '$lib/utils/apiClient';
 	import {
 		validateField,
 		generateTimeSlots,
 		sortedBakeries,
 		asapScheduleDate,
-		type BakeryAddress,
 		type Bakery,
 		type BakeryHour,
-		type SavedAddress,
 		type CustomerProfile,
 		type ErrorKey
 	} from '$lib/services/checkout';
+	import type { PageData } from './$types';
 	import CheckoutContact from '$lib/components/checkout/CheckoutContact.svelte';
 	import CheckoutGuestContact from '$lib/components/checkout/CheckoutGuestContact.svelte';
 	import CheckoutDeliveryAddress from '$lib/components/checkout/CheckoutDeliveryAddress.svelte';
@@ -27,14 +24,11 @@
 	import CheckoutSummary from '$lib/components/checkout/CheckoutSummary.svelte';
 	import CheckoutPayment from '$lib/components/checkout/CheckoutPayment.svelte';
 
-	// ── Session ──────────────────────────────────────────────────────────────────
+	// ── Data from server ─────────────────────────────────────────────────────────
 
-	const isGuest = !get(isLoggedIn);
+	let { data }: { data: PageData } = $props();
 
-	// ── Page state ───────────────────────────────────────────────────────────────
-
-	let pageLoading = $state(true);
-	let pageError = $state('');
+	const isGuest = !untrack(() => data.user);
 
 	// Guest contact
 	let guestFirstName = $state('');
@@ -125,11 +119,11 @@
 		return !fields.some((f) => errors[f]);
 	}
 
-	// Loaded data
-	let customer = $state<CustomerProfile | null>(null);
-	let bakeries = $state<Bakery[]>([]);
-	let selectedBakeryId = $state<number | null>(null);
-	let stripePublishableKey = $state('');
+	// Loaded data (from server) — untrack signals intentional one-time snapshots
+	let customer = $state<CustomerProfile | null>(untrack(() => data.customer));
+	let bakeries = $state<Bakery[]>(untrack(() => data.bakeries));
+	let selectedBakeryId = $state<number | null>(untrack(() => data.bakeries[0]?.id ?? null));
+	const stripePublishableKey = untrack(() => data.stripePublishableKey);
 
 	// User geolocation
 	let userLat = $state<number | null>(null);
@@ -186,12 +180,13 @@
 
 	// ── Lifecycle ────────────────────────────────────────────────────────────────
 
-	onMount(async () => {
+	onMount(() => {
 		if ($cart.items.length === 0) {
 			goto(resolve('/'));
 			return;
 		}
 
+		// Request geolocation — silently ignore if denied
 		if (typeof navigator !== 'undefined' && navigator.geolocation) {
 			navigator.geolocation.getCurrentPosition(
 				(pos) => {
@@ -200,24 +195,6 @@
 				},
 				() => {}
 			);
-		}
-
-		try {
-			const [bakeriesData, stripeConfig] = await Promise.all([
-				api.get<Bakery[]>('/bakeries'),
-				api.get<{ publishableKey: string }>('/stripe/config').catch(() => ({ publishableKey: '' }))
-			]);
-			stripePublishableKey = stripeConfig.publishableKey ?? '';
-			bakeries = bakeriesData;
-			if (bakeries.length > 0) selectedBakeryId = bakeries[0].id;
-
-			if (!isGuest) {
-				customer = await api.get<CustomerProfile>('/customers/me');
-			}
-		} catch (err) {
-			pageError = err instanceof Error ? err.message : 'Failed to load checkout data.';
-		} finally {
-			pageLoading = false;
 		}
 	});
 
@@ -401,15 +378,7 @@
 <main class="mx-auto max-w-2xl px-6 py-16">
 	<h1 class="mb-10 font-serif text-4xl font-bold text-foreground">Checkout</h1>
 
-	{#if pageLoading}
-		<p class="text-center text-muted-foreground">Loading…</p>
-	{:else if pageError}
-		<div
-			class="rounded-xl border border-destructive bg-destructive/10 p-6 text-center text-destructive"
-		>
-			<p>{pageError}</p>
-		</div>
-	{:else if $cart.items.length === 0}
+	{#if $cart.items.length === 0}
 		<div class="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
 			<p>Your cart is empty.</p>
 			<a href={resolve('/')} class="mt-4 inline-block text-primary hover:underline"

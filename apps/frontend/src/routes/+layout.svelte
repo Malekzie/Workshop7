@@ -24,7 +24,7 @@
 
 {#if navigating}
 	<div
-		class="fixed top-0 right-0 left-0 z-50 h-[3px] overflow-hidden"
+		class="fixed top-0 right-0 left-0 z-50 h-0.75 overflow-hidden"
 		role="progressbar"
 		aria-label="Page loading"
 	>
