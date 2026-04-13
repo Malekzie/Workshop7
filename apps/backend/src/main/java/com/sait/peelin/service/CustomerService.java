@@ -56,6 +56,7 @@ public class CustomerService {
     private static final Logger log = LoggerFactory.getLogger(CustomerService.class);
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "customers", key = "'all:' + #search")
     public List<CustomerDto> listAdmin(String search) {
         currentUserService.requireUser();
         if (StringUtils.hasText(search)) {
@@ -66,6 +67,7 @@ public class CustomerService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "customers", key = "'pending-photos'")
     public List<CustomerDto> pendingPhotos() {
         return customerRepository.findByUserPhotoApprovalPendingTrue().stream().map(this::toDto).toList();
     }
@@ -264,6 +266,7 @@ public class CustomerService {
     }
 
     @Transactional
+    @CacheEvict(value = "customers", allEntries = true)
     public void approvePhoto(UUID id) {
         Customer c = customerRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
         if (c.getUser() != null) {
@@ -281,6 +284,7 @@ public class CustomerService {
     }
 
     @Transactional
+    @CacheEvict(value = "customers", allEntries = true)
     public void rejectPhoto(UUID id) {
         Customer c = customerRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
         if (c.getUser() != null) {
