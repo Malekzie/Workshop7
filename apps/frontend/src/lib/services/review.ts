@@ -1,5 +1,5 @@
 import { apiFetch } from '$lib/utils/api';
-import { REVIEWS_API } from '$lib/services/constants';
+import { ORDERS_API, PRODUCTS_API, REVIEWS_API } from '$lib/services/constants';
 import type {
 	ApiId,
 	ReviewRecord,
@@ -20,7 +20,7 @@ export async function createProductReview(
 	orderId: ApiId | null = null,
 	guestName: string | null = null
 ): Promise<ReviewSubmissionResult | undefined> {
-	const res = await apiFetch(`${REVIEWS_API}/products/${productId}/reviews`, {
+	const res = await apiFetch(`${PRODUCTS_API}/${productId}/reviews`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({
@@ -48,7 +48,7 @@ export async function createOrderReview(
 	rating: number,
 	comment: string
 ): Promise<ReviewSubmissionResult | undefined> {
-	const res = await apiFetch(`${REVIEWS_API}/orders/${orderId}/reviews`, {
+	const res = await apiFetch(`${ORDERS_API}/${orderId}/reviews`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ rating, comment, orderId })
@@ -66,7 +66,7 @@ export async function createOrderReview(
 }
 
 export async function getProductReviews(productId: ApiId): Promise<ReviewRecord[]> {
-	const res = await fetch(`${REVIEWS_API}/products/${productId}/reviews`);
+	const res = await fetch(`${PRODUCTS_API}/${productId}/reviews`);
 
 	if (!res.ok) throw new Error(`Failed to fetch reviews: ${res.status}`);
 	return res.json();
