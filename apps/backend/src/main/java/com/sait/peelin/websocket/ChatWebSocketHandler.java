@@ -50,7 +50,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         }
 
         try {
-            chatService.assertUserCanAccessThread(threadId, user);
+            chatService.assertUserCanAccessThread(new ChatService.ThreadRef(threadId), user);
         } catch (ResponseStatusException ex) {
             session.close(new CloseStatus(resolveCloseCode(ex.getStatusCode()), "Forbidden"));
             return;
@@ -97,7 +97,11 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
         ChatMessageDto created;
         try {
-            created = chatService.postMessage(threadId, text, user);
+            created = chatService.postMessage(
+                    new ChatService.ThreadRef(threadId),
+                    new ChatService.MessageDraft(text),
+                    user
+            );
         } catch (ResponseStatusException ex) {
             ObjectNode error = objectMapper.createObjectNode();
             error.put("type", "error");
@@ -115,12 +119,12 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     }
 
     private void handleRead(Integer threadId, User user) throws Exception {
-        boolean changed = chatService.markRead(threadId, user);
+        boolean changed = chatService.markRead(new ChatService.ThreadRef(threadId), user);
         if (!changed) {
             return;
         }
 
-        List<ChatMessageDto> messages = chatService.messages(threadId, user);
+        List<ChatMessageDto> messages = chatService.messages(new ChatService.ThreadRef(threadId), user);
 
         ObjectNode outbound = objectMapper.createObjectNode();
         outbound.put("type", "read");
