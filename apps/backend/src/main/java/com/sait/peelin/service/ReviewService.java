@@ -101,10 +101,6 @@ public class ReviewService {
         }
         Product product = productRepository.findById(productId).orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
-        if (isAuthenticated && !orderItemRepository.existsPurchasedByCustomer(customer.getId(), productId)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You can only review products you have purchased");
-        }
-
 
         Bakery bakery = resolveBakeryForProductReview(customer.getId(), productId);
         String comment = req.getComment();
