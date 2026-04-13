@@ -4,6 +4,7 @@
 	import { cart } from '$lib/stores/cart';
 	import * as Sentry from '@sentry/sveltekit';
 	import { formatCanadianPostalInput } from '$lib/utils/canadianPostalCode';
+	import { FormValidationUtil } from '$lib/utils/formValidation';
 	import { formatPriceCad } from '$lib/utils/money';
 
 	const ORDERS_API = '/api/v1/orders';
@@ -51,15 +52,6 @@
 		{ value: 'YT', label: 'Yukon' }
 	];
 
-	function formatPhone(value: string): string {
-		const digits = value.replace(/\D/g, '').substring(0, 10);
-		const parts = [];
-		if (digits.length > 0) parts.push('(' + digits.substring(0, 3));
-		if (digits.length >= 4) parts.push(') ' + digits.substring(3, 6));
-		if (digits.length >= 7) parts.push('-' + digits.substring(6, 10));
-		return parts.join('');
-	}
-
 	async function submit() {
 		error = '';
 
@@ -71,8 +63,20 @@
 			error = 'Email is required.';
 			return;
 		}
+		if (!FormValidationUtil.isValidEmail(email)) {
+			error = 'Enter a valid email address.';
+			return;
+		}
+		if (phone.trim() && !FormValidationUtil.isValidPhone(phone)) {
+			error = 'Enter a valid phone number.';
+			return;
+		}
 		if (orderMethod === 'delivery' && (!line1 || !city || !province || !postalCode)) {
 			error = 'Full delivery address is required for delivery orders.';
+			return;
+		}
+		if (orderMethod === 'delivery' && !FormValidationUtil.isValidCanadianPostalCode(postalCode)) {
+			error = 'Enter a valid Canadian postal code (e.g. T2P 1J9).';
 			return;
 		}
 		if ($cart.items.length === 0) {
@@ -217,7 +221,7 @@
 							type="tel"
 							bind:value={phone}
 							oninput={(e) => {
-								phone = formatPhone(e.currentTarget.value);
+								phone = FormValidationUtil.formatPhone(e.currentTarget.value);
 							}}
 							class="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
 						/>

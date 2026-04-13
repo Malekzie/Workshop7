@@ -1,3 +1,5 @@
+import { FormValidationUtil } from '$lib/utils/formValidation';
+
 // ── Types ────────────────────────────────────────────────────────────────
 
 export interface BakeryAddress {
@@ -101,12 +103,10 @@ export function validateField(
 			return '';
 		case 'guestEmail':
 			if (!val.trim()) return 'Email is required.';
-			if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val.trim()))
-				return 'Enter a valid email address.';
+			if (!FormValidationUtil.isValidEmail(val)) return 'Enter a valid email address.';
 			return '';
 		case 'guestPhone':
-			if (val.trim() && !/^\+?[\d\s\-().]{7,15}$/.test(val.trim()))
-				return 'Enter a valid phone number.';
+			if (val.trim() && !FormValidationUtil.isValidPhone(val)) return 'Enter a valid phone number.';
 			return '';
 		case 'deliveryLine1':
 			if (!val.trim()) return 'Address is required.';
@@ -121,19 +121,14 @@ export function validateField(
 			return '';
 		case 'deliveryPostal':
 			if (!val.trim()) return 'Postal code is required.';
-			if (!/^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/.test(val.trim()))
+			if (!FormValidationUtil.isValidCanadianPostalCode(val))
 				return 'Enter a valid Canadian postal code (e.g. T2P 1J9).';
 			return '';
 	}
 }
 
 export function formatPhone(raw: string): string {
-	const digits = raw.replace(/\D/g, '').substring(0, 10);
-	const parts: string[] = [];
-	if (digits.length > 0) parts.push('(' + digits.substring(0, 3));
-	if (digits.length >= 4) parts.push(') ' + digits.substring(3, 6));
-	if (digits.length >= 7) parts.push('-' + digits.substring(6, 10));
-	return parts.join('');
+	return FormValidationUtil.formatPhone(raw);
 }
 
 // ── Geolocation & Distance ────────────────────────────────────────────────
@@ -144,9 +139,7 @@ export function haversineKm(lat1: number, lon1: number, lat2: number, lon2: numb
 	const dLon = ((lon2 - lon1) * Math.PI) / 180;
 	const a =
 		Math.sin(dLat / 2) ** 2 +
-		Math.cos((lat1 * Math.PI) / 180) *
-			Math.cos((lat2 * Math.PI) / 180) *
-			Math.sin(dLon / 2) ** 2;
+		Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
 	return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
@@ -173,17 +166,17 @@ export function formatBakeryOption(
 	return label;
 }
 
-export function sortedBakeries(bakeries: Bakery[], userLat: number | null, userLng: number | null): Bakery[] {
+export function sortedBakeries(
+	bakeries: Bakery[],
+	userLat: number | null,
+	userLng: number | null
+): Bakery[] {
 	if (userLat == null || userLng == null) return bakeries;
 	return [...bakeries].sort((a, b) => {
 		const da =
-			a.latitude && a.longitude
-				? haversineKm(userLat, userLng, a.latitude, a.longitude)
-				: Infinity;
+			a.latitude && a.longitude ? haversineKm(userLat, userLng, a.latitude, a.longitude) : Infinity;
 		const db =
-			b.latitude && b.longitude
-				? haversineKm(userLat, userLng, b.latitude, b.longitude)
-				: Infinity;
+			b.latitude && b.longitude ? haversineKm(userLat, userLng, b.latitude, b.longitude) : Infinity;
 		return da - db;
 	});
 }
@@ -260,7 +253,11 @@ export function nextOpenStr(bakeryHours: BakeryHour[]): string | null {
 	return null;
 }
 
-export function scheduledDayClosedNotice(scheduleDate: string, bakeryHours: BakeryHour[], availableTimeSlots: string[]): string | null {
+export function scheduledDayClosedNotice(
+	scheduleDate: string,
+	bakeryHours: BakeryHour[],
+	availableTimeSlots: string[]
+): string | null {
 	if (!scheduleDate || availableTimeSlots.length > 0) return null;
 	if (!bakeryHours.length) return null;
 	for (let offset = 1; offset <= 7; offset++) {
@@ -271,8 +268,7 @@ export function scheduledDayClosedNotice(scheduleDate: string, bakeryHours: Bake
 		if (!entry || entry.closed) continue;
 		const [oh, om] = entry.openTime.split(':').map(Number);
 		const timeStr = formatTimeHM(oh, om);
-		const dayLabel =
-			offset === 1 ? 'tomorrow' : d.toLocaleDateString('en-CA', { weekday: 'long' });
+		const dayLabel = offset === 1 ? 'tomorrow' : d.toLocaleDateString('en-CA', { weekday: 'long' });
 		return `This location is closed on the selected day. It will open ${dayLabel} at ${timeStr}.`;
 	}
 	return 'This location appears to be closed for the near future.';

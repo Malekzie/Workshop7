@@ -22,6 +22,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/stores';
 	import { formatCanadianPostalInput } from '$lib/utils/canadianPostalCode';
+	import { FormValidationUtil } from '$lib/utils/formValidation';
 
 	const reason = $derived($page.url.searchParams.get('reason'));
 
@@ -169,34 +170,14 @@
 		if (!fields.city.trim()) e.city = 'City is required.';
 		if (!fields.province) e.province = 'Province is required.';
 		if (!fields.postalCode.trim()) e.postalCode = 'Postal code is required.';
-		else if (!/^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/.test(fields.postalCode.trim()))
+		else if (!FormValidationUtil.isValidCanadianPostalCode(fields.postalCode))
 			e.postalCode = 'Enter a valid Canadian postal code.';
 		if (!fields.username.trim()) e.username = 'Username is required.';
 		if (!fields.email.trim()) e.email = 'Email is required.';
-		else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email.trim()))
+		else if (!FormValidationUtil.isValidEmail(fields.email))
 			e.email = 'Enter a valid email address.';
 		errors = e;
 		return Object.keys(e).length === 0;
-	}
-
-	function formatPhone(value) {
-		const digits = value.replace(/\D/g, '').substring(0, 10);
-		const parts = [];
-		if (digits.length > 0) parts.push('(' + digits.substring(0, 3));
-		if (digits.length >= 4) parts.push(') ' + digits.substring(3, 6));
-		if (digits.length >= 7) parts.push('-' + digits.substring(6, 10));
-		return parts.join('');
-	}
-
-	function formatPostalCode(value) {
-		const cleaned = value
-			.replace(/[^a-zA-Z0-9]/g, '')
-			.toUpperCase()
-			.substring(0, 6);
-		if (cleaned.length > 3) {
-			return cleaned.substring(0, 3) + ' ' + cleaned.substring(3);
-		}
-		return cleaned;
 	}
 
 	async function handleSave(event) {
@@ -476,7 +457,7 @@
 								type="tel"
 								bind:value={fields.phone}
 								oninput={(e) => {
-									fields.phone = formatPhone(e.target.value);
+									fields.phone = FormValidationUtil.formatPhone(e.target.value);
 								}}
 								class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
 									{errors.phone
@@ -501,7 +482,7 @@
 								type="tel"
 								bind:value={fields.businessPhone}
 								oninput={(e) => {
-									fields.businessPhone = formatPhone(e.target.value);
+									fields.businessPhone = FormValidationUtil.formatPhone(e.target.value);
 								}}
 								class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none"
 							/>

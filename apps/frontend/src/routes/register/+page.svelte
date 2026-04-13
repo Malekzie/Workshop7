@@ -6,6 +6,7 @@
 	import { user } from '$lib/stores/authStore';
 	import { Eye, EyeOff } from '@lucide/svelte';
 	import { formatCanadianPostalInput } from '$lib/utils/canadianPostalCode';
+	import { FormValidationUtil } from '$lib/utils/formValidation';
 
 	let fields = {
 		firstName: '',
@@ -66,7 +67,7 @@
 				return '';
 			case 'email':
 				if (!value.trim()) return 'Email is required.';
-				if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) return 'Enter a valid email address.';
+				if (!FormValidationUtil.isValidEmail(value)) return 'Enter a valid email address.';
 				return '';
 			case 'username':
 				if (!value.trim()) return 'Username is required.';
@@ -82,7 +83,7 @@
 				return '';
 			case 'phone':
 				if (!value.trim()) return 'Phone number is required.';
-				if (!/^\+?[\d\s\-().]{7,15}$/.test(value)) return 'Enter a valid phone number.';
+				if (!FormValidationUtil.isValidPhone(value)) return 'Enter a valid phone number.';
 				return '';
 			case 'addressLine1':
 				if (!value.trim()) return 'Address is required.';
@@ -95,7 +96,7 @@
 				return '';
 			case 'postalCode':
 				if (!value.trim()) return 'Postal code is required.';
-				if (!/^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/.test(value.trim()))
+				if (!FormValidationUtil.isValidCanadianPostalCode(value))
 					return 'Enter a valid Canadian postal code (e.g. T2P 1J9).';
 				return '';
 			default:
@@ -114,17 +115,6 @@
 		}
 	}
 
-	function formatPostalCode(value) {
-		const cleansed = value
-			.replace(/[^a-zA-Z0-9]/g, '')
-			.toUpperCase()
-			.substring(0, 6);
-		if (cleansed.length > 3) {
-			return cleansed.substring(0, 3) + ' ' + cleansed.substring(3);
-		}
-		return cleansed;
-	}
-
 	function validateStep(fieldNames) {
 		fieldNames.forEach((name) => {
 			touched[name] = true;
@@ -141,15 +131,6 @@
 
 	function prevStep() {
 		step = 1;
-	}
-
-	function formatPhone(value) {
-		const digits = value.replace(/\D/g, '').substring(0, 10);
-		const parts = [];
-		if (digits.length > 0) parts.push('(' + digits.substring(0, 3));
-		if (digits.length >= 4) parts.push(') ' + digits.substring(3, 6));
-		if (digits.length >= 7) parts.push('-' + digits.substring(6, 10));
-		return parts.join('');
 	}
 
 	function getDefaultPostAuthRoute(role) {
@@ -424,7 +405,7 @@
 								placeholder="(403) 555-0100"
 								bind:value={fields.phone}
 								oninput={(e) => {
-									fields.phone = formatPhone(e.target.value);
+									fields.phone = FormValidationUtil.formatPhone(e.target.value);
 									handleInput('phone');
 								}}
 								onblur={() => handleBlur('phone')}
@@ -449,7 +430,7 @@
 								placeholder="(403) 555-0100"
 								bind:value={fields.businessPhone}
 								oninput={(e) => {
-									fields.businessPhone = formatPhone(e.target.value);
+									fields.businessPhone = FormValidationUtil.formatPhone(e.target.value);
 								}}
 								class="bg-surface-container-highest mt-1 w-full rounded-xl px-4 py-3 font-medium ring-1 ring-border transition"
 							/>

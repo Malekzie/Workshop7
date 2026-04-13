@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import SpecialCard from '$lib/components/product/SpecialCard.svelte';
+	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { getTodaySpecial } from '$lib/services/product-specials';
 	import { getProductById } from '$lib/services/products';
 
@@ -53,7 +54,9 @@
 		<p class="mb-8 text-sm text-muted-foreground">Our featured product for today's date.</p>
 
 		{#if loading}
-			<p class="text-sm text-muted-foreground">Loading today's special…</p>
+			<div class="mx-auto max-w-lg">
+				<Skeleton class="h-64 w-full rounded-2xl" />
+			</div>
 		{:else if specials.length > 0}
 			<div class="mx-auto grid max-w-lg grid-cols-1 gap-4">
 				{#each specials as special (special.productSpecialId)}
