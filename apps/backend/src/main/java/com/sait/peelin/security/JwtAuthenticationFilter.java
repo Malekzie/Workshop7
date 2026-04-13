@@ -35,7 +35,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         var existingAuth = SecurityContextHolder.getContext().getAuthentication();
 
-        if (existingAuth != null && existingAuth.isAuthenticated() && existingAuth.getName() != null) {
+        if (existingAuth != null && existingAuth.isAuthenticated() && existingAuth.getName() != null
+                && !(existingAuth instanceof org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken)) {
             User sessionUser = userLookupCacheService.findActiveByLoginIdentifier(existingAuth.getName());
 
             if (sessionUser == null) {
@@ -50,6 +51,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String jwt = extractToken(request);
+
+        if (jwt != null && !tokenDenylistService.isDenied(jwt)) {
+            // If we have a valid JWT, clear any existing OAuth2 auth so JWT takes precedence
+            if (SecurityContextHolder.getContext().getAuthentication() instanceof
+                    org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken) {
+                SecurityContextHolder.clearContext();
+            }
+        }
 
         if (jwt == null || tokenDenylistService.isDenied(jwt)) {
             filterChain.doFilter(request, response);
