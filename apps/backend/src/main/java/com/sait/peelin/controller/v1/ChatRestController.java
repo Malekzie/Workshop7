@@ -67,7 +67,6 @@ public class ChatRestController {
     }
 
     @PostMapping("/threads/{threadId}/close")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
     public ChatThreadDto close(@PathVariable Integer threadId) {
         return chatService.closeThread(threadId);
     }

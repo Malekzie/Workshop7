@@ -1,5 +1,13 @@
 <script>
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button';
+	import { logoutUser } from '$lib/services/auth';
+
+	async function handleGoHome() {
+		await logoutUser();
+		goto(resolve('/'));
+	}
 </script>
 
 <div class="flex min-h-screen items-center justify-center bg-background px-6">
@@ -10,6 +18,6 @@
 			get it sorted out.
 		</p>
 		<Button href="mailto:peelingoodbakery@gmail.com" class="w-full">Contact support</Button>
-		<Button href="/" variant="outline" class="mt-3 w-full">Go home</Button>
+		<Button variant="outline" class="mt-3 w-full" onclick={handleGoHome}>Go home</Button>
 	</div>
 </div>

@@ -7,6 +7,7 @@ import com.sait.peelin.service.JwtService;
 import com.sait.peelin.service.TokenDenylistService;
 import com.sait.peelin.service.UserLookupCacheService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageDeliveryException;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class StompChannelInterceptor implements ChannelInterceptor {
@@ -63,6 +65,9 @@ public class StompChannelInterceptor implements ChannelInterceptor {
         }
 
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
+            java.util.Map<String, Object> attrs = accessor.getSessionAttributes();
+            log.info("WS CONNECT session attrs: {}", attrs != null ? attrs.keySet() : "null");
+            log.info("WS CONNECT token resolved: {}", resolveToken(accessor) != null ? "YES" : "NULL");
             String jwt = resolveToken(accessor);
             if (jwt == null || tokenDenylistService.isDenied(jwt)) {
                 throw new MessageDeliveryException("Unauthorized");
@@ -91,10 +96,20 @@ public class StompChannelInterceptor implements ChannelInterceptor {
     }
 
     private String resolveToken(StompHeaderAccessor accessor) {
+        // Web clients: token cookie copied to session attrs by HandshakeInterceptor
+        java.util.Map<String, Object> sessionAttrs = accessor.getSessionAttributes();
+        if (sessionAttrs != null) {
+            Object tokenAttr = sessionAttrs.get("token");
+            if (tokenAttr instanceof String tokenStr && !tokenStr.isBlank()) {
+                return tokenStr;
+            }
+        }
+        // Mobile/desktop clients: Bearer token in STOMP Authorization header
         String authHeader = accessor.getFirstNativeHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             return authHeader.substring(7);
         }
+        // Legacy: cookie passed explicitly as STOMP native header (mobile fallback)
         String cookieHeader = accessor.getFirstNativeHeader("cookie");
         if (cookieHeader != null) {
             for (String part : cookieHeader.split(";")) {

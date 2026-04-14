@@ -173,12 +173,16 @@ public class ChatService {
             @CacheEvict(value = "chat-messages", key = "'thread:' + #threadId")
     })
     public ChatThreadDto closeThread(Integer threadId) {
-        User staff = currentUserService.requireUser();
-        if (staff.getUserRole() != UserRole.employee && staff.getUserRole() != UserRole.admin) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
+        User actor = currentUserService.requireUser();
         ChatThread t = chatThreadRepository.findById(threadId)
                 .orElseThrow(() -> new ResourceNotFoundException("Thread not found"));
+        if (actor.getUserRole() == UserRole.customer) {
+            if (!t.getCustomerUser().getUserId().equals(actor.getUserId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            }
+        } else if (actor.getUserRole() != UserRole.employee && actor.getUserRole() != UserRole.admin) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
         t.setStatus("closed");
         t.setClosedAt(OffsetDateTime.now());
         t.setUpdatedAt(OffsetDateTime.now());
@@ -190,6 +194,7 @@ public class ChatService {
                 t.getCustomerUser().getUserId().toString(),
                 "/queue/chat/notifications",
                 dto);
+        messagingTemplate.convertAndSend("/topic/chat/thread/" + threadId + "/status", dto);
         return dto;
     }
 

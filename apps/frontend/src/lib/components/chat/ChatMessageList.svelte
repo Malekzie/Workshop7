@@ -45,11 +45,11 @@
 				<div
 					class="rounded-2xl px-3 py-2 text-sm {mine
 						? 'rounded-tr-sm bg-[#C4714A] text-white'
-						: 'rounded-tl-sm bg-white text-[#2C1A0E] shadow-sm'}"
+						: 'rounded-tl-sm bg-white text-[#2C1A0E] shadow-sm dark:bg-[#FAF7F2]/10 dark:text-[#FAF7F2]'}"
 				>
 					{msg.text}
 				</div>
-				<p class="mt-0.5 px-1 text-[10px] text-[#2C1A0E]/40 {mine ? 'text-right' : 'text-left'}">
+				<p class="mt-0.5 px-1 text-[10px] text-[#2C1A0E]/40 dark:text-[#FAF7F2]/40 {mine ? 'text-right' : 'text-left'}">
 					{formatTime(msg.sentAt)}
 				</p>
 			</div>
@@ -58,7 +58,7 @@
 
 	{#if typingLabel}
 		<div class="flex justify-start">
-			<div class="rounded-2xl rounded-tl-sm bg-white px-3 py-2 text-xs text-[#2C1A0E]/50 shadow-sm">
+			<div class="rounded-2xl rounded-tl-sm bg-white px-3 py-2 text-xs text-[#2C1A0E]/50 shadow-sm dark:bg-[#FAF7F2]/10 dark:text-[#FAF7F2]/50">
 				{typingLabel} is typing...
 			</div>
 		</div>
@@ -66,7 +66,7 @@
 
 	{#if messages.length === 0 && !typingLabel}
 		<div class="flex flex-1 items-center justify-center">
-			<p class="text-xs text-[#2C1A0E]/40">No messages yet</p>
+			<p class="text-xs text-[#2C1A0E]/40 dark:text-[#FAF7F2]/40">No messages yet</p>
 		</div>
 	{/if}
 </div>

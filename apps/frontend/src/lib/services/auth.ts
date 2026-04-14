@@ -76,6 +76,14 @@ export async function logoutUser(): Promise<void> {
 		});
 	} catch (error) {
 		Sentry.captureException(error);
+	} finally {
+		// Ensure frontend-visible auth cookies are removed even if backend logout is rejected.
+		await fetch('/auth/local-logout', {
+			method: 'POST',
+			credentials: 'include'
+		}).catch(() => {
+			/* no-op */
+		});
 	}
 	clearAuth();
 }

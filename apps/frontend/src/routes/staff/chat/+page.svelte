@@ -31,9 +31,11 @@
     let typingLabel = $state('');
     let typingTimer: ReturnType<typeof setTimeout> | undefined = undefined;
     let actionError = $state('');
+    let confirmClose = $state(false);
 
     let unsubMessages: (() => void) | null = null;
     let unsubTyping: (() => void) | null = null;
+    let unsubStatus: (() => void) | null = null;
 
     async function loadThreads() {
         loadingThreads = true;
@@ -49,10 +51,12 @@
     async function selectThread(t: ChatThread) {
         selectedThread = t;
         actionError = '';
+        confirmClose = false;
         loadingMessages = true;
 
         unsubMessages?.();
         unsubTyping?.();
+        unsubStatus?.();
 
         try {
             messages = await getMessages(t.id);
@@ -76,6 +80,16 @@
             typingLabel = 'Customer';
             clearTimeout(typingTimer);
             typingTimer = setTimeout(() => { typingLabel = ''; }, 3000);
+        });
+
+        unsubStatus = subscribeWs(`/topic/chat/thread/${t.id}/status`, (data) => {
+            const updated = data as ChatThread;
+            if (updated.status === 'closed' && selectedThread?.id === updated.id) {
+                selectedThread = updated;
+                threads = threads.filter((th) => th.id !== updated.id);
+                unsubMessages?.();
+                unsubTyping?.();
+            }
         });
     }
 
@@ -115,14 +129,14 @@
 
     async function handleClose() {
         if (!selectedThread) return;
+        confirmClose = false;
         actionError = '';
         try {
             const updated = await closeThread(selectedThread.id);
             threads = threads.filter((t) => t.id !== updated.id);
+            selectedThread = updated;
             unsubMessages?.();
             unsubTyping?.();
-            selectedThread = null;
-            messages = [];
         } catch {
             actionError = 'Failed to close.';
         }
@@ -132,6 +146,7 @@
         activeCategory = cat;
         selectedThread = null;
         messages = [];
+        confirmClose = false;
         await loadThreads();
     }
 
@@ -140,6 +155,7 @@
     onDestroy(() => {
         unsubMessages?.();
         unsubTyping?.();
+        unsubStatus?.();
         clearTimeout(typingTimer);
     });
 
@@ -222,20 +238,38 @@
                     {#if actionError}
                         <p class="text-xs text-destructive">{actionError}</p>
                     {/if}
-                    {#if !selectedThread.employeeUserId}
-                        <button
-                            onclick={handleAssign}
-                            class="rounded-lg bg-[#8A9E7F] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#7a8e6f]"
-                        >
-                            Assign to me
-                        </button>
+                    {#if selectedThread.status !== 'closed'}
+                        {#if !selectedThread.employeeUserId}
+                            <button
+                                onclick={handleAssign}
+                                class="rounded-lg bg-[#8A9E7F] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#7a8e6f]"
+                            >
+                                Assign to me
+                            </button>
+                        {/if}
+                        {#if confirmClose}
+                            <span class="text-xs text-muted-foreground">Close this thread?</span>
+                            <button
+                                onclick={handleClose}
+                                class="rounded-lg bg-[#C4714A] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#b56340]"
+                            >
+                                Yes, close
+                            </button>
+                            <button
+                                onclick={() => { confirmClose = false; }}
+                                class="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+                            >
+                                Cancel
+                            </button>
+                        {:else}
+                            <button
+                                onclick={() => { confirmClose = true; }}
+                                class="rounded-lg bg-[#C4714A] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#b56340]"
+                            >
+                                Close thread
+                            </button>
+                        {/if}
                     {/if}
-                    <button
-                        onclick={handleClose}
-                        class="rounded-lg bg-[#C4714A] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#b56340]"
-                    >
-                        Close thread
-                    </button>
                 </div>
             </div>
 
@@ -243,6 +277,16 @@
             {#if loadingMessages}
                 <div class="flex flex-1 items-center justify-center">
                     <p class="text-xs text-muted-foreground">Loading messages...</p>
+                </div>
+            {:else if selectedThread.status === 'closed'}
+                <ChatMessageList
+                    {messages}
+                    currentUserId={$user?.userId ?? ''}
+                />
+                <div class="border-t border-border p-4">
+                    <div class="rounded-xl bg-[#C4714A]/10 px-4 py-3 text-center">
+                        <p class="text-xs font-medium text-[#C4714A]">This conversation has been ended.</p>
+                    </div>
                 </div>
             {:else}
                 <ChatMessageList
