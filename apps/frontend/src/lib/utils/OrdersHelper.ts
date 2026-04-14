@@ -35,7 +35,7 @@ export function formatDate(dateStr: string | null | undefined): string {
 
 export function formatPrice(amount: number | null | undefined): string {
 	if (amount == null) return '—';
-	return (amount / 100).toLocaleString('en-CA', {
+	return amount.toLocaleString('en-CA', {
 		style: 'currency',
 		currency: 'CAD',
 		minimumFractionDigits: 2,
