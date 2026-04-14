@@ -116,12 +116,7 @@
 			<p class="text-sm text-destructive">Failed to load customers.</p>
 		{:else if tab === 'all'}
 			<div class="flex gap-3">
-				<Input
-					placeholder="Search by name or email..."
-					bind:value={search}
-					class="max-w-sm"
-					oninput={handleSearch}
-				/>
+				<Input placeholder="Search by name or email..." bind:value={search} class="max-w-sm" />
 			</div>
 
 			<div class="rounded-xl border border-border bg-card">
