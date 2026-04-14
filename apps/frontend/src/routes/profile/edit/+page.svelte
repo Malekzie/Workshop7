@@ -166,6 +166,10 @@
 		if (!fields.firstName.trim()) e.firstName = 'First name is required.';
 		if (!fields.lastName.trim()) e.lastName = 'Last name is required.';
 		if (!fields.phone.trim()) e.phone = 'Phone is required.';
+		else if (fields.phone.trim().toUpperCase().startsWith('OAUTH-'))
+			e.phone = 'Please enter a valid phone number.';
+		else if (!FormValidationUtil.isValidPhone(fields.phone))
+			e.phone = 'Enter a valid phone number.';
 		if (!fields.addressLine1.trim()) e.addressLine1 = 'Address is required.';
 		if (!fields.city.trim()) e.city = 'City is required.';
 		if (!fields.province) e.province = 'Province is required.';
