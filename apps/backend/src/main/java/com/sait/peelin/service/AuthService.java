@@ -141,16 +141,22 @@ public class AuthService {
     }
 
     /**
-     * Lightweight check for multi-step UIs: username and sign-in email must not already exist (case-insensitive).
-     * Email may still match an employee work email only — that does not use a {@link User} row until registered.
+     * Lightweight check for multi-step UIs: username must be free; sign-in email must not be taken by another
+     * <strong>customer</strong> or <strong>admin</strong> account. Employee sign-in rows may reuse the same address
+     * so a new customer can register with that email for employee–customer linking.
      */
     @Transactional(readOnly = true)
     public RegisterAvailabilityResponse getRegisterAvailability(String username, String email) {
         String u = username != null ? username.trim() : "";
         String e = email != null ? email.trim().toLowerCase() : "";
         boolean usernameAvailable = u.isEmpty() || !userRepository.existsByUsernameIgnoreCase(u);
-        boolean emailAvailable = e.isEmpty() || !userRepository.existsByUserEmailIgnoreCase(e);
+        boolean emailAvailable = e.isEmpty() || !isCustomerOrAdminSignInEmailTaken(e);
         return new RegisterAvailabilityResponse(usernameAvailable, emailAvailable);
+    }
+
+    private boolean isCustomerOrAdminSignInEmailTaken(String emailNorm) {
+        return userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.customer)
+                || userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.admin);
     }
 
     @Transactional
@@ -163,7 +169,7 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already taken");
         }
         String emailNorm = request.getEmail().trim().toLowerCase();
-        if (userRepository.existsByUserEmailIgnoreCase(emailNorm)) {
+        if (isCustomerOrAdminSignInEmailTaken(emailNorm)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
         }
 
@@ -256,7 +262,7 @@ public class AuthService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid email");
             }
             if (!ne.equalsIgnoreCase(u.getUserEmail())) {
-                if (userRepository.existsByUserEmailIgnoreCaseAndUserIdNot(ne, u.getUserId())) {
+                if (userRepository.existsOtherCustomerOrAdminWithEmailIgnoreCase(ne, u.getUserId())) {
                     throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
                 }
                 u.setUserEmail(ne);

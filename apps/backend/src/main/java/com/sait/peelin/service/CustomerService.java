@@ -500,7 +500,8 @@ public class CustomerService {
             return;
         }
         String emailNorm = trimmed.toLowerCase();
-        if (userRepository.existsByUserEmailIgnoreCase(emailNorm)) {
+        if (userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.customer)
+                || userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.admin)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "This email is already registered. Sign in to complete your order.");
         }

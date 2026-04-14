@@ -1,5 +1,6 @@
 package com.sait.peelin.service;
 
+import com.sait.peelin.dto.v1.auth.RegisterAvailabilityResponse;
 import com.sait.peelin.dto.v1.auth.RegisterRequest;
 import com.sait.peelin.model.Customer;
 import com.sait.peelin.model.User;
@@ -23,6 +24,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.*;
 
@@ -79,7 +81,10 @@ class AuthServiceTest {
         request.setEmail("test@example.com");
         request.setPassword("password");
         when(userRepository.existsByUsernameIgnoreCase("testuser")).thenReturn(false);
-        when(userRepository.existsByUserEmailIgnoreCase("test@example.com")).thenReturn(false);
+        when(userRepository.existsByUserEmailIgnoreCaseAndUserRole(eq("test@example.com"), eq(UserRole.customer)))
+                .thenReturn(false);
+        when(userRepository.existsByUserEmailIgnoreCaseAndUserRole(eq("test@example.com"), eq(UserRole.admin)))
+                .thenReturn(false);
         when(customerRepository.findGuestCustomersByEmailNormalized("test@example.com")).thenReturn(List.of());
         when(passwordEncoder.encode("password")).thenReturn("encoded_password");
         Customer createdCustomer = mock(Customer.class);
@@ -103,5 +108,32 @@ class AuthServiceTest {
         assertFalse(savedUser.getPhotoApprovalPending(), "Photo approval should not be pending by default");
         assertNotNull(savedUser.getUserCreatedAt());
         verify(welcomeEmailService).sendWelcomeEmail(any(User.class));
+    }
+
+    @Test
+    void getRegisterAvailability_EmailStillAvailableWhenOnlyEmployeeUsesIt() {
+        when(userRepository.existsByUsernameIgnoreCase("newcust")).thenReturn(false);
+        when(userRepository.existsByUserEmailIgnoreCaseAndUserRole(eq("staff@bakery.ca"), eq(UserRole.customer)))
+                .thenReturn(false);
+        when(userRepository.existsByUserEmailIgnoreCaseAndUserRole(eq("staff@bakery.ca"), eq(UserRole.admin)))
+                .thenReturn(false);
+
+        RegisterAvailabilityResponse res =
+                authService.getRegisterAvailability("newcust", "staff@bakery.ca");
+
+        assertTrue(res.isUsernameAvailable());
+        assertTrue(res.isEmailAvailable());
+    }
+
+    @Test
+    void getRegisterAvailability_EmailTakenWhenCustomerUsesIt() {
+        when(userRepository.existsByUsernameIgnoreCase("x")).thenReturn(false);
+        when(userRepository.existsByUserEmailIgnoreCaseAndUserRole(eq("taken@bakery.ca"), eq(UserRole.customer)))
+                .thenReturn(true);
+
+        RegisterAvailabilityResponse res = authService.getRegisterAvailability("x", "taken@bakery.ca");
+
+        assertTrue(res.isUsernameAvailable());
+        assertFalse(res.isEmailAvailable());
     }
 }

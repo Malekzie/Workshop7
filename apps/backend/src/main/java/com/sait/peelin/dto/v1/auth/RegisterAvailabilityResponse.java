@@ -6,9 +6,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Pre-check before multi-step registration: username/email must not already be in use as a login identity.
- * An email that only matches an employee work email (not their {@code User.user_email} login)
- * remains available so the customer account can be created and auto-linked.
+ * Pre-check before multi-step registration: username must be unique; sign-in email must not belong to another
+ * customer or admin account. Employee accounts may share that email so customer registration can match work email
+ * for employee–customer linking.
  */
 @Getter
 @Setter
