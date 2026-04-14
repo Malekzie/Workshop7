@@ -98,7 +98,8 @@
 		<nav class="flex flex-col gap-1">
 			{#each navLinks as link (link.href)}
 				{@const active =
-					page.url.pathname === link.href || page.url.pathname.startsWith(link.href + '/')}
+					page.url.pathname === link.href ||
+					(!link.exact && page.url.pathname.startsWith(link.href + '/'))}
 				<a
 					href={resolve(link.href)}
 					class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
