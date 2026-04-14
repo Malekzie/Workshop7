@@ -54,6 +54,7 @@ public class ReviewService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "reviews", key = "'bakery:' + #bakeryId")
     public List<ReviewDto> forBakery(Integer bakeryId) {
         return reviewRepository.findByBakery_IdAndReviewStatus(bakeryId, ReviewStatus.approved)
                 .stream()
@@ -68,6 +69,7 @@ public class ReviewService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "reviews", key = "'bakery-avg:' + #bakeryId")
     public Double averageForBakery(Integer bakeryId) {
         return reviewRepository.averageRatingForBakery(bakeryId).orElse(null);
     }
