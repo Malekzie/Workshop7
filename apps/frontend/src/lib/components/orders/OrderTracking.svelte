@@ -80,7 +80,7 @@
 	}
 </script>
 
-<main class="mx-auto max-w-2xl px-6 py-16">
+<main class="mx-auto w-full max-w-2xl px-6 py-16">
 	<div class="mb-8 flex items-center justify-between">
 		<h1 class="font-serif text-3xl font-bold text-foreground">Order Tracking</h1>
 		<button class="text-sm text-primary hover:underline" onclick={fetchOrder}> Refresh </button>
