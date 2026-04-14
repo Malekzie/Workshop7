@@ -325,6 +325,12 @@ public class AuthService {
     @Transactional
     public void changePassword(ChangePasswordRequest request) {
         User u = currentUserService.requireUser();
+
+        if (!StringUtils.hasText(u.getUserPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "This account has no password set. Use forgot password to create one first.");
+        }
+
         if (!passwordEncoder.matches(request.getCurrentPassword(), u.getUserPasswordHash())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
         }

@@ -21,6 +21,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/stores';
+	import { Eye, EyeOff } from '@lucide/svelte';
 	import { formatCanadianPostalInput } from '$lib/utils/canadianPostalCode';
 	import { FormValidationUtil } from '$lib/utils/formValidation';
 
@@ -45,6 +46,9 @@
 	let deactivatePassword = $state('');
 	let showDeleteConfirm = $state(false);
 	let deleting = $state(false);
+	let showCurrentPassword = $state(false);
+	let showNewPassword = $state(false);
+	let showConfirmPassword = $state(false);
 
 	let fields = $state({
 		username: '',
@@ -158,6 +162,11 @@
 			if (!fields.currentPassword) e.currentPassword = 'Current password is required.';
 			if (!fields.newPassword) e.newPassword = 'New password is required.';
 			else if (fields.newPassword.length < 8) e.newPassword = 'Must be at least 8 characters.';
+			else if (!/[A-Z]/.test(fields.newPassword))
+				e.newPassword = 'Must include an uppercase letter.';
+			else if (!/[0-9]/.test(fields.newPassword)) e.newPassword = 'Must include a number.';
+			else if (!/[^a-zA-Z0-9]/.test(fields.newPassword))
+				e.newPassword = 'Must include a special character.';
 			else if (fields.newPassword === fields.currentPassword)
 				e.newPassword = 'New password must be different from your current password.';
 			if (fields.newPassword !== fields.confirmPassword)
@@ -177,6 +186,9 @@
 		else if (!FormValidationUtil.isValidCanadianPostalCode(fields.postalCode))
 			e.postalCode = 'Enter a valid Canadian postal code.';
 		if (!fields.username.trim()) e.username = 'Username is required.';
+		else if (fields.username.trim().length < 3) e.username = 'Must be at least 3 characters.';
+		else if (!/^[a-zA-Z0-9_]+$/.test(fields.username.trim()))
+			e.username = 'Only letters, numbers, and underscores.';
 		if (!fields.email.trim()) e.email = 'Email is required.';
 		else if (!FormValidationUtil.isValidEmail(fields.email))
 			e.email = 'Enter a valid email address.';
@@ -619,6 +631,7 @@
 						<CardDescription>Leave blank to keep your current password</CardDescription>
 					</CardHeader>
 					<CardContent class="space-y-4">
+						<!-- Current Password -->
 						<div class="space-y-1.5">
 							<label
 								for="currentPassword"
@@ -626,19 +639,31 @@
 							>
 								Current Password
 							</label>
-							<input
-								id="currentPassword"
-								type="password"
-								bind:value={fields.currentPassword}
-								class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
-                    {errors.currentPassword ? 'border-destructive ring-1 ring-destructive' : ''}"
-								placeholder="••••••••"
-								autocomplete="new-password"
-							/>
+							<div class="relative">
+								<input
+									id="currentPassword"
+									type={showCurrentPassword ? 'text' : 'password'}
+									bind:value={fields.currentPassword}
+									class="w-full rounded-lg border border-border bg-background px-4 py-2.5 pr-10 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
+                {errors.currentPassword ? 'border-destructive ring-1 ring-destructive' : ''}"
+									placeholder="••••••••"
+									autocomplete="current-password"
+								/>
+								<button
+									type="button"
+									tabindex="-1"
+									onclick={() => (showCurrentPassword = !showCurrentPassword)}
+									class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+								>
+									{#if showCurrentPassword}<EyeOff size={16} />{:else}<Eye size={16} />{/if}
+								</button>
+							</div>
 							{#if errors.currentPassword}<p class="text-xs text-destructive">
 									{errors.currentPassword}
 								</p>{/if}
 						</div>
+
+						<!-- New Password -->
 						<div class="space-y-1.5">
 							<label
 								for="newPassword"
@@ -646,19 +671,31 @@
 							>
 								New Password
 							</label>
-							<input
-								id="newPassword"
-								type="password"
-								bind:value={fields.newPassword}
-								class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
-                    {errors.newPassword ? 'border-destructive ring-1 ring-destructive' : ''}"
-								placeholder="••••••••"
-								autocomplete="new-password"
-							/>
+							<div class="relative">
+								<input
+									id="newPassword"
+									type={showNewPassword ? 'text' : 'password'}
+									bind:value={fields.newPassword}
+									class="w-full rounded-lg border border-border bg-background px-4 py-2.5 pr-10 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
+                {errors.newPassword ? 'border-destructive ring-1 ring-destructive' : ''}"
+									placeholder="••••••••"
+									autocomplete="new-password"
+								/>
+								<button
+									type="button"
+									tabindex="-1"
+									onclick={() => (showNewPassword = !showNewPassword)}
+									class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+								>
+									{#if showNewPassword}<EyeOff size={16} />{:else}<Eye size={16} />{/if}
+								</button>
+							</div>
 							{#if errors.newPassword}<p class="text-xs text-destructive">
 									{errors.newPassword}
 								</p>{/if}
 						</div>
+
+						<!-- Confirm New Password -->
 						<div class="space-y-1.5">
 							<label
 								for="confirmPassword"
@@ -666,15 +703,25 @@
 							>
 								Confirm New Password
 							</label>
-							<input
-								id="confirmPassword"
-								type="password"
-								bind:value={fields.confirmPassword}
-								class="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
-                    {errors.confirmPassword ? 'border-destructive ring-1 ring-destructive' : ''}"
-								placeholder="••••••••"
-								autocomplete="new-password"
-							/>
+							<div class="relative">
+								<input
+									id="confirmPassword"
+									type={showConfirmPassword ? 'text' : 'password'}
+									bind:value={fields.confirmPassword}
+									class="w-full rounded-lg border border-border bg-background px-4 py-2.5 pr-10 text-sm transition focus:ring-2 focus:ring-primary focus:outline-none
+                {errors.confirmPassword ? 'border-destructive ring-1 ring-destructive' : ''}"
+									placeholder="••••••••"
+									autocomplete="new-password"
+								/>
+								<button
+									type="button"
+									tabindex="-1"
+									onclick={() => (showConfirmPassword = !showConfirmPassword)}
+									class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+								>
+									{#if showConfirmPassword}<EyeOff size={16} />{:else}<Eye size={16} />{/if}
+								</button>
+							</div>
 							{#if errors.confirmPassword}<p class="text-xs text-destructive">
 									{errors.confirmPassword}
 								</p>{/if}
