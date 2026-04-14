@@ -425,8 +425,9 @@
 				{deliveryPostal}
 				onBakeryChange={() => {}}
 				onMethodChange={() => {}}
-				onUseCustomAddress={() => {}}
+				onUseCustomAddress={() => (useCustomAddress = true)}
 				onUseSavedAddress={() => {
+					useCustomAddress = false;
 					deliveryLine1 = '';
 					deliveryLine2 = '';
 					deliveryCity = '';
