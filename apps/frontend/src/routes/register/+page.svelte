@@ -184,9 +184,17 @@
 			await registerUser(registrationPayload);
 
 		if (!ok) {
-			errors.email = message ?? 'Registration failed.';
-			touched.email = true;
-			submitError = message ?? 'Registration failed. Please go back and check your details.';
+			const msg = message ?? 'Registration failed. Please check your details and try again.';
+			submitError = msg;
+			if (msg.toLowerCase().includes('username')) {
+				errors.username = msg;
+				touched.username = true;
+				step = 1;
+			} else if (msg.toLowerCase().includes('email')) {
+				errors.email = msg;
+				touched.email = true;
+				step = 1;
+			}
 			return;
 		}
 
