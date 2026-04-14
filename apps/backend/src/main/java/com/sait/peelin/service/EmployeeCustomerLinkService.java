@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -92,18 +93,30 @@ public class EmployeeCustomerLinkService {
         return true;
     }
 
+    /**
+     * When exactly one active employee row has this work email and that employee is not already linked to a customer.
+     */
+    @Transactional(readOnly = true)
+    public Optional<Employee> findSingleUnlinkedEmployeeByWorkEmail(String emailNormalized) {
+        if (!StringUtils.hasText(emailNormalized)) {
+            return Optional.empty();
+        }
+        String e = emailNormalized.trim();
+        List<Employee> byEmail = employeeRepository.findByWorkEmailNormalized(e);
+        List<Employee> unlinked = byEmail.stream()
+                .filter(emp -> !linkRepository.existsByEmployee_Id(emp.getId()))
+                .toList();
+        if (unlinked.size() == 1) {
+            return Optional.of(unlinked.get(0));
+        }
+        return Optional.empty();
+    }
+
     private Employee findSingleUnlinkedEmployeeByEmail(Customer customer) {
         if (!StringUtils.hasText(customer.getCustomerEmail())) {
             return null;
         }
-        List<Employee> byEmail = employeeRepository.findByWorkEmailNormalized(customer.getCustomerEmail().trim());
-        List<Employee> unlinkedEmail = byEmail.stream()
-                .filter(e -> !linkRepository.existsByEmployee_Id(e.getId()))
-                .toList();
-        if (unlinkedEmail.size() == 1) {
-            return unlinkedEmail.get(0);
-        }
-        return null;
+        return findSingleUnlinkedEmployeeByWorkEmail(customer.getCustomerEmail().trim()).orElse(null);
     }
 
     /** True when the two users are the customer and employee sides of the same link row. */

@@ -15,6 +15,8 @@
 		email: '',
 		username: '',
 		password: '',
+		employeeLinkPassword: '',
+		employeeLinkPasswordConfirm: '',
 		phone: '',
 		businessPhone: '',
 		addressLine1: '',
@@ -30,6 +32,8 @@
 		email: '',
 		username: '',
 		password: '',
+		employeeLinkPassword: '',
+		employeeLinkPasswordConfirm: '',
 		phone: '',
 		addressLine1: '',
 		city: '',
@@ -43,6 +47,8 @@
 		email: false,
 		username: false,
 		password: false,
+		employeeLinkPassword: false,
+		employeeLinkPasswordConfirm: false,
 		phone: false,
 		addressLine1: false,
 		city: false,
@@ -52,11 +58,16 @@
 
 	let step = 1;
 	let showPassword = false;
+	let showEmployeeLinkPassword = false;
+	let showEmployeeLinkPasswordConfirm = false;
 	/** True while calling register/availability before advancing to step 2 */
 	let step1Checking = false;
+	/** From availability API: email matches one unlinked employee work email */
+	let employeeLinkOffered = false;
 
 	const stepOneFields = ['firstName', 'lastName', 'email', 'username', 'password'];
-	const stepTwoFields = ['phone', 'addressLine1', 'city', 'province', 'postalCode'];
+	const stepTwoProfileFields = ['phone', 'addressLine1', 'city', 'province', 'postalCode'];
+	const employeeLinkStepFields = ['employeeLinkPassword', 'employeeLinkPasswordConfirm'];
 	let submitError = '';
 	let registrationSuccess = false;
 
@@ -82,6 +93,14 @@
 				if (!/[A-Z]/.test(value)) return 'Must include an uppercase letter.';
 				if (!/[0-9]/.test(value)) return 'Must include a number.';
 				if (!/[^a-zA-Z0-9]/.test(value)) return 'Must include a special character.';
+				return '';
+			case 'employeeLinkPassword':
+				if (!value.trim()) return 'Employee account password is required.';
+				return '';
+			case 'employeeLinkPasswordConfirm':
+				if (!value.trim()) return 'Confirm your employee password.';
+				if (value !== fields.employeeLinkPassword)
+					return 'The two employee password fields do not match.';
 				return '';
 			case 'phone':
 				if (!value.trim()) return 'Phone number is required.';
@@ -126,13 +145,42 @@
 		return !fieldNames.some((name) => errors[name]);
 	}
 
-	function nextStep() {
+	async function nextStep() {
 		if (!validateStep(stepOneFields)) return;
-		step = 2;
+		step1Checking = true;
+		submitError = '';
+		try {
+			const result = await fetchRegisterAvailability(fields.username, fields.email);
+			if (!result.ok) {
+				submitError = result.message;
+				return;
+			}
+			if (!result.usernameAvailable) {
+				errors.username = 'That username is already taken.';
+				touched.username = true;
+				return;
+			}
+			if (!result.emailAvailable) {
+				errors.email = 'That email is already registered.';
+				touched.email = true;
+				return;
+			}
+			employeeLinkOffered = result.employeeLinkOffered;
+			fields.employeeLinkPassword = '';
+			fields.employeeLinkPasswordConfirm = '';
+			errors.employeeLinkPassword = '';
+			errors.employeeLinkPasswordConfirm = '';
+			touched.employeeLinkPassword = false;
+			touched.employeeLinkPasswordConfirm = false;
+			step = 2;
+		} finally {
+			step1Checking = false;
+		}
 	}
 
 	function prevStep() {
 		step = 1;
+		submitError = '';
 	}
 
 	function getDefaultPostAuthRoute(role) {
@@ -149,15 +197,10 @@
 		event.preventDefault();
 		submitError = '';
 
-		const requiredFields = [...stepOneFields, ...stepTwoFields];
-
-		requiredFields.forEach((name) => {
-			touched[name] = true;
-			errors[name] = validateField(name, fields[name]);
-		});
-
-		const hasErrors = Object.values(errors).some((e) => e !== '');
-		if (hasErrors) return;
+		const fieldsToValidate = employeeLinkOffered
+			? [...stepOneFields, ...employeeLinkStepFields]
+			: [...stepOneFields, ...stepTwoProfileFields];
+		if (!validateStep(fieldsToValidate)) return;
 
 		const payload = {
 			firstName: fields.firstName.trim(),
@@ -175,30 +218,67 @@
 			postalCode: fields.postalCode.trim().toUpperCase()
 		};
 
-		const registrationPayload = {
-			username: payload.username,
-			email: payload.email,
-			password: payload.password,
-			phone: payload.phone
-		};
+		const registrationPayload =
+			employeeLinkOffered ?
+				{
+					username: payload.username,
+					email: payload.email,
+					password: payload.password,
+					phone: null,
+					employeeLinkPassword: fields.employeeLinkPassword
+				}
+			:	{
+					username: payload.username,
+					email: payload.email,
+					password: payload.password,
+					phone: payload.phone || null
+				};
 
-		const { ok, message, employeeDiscountLinkEstablished, employeeDiscountLinkMessage } =
-			await registerUser(registrationPayload);
+		const registerResult = await registerUser(registrationPayload);
 
-		if (!ok) {
-			const msg = message ?? 'Registration failed. Please check your details and try again.';
+		if (!registerResult.ok) {
+			const { message, status } = registerResult;
+			if (employeeLinkOffered && status === 401) {
+				errors.employeeLinkPassword =
+					message?.trim() ||
+					'That password does not match the staff account for this email.';
+				touched.employeeLinkPassword = true;
+				submitError = '';
+				return;
+			}
+			if (
+				employeeLinkOffered &&
+				message &&
+				message.includes('Employee password')
+			) {
+				errors.employeeLinkPassword = message;
+				touched.employeeLinkPassword = true;
+				submitError = '';
+				return;
+			}
+
+			const msg =
+				message ?? 'Registration failed. Please check your details and try again.';
 			submitError = msg;
-			if (msg.toLowerCase().includes('username')) {
+			const lower = msg.toLowerCase();
+			if (lower.includes('username')) {
 				errors.username = msg;
 				touched.username = true;
 				step = 1;
-			} else if (msg.toLowerCase().includes('email')) {
+			} else if (lower.includes('email')) {
 				errors.email = msg;
 				touched.email = true;
 				step = 1;
+			} else if (status === 409) {
+				step = 1;
+			} else {
+				errors.email = msg;
+				touched.email = true;
 			}
 			return;
 		}
+
+		const { employeeDiscountLinkEstablished, employeeDiscountLinkMessage } = registerResult;
 
 		if (employeeDiscountLinkEstablished) {
 			const msg =
@@ -207,27 +287,32 @@
 			alert(msg);
 		}
 
-		try {
-			await updateProfile({
-				firstName: payload.firstName,
-				middleInitial: payload.middleInitial,
-				lastName: payload.lastName,
-				phone: payload.phone,
-				businessPhone: payload.businessPhone,
-				email: payload.email,
-				username: payload.username,
-				address: {
-					line1: payload.addressLine1,
-					line2: payload.addressLine2,
-					city: payload.city,
-					province: payload.province,
-					postalCode: payload.postalCode
-				}
-			});
-		} catch (error) {
-			submitError =
-				'Account created, but profile setup failed. Please sign in and complete your profile.';
-			return;
+		const skipProfilePatch =
+			employeeDiscountLinkEstablished === true || employeeLinkOffered === true;
+
+		if (!skipProfilePatch) {
+			try {
+				await updateProfile({
+					firstName: payload.firstName,
+					middleInitial: payload.middleInitial,
+					lastName: payload.lastName,
+					phone: payload.phone,
+					businessPhone: payload.businessPhone,
+					email: payload.email,
+					username: payload.username,
+					address: {
+						line1: payload.addressLine1,
+						line2: payload.addressLine2,
+						city: payload.city,
+						province: payload.province,
+						postalCode: payload.postalCode
+					}
+				});
+			} catch (error) {
+				submitError =
+					'Account created, but profile setup failed. Please sign in and complete your profile.';
+				return;
+			}
 		}
 
 		registrationSuccess = true;
@@ -242,7 +327,13 @@
 			<h2 class="font-headline mb-3 text-4xl font-bold text-primary">Create Account</h2>
 			<p class="text-sm text-muted-foreground">
 				Step {step} of 2
-				{step === 1 ? '· Account details' : '· Contact and address'}
+				{#if step === 1}
+					· Account details
+				{:else if employeeLinkOffered}
+					· Link staff account
+				{:else}
+					· Contact and address
+				{/if}
 			</p>
 		</header>
 
@@ -405,6 +496,89 @@
 						</button>
 					</div>
 				{:else}
+					{#if employeeLinkOffered}
+					<div class="space-y-5">
+						<p class="text-on-surface-variant text-sm leading-relaxed">
+							This matches a staff work email. Enter your <strong>employee</strong> password twice to
+							link. We copy your name, phone, and address from staff records.
+						</p>
+
+						<div class="space-y-1.5">
+							<label
+								for="register-employee-link-password"
+								class="text-on-surface-variant px-1 text-sm font-bold">Employee account password</label
+							>
+							<div class="relative mt-1">
+								<input
+									id="register-employee-link-password"
+									type={showEmployeeLinkPassword ? 'text' : 'password'}
+									autocomplete="current-password"
+									placeholder="Staff sign-in password"
+									bind:value={fields.employeeLinkPassword}
+									onblur={() => handleBlur('employeeLinkPassword')}
+									oninput={() => handleInput('employeeLinkPassword')}
+									class="bg-surface-container-highest w-full rounded-xl px-4 py-3 pr-12 font-medium ring-1 ring-border transition
+										{errors.employeeLinkPassword && touched.employeeLinkPassword
+											? 'ring-2 ring-red-400'
+											: ''}"
+								/>
+								<button
+									type="button"
+									onclick={() => (showEmployeeLinkPassword = !showEmployeeLinkPassword)}
+									class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition hover:text-foreground"
+									aria-label={showEmployeeLinkPassword ? 'Hide password' : 'Show password'}
+								>
+									{#if showEmployeeLinkPassword}
+										<EyeOff size={18} />
+									{:else}
+										<Eye size={18} />
+									{/if}
+								</button>
+							</div>
+							{#if errors.employeeLinkPassword && touched.employeeLinkPassword}
+								<p class="px-1 text-xs text-red-500">{errors.employeeLinkPassword}</p>
+							{/if}
+						</div>
+
+						<div class="space-y-1.5">
+							<label
+								for="register-employee-link-confirm"
+								class="text-on-surface-variant px-1 text-sm font-bold">Confirm employee password</label
+							>
+							<div class="relative mt-1">
+								<input
+									id="register-employee-link-confirm"
+									type={showEmployeeLinkPasswordConfirm ? 'text' : 'password'}
+									autocomplete="new-password"
+									placeholder="Re-enter staff password"
+									bind:value={fields.employeeLinkPasswordConfirm}
+									onblur={() => handleBlur('employeeLinkPasswordConfirm')}
+									oninput={() => handleInput('employeeLinkPasswordConfirm')}
+									class="bg-surface-container-highest w-full rounded-xl px-4 py-3 pr-12 font-medium ring-1 ring-border transition
+										{errors.employeeLinkPasswordConfirm && touched.employeeLinkPasswordConfirm
+											? 'ring-2 ring-red-400'
+											: ''}"
+								/>
+								<button
+									type="button"
+									onclick={() =>
+										(showEmployeeLinkPasswordConfirm = !showEmployeeLinkPasswordConfirm)}
+									class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition hover:text-foreground"
+									aria-label={showEmployeeLinkPasswordConfirm ? 'Hide password' : 'Show password'}
+								>
+									{#if showEmployeeLinkPasswordConfirm}
+										<EyeOff size={18} />
+									{:else}
+										<Eye size={18} />
+									{/if}
+								</button>
+							</div>
+							{#if errors.employeeLinkPasswordConfirm && touched.employeeLinkPasswordConfirm}
+								<p class="px-1 text-xs text-red-500">{errors.employeeLinkPasswordConfirm}</p>
+							{/if}
+						</div>
+					</div>
+					{:else}
 					<div class="grid gap-5 md:grid-cols-2">
 						<div class="space-y-1.5 md:col-span-2">
 							<label for="register-phone" class="text-on-surface-variant px-1 text-sm font-bold"
@@ -559,6 +733,7 @@
 							{/if}
 						</div>
 					</div>
+					{/if}
 
 					{#if registrationSuccess}
 						<div

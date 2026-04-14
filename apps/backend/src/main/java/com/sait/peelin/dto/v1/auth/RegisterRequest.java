@@ -27,4 +27,11 @@ public class RegisterRequest {
 
     @NotBlank
     private String password;
+
+    /**
+     * Required when registering with an email that matches an unlinked employee work email; must match that
+     * employee user’s sign-in password so we can safely auto-link the new customer row.
+     */
+    @Size(max = 128)
+    private String employeeLinkPassword;
 }
