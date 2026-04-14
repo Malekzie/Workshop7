@@ -6,6 +6,7 @@ import com.sait.peelin.dto.v1.auth.ChangePasswordRequest;
 import com.sait.peelin.dto.v1.auth.DeactivateAccountRequest;
 import com.sait.peelin.dto.v1.auth.LoginAccountChoice;
 import com.sait.peelin.dto.v1.auth.LoginRequest;
+import com.sait.peelin.dto.v1.auth.RegisterAvailabilityResponse;
 import com.sait.peelin.dto.v1.auth.RegisterRequest;
 import com.sait.peelin.exception.AmbiguousLinkedLoginException;
 import com.sait.peelin.model.Customer;
@@ -139,13 +140,36 @@ public class AuthService {
         return jwtService.generateToken(userDetails);
     }
 
+    /**
+     * Lightweight check for multi-step UIs: username must be free; sign-in email must not be taken by another
+     * <strong>customer</strong> or <strong>admin</strong> account. Employee sign-in rows may reuse the same address
+     * so a new customer can register with that email for employee–customer linking.
+     */
+    @Transactional(readOnly = true)
+    public RegisterAvailabilityResponse getRegisterAvailability(String username, String email) {
+        String u = username != null ? username.trim() : "";
+        String e = email != null ? email.trim().toLowerCase() : "";
+        boolean usernameAvailable = u.isEmpty() || !userRepository.existsByUsernameIgnoreCase(u);
+        boolean emailAvailable = e.isEmpty() || !isCustomerOrAdminSignInEmailTaken(e);
+        return new RegisterAvailabilityResponse(usernameAvailable, emailAvailable);
+    }
+
+    private boolean isCustomerOrAdminSignInEmailTaken(String emailNorm) {
+        return userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.customer)
+                || userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.admin);
+    }
+
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByUsername(request.getUsername())) {
+        String usernameTrim = request.getUsername().trim();
+        if (!StringUtils.hasText(usernameTrim)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username required");
+        }
+        if (userRepository.existsByUsernameIgnoreCase(usernameTrim)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already taken");
         }
         String emailNorm = request.getEmail().trim().toLowerCase();
-        if (userRepository.existsByUserEmail(emailNorm)) {
+        if (isCustomerOrAdminSignInEmailTaken(emailNorm)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
         }
 
@@ -159,7 +183,7 @@ public class AuthService {
         }
 
         User user = new User();
-        user.setUsername(request.getUsername());
+        user.setUsername(usernameTrim);
         user.setUserEmail(emailNorm);
         user.setUserPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setUserRole(UserRole.customer);
@@ -238,7 +262,7 @@ public class AuthService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid email");
             }
             if (!ne.equalsIgnoreCase(u.getUserEmail())) {
-                if (userRepository.existsByUserEmailIgnoreCaseAndUserIdNot(ne, u.getUserId())) {
+                if (userRepository.existsOtherCustomerOrAdminWithEmailIgnoreCase(ne, u.getUserId())) {
                     throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
                 }
                 u.setUserEmail(ne);

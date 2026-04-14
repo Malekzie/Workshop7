@@ -1,6 +1,7 @@
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.User;
+import com.sait.peelin.model.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -34,6 +35,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     List<User> findAllActiveByLoginPrincipal(@Param("principal") String principal);
 
     boolean existsByUsername(String username);
+
+    boolean existsByUsernameIgnoreCase(String username);
+
     boolean existsByUserEmail(String userEmail);
 
     boolean existsByUserEmailIgnoreCase(String userEmail);
@@ -41,6 +45,24 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     boolean existsByUsernameIgnoreCaseAndUserIdNot(String username, UUID userId);
 
     boolean existsByUserEmailIgnoreCaseAndUserIdNot(String userEmail, UUID userId);
+
+    /** True if a customer account already uses this sign-in email (case-insensitive). */
+    boolean existsByUserEmailIgnoreCaseAndUserRole(String userEmail, UserRole userRole);
+
+    /**
+     * Another customer or admin (not {@code excludeUserId}) already uses this email.
+     * Employee rows may share the same address for linking; they do not block here.
+     */
+    @Query("""
+            SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END
+            FROM User u
+            WHERE u.userId <> :excludeUserId
+              AND LOWER(TRIM(u.userEmail)) = LOWER(TRIM(:email))
+              AND u.userRole IN (com.sait.peelin.model.UserRole.customer, com.sait.peelin.model.UserRole.admin)
+            """)
+    boolean existsOtherCustomerOrAdminWithEmailIgnoreCase(
+            @Param("email") String email,
+            @Param("excludeUserId") UUID excludeUserId);
 
     @Modifying
     @Query(value = """

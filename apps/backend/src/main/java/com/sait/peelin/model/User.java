@@ -13,9 +13,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "\"user\"", uniqueConstraints = {
         @UniqueConstraint(name = "user_username_key",
-                columnNames = {"username"}),
-        @UniqueConstraint(name = "user_user_email_key",
-                columnNames = {"user_email"})})
+                columnNames = {"username"})})
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
