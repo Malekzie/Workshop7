@@ -4,6 +4,7 @@ import com.sait.peelin.model.ProductSpecial;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 public interface ProductSpecialRepository extends JpaRepository<ProductSpecial, Integer> {
@@ -12,4 +13,5 @@ public interface ProductSpecialRepository extends JpaRepository<ProductSpecial, 
      * First matching row for the calendar day (lowest {@code product_special_id} if several share the date).
      */
     Optional<ProductSpecial> findFirstByFeaturedOnOrderByProductSpecialIdAsc(LocalDate featuredOn);
+    List<ProductSpecial> findByFeaturedOnOrderByProductSpecialIdAsc(LocalDate featuredOn);
 }

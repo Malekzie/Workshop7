@@ -115,4 +115,13 @@ public class ProductSpecialService {
                 p.getProductImageUrl()
         );
     }
+
+    @Transactional(readOnly = true)
+    @Cacheable(value = "product-specials", key = "'list:' + #date", unless = "#result.isEmpty()")
+    public List<ProductSpecialTodayDto> findForDate(LocalDate date) {
+        return productSpecialRepository.findByFeaturedOnOrderByProductSpecialIdAsc(date)
+                .stream()
+                .map(ps -> new ProductSpecialTodayDto(ps.getProductId(), ps.getDiscountPercent()))
+                .toList();
+    }
 }

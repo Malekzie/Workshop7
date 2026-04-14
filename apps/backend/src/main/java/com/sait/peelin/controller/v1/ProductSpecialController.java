@@ -96,4 +96,12 @@ public class ProductSpecialController {
     public void delete(@PathVariable Integer id) {
         productSpecialService.delete(id);
     }
+
+    @GetMapping("/for-date")
+    public List<ProductSpecialTodayDto> forDate(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        LocalDate d = date != null ? date : LocalDate.now();
+        return productSpecialService.findForDate(d);
+    }
 }
