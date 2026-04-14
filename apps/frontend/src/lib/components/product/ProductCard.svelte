@@ -18,11 +18,16 @@
 
 	function addToCart(e) {
 		e.stopPropagation();
+		const discountedPrice =
+			isSpecial && specialDiscount
+				? product.basePrice * (1 - specialDiscount / 100)
+				: product.basePrice;
+
 		cart.addItem({
 			productId: product.id,
 			productName: product.name,
 			productImageUrl: product.imageUrl ?? null,
-			unitPrice: product.basePrice,
+			unitPrice: discountedPrice,
 			quantity
 		});
 		added = true;

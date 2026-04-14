@@ -134,9 +134,6 @@
 				getTodaySpecial().catch(() => null)
 			]);
 
-			// temporary test - remove after testing
-			todaySpecial = { productId: 6, discountPercent: 10 };
-
 			const initialState = resolveInitialMenuState($page.url, tags);
 			activeTagId = initialState.activeTagId;
 			searchQuery = initialState.searchQuery;
