@@ -14,6 +14,7 @@
     let open = $state(false);
     let loading = $state(false);
     let thread = $state<ChatThread | null>(null);
+    let existingThread = $state<ChatThread | null>(null);
     let messages = $state<ChatMessage[]>([]);
     let typingLabel = $state('');
     let typingTimer: ReturnType<typeof setTimeout>;
@@ -21,6 +22,22 @@
 
     let unsubMessages: (() => void) | null = null;
     let unsubTyping: (() => void) | null = null;
+
+    // Reset all chat state when the logged-in user changes (prevents session bleed between users)
+    let _prevUserId: string | undefined;
+    $effect(() => {
+        const uid = $user?.userId;
+        if (_prevUserId !== undefined && uid !== _prevUserId) {
+            unsubMessages?.();
+            unsubTyping?.();
+            thread = null;
+            existingThread = null;
+            messages = [];
+            open = false;
+            sendError = '';
+        }
+        _prevUserId = uid;
+    });
 
     function subscribeThread(t: ChatThread) {
         unsubMessages?.();
@@ -52,16 +69,30 @@
     async function handleOpen() {
         open = true;
         if (thread || loading) return;
+        // Load any existing open thread in background to offer resume option —
+        // but always show the category picker first (don't auto-enter the thread).
         loading = true;
         try {
             const threads = await getThreads();
             if (threads.length > 0) {
-                thread = threads[0];
-                messages = await getMessages(thread.id);
-                subscribeThread(thread);
+                existingThread = threads[0];
             }
         } catch {
-            // No thread yet — category picker shown
+            // no existing thread — show picker as normal
+        } finally {
+            loading = false;
+        }
+    }
+
+    async function handleResume() {
+        if (!existingThread) return;
+        loading = true;
+        try {
+            thread = existingThread;
+            messages = await getMessages(thread.id);
+            subscribeThread(thread);
+        } catch {
+            // stay on picker
         } finally {
             loading = false;
         }
@@ -71,6 +102,7 @@
         loading = true;
         try {
             thread = await createThread(category);
+            existingThread = null;
             messages = [];
             subscribeThread(thread);
         } catch {
@@ -145,7 +177,11 @@
                         </div>
                     </div>
                 {:else if !thread}
-                    <ChatCategoryPicker onpick={handleCategoryPick} />
+                    <ChatCategoryPicker
+                        onpick={handleCategoryPick}
+                        {existingThread}
+                        onresume={handleResume}
+                    />
                 {:else}
                     <ChatMessageList
                         {messages}

@@ -1,6 +1,8 @@
 package com.sait.peelin.security;
 
 import com.sait.peelin.model.User;
+import com.sait.peelin.model.UserRole;
+import com.sait.peelin.service.ChatLookupCacheService;
 import com.sait.peelin.service.JwtService;
 import com.sait.peelin.service.TokenDenylistService;
 import com.sait.peelin.service.UserLookupCacheService;
@@ -26,12 +28,39 @@ public class StompChannelInterceptor implements ChannelInterceptor {
     private final JwtService jwtService;
     private final TokenDenylistService tokenDenylistService;
     private final UserLookupCacheService userLookupCacheService;
+    private final ChatLookupCacheService chatLookupCacheService;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor =
                 MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
         if (accessor == null) return message;
+
+        if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
+            String destination = accessor.getDestination();
+            if (destination != null && destination.matches("/topic/chat/thread/\\d+/.*")) {
+                Object principal = accessor.getUser();
+                if (principal instanceof UsernamePasswordAuthenticationToken authToken) {
+                    Object details = authToken.getDetails();
+                    if (details instanceof User userDetails &&
+                            userDetails.getUserRole() == UserRole.customer) {
+                        String[] parts = destination.split("/");
+                        // destination: /topic/chat/thread/{id}/messages -> parts[4] = id
+                        try {
+                            int threadId = Integer.parseInt(parts[4]);
+                            Integer allowedThreadId = chatLookupCacheService
+                                    .findOpenThreadIdForCustomer(userDetails.getUserId());
+                            if (allowedThreadId == null || !allowedThreadId.equals(threadId)) {
+                                throw new MessageDeliveryException("Forbidden: cannot subscribe to this thread");
+                            }
+                        } catch (NumberFormatException ignored) {
+                            // malformed path — block it
+                            throw new MessageDeliveryException("Forbidden");
+                        }
+                    }
+                }
+            }
+        }
 
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
             String jwt = resolveToken(accessor);

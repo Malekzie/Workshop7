@@ -107,7 +107,6 @@ public class ChatService {
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "chat-messages", key = "'thread:' + #threadId")
     public List<ChatMessageDto> messages(Integer threadId) {
         User u = currentUserService.requireUser();
         if (u.getUserRole() == UserRole.customer) {
