@@ -110,6 +110,8 @@ export interface RegisterSuccess {
 export interface RegisterFailure {
 	ok: false;
 	message: string;
+	/** Present when the server rejected the request (e.g. 401 employee link password). */
+	status?: number;
 }
 
 export type RegisterResult = RegisterSuccess | RegisterFailure;

@@ -89,7 +89,12 @@ export async function logoutUser(): Promise<void> {
 }
 
 export type RegisterAvailabilityResult =
-	| { ok: true; usernameAvailable: boolean; emailAvailable: boolean }
+	| {
+			ok: true;
+			usernameAvailable: boolean;
+			emailAvailable: boolean;
+			employeeLinkOffered: boolean;
+	  }
 	| { ok: false; message: string };
 
 /**
@@ -112,11 +117,13 @@ export async function fetchRegisterAvailability(
 		const data = (await res.json()) as {
 			usernameAvailable?: boolean;
 			emailAvailable?: boolean;
+			employeeLinkOffered?: boolean;
 		};
 		return {
 			ok: true,
 			usernameAvailable: data.usernameAvailable !== false,
-			emailAvailable: data.emailAvailable !== false
+			emailAvailable: data.emailAvailable !== false,
+			employeeLinkOffered: data.employeeLinkOffered === true
 		};
 	} catch {
 		return { ok: false, message: 'Could not reach the server. Try again later.' };
@@ -136,14 +143,20 @@ export async function registerUser(payload: Record<string, unknown>): Promise<Re
 			const err = (await res.json().catch(() => ({}))) as { message?: string };
 			Sentry.withScope((scope) => {
 				scope.setTag('action', 'REGISTER_FAILED');
-				scope.setTag('reason', res.status === 409 ? 'duplicate_account' : 'api_error');
+				const reason =
+					res.status === 409
+						? 'duplicate_account'
+						: res.status === 401
+							? 'employee_link_password'
+							: 'api_error';
+				scope.setTag('reason', reason);
 				scope.setTag('status_code', String(res.status));
 				Sentry.captureMessage(
 					`Registration failed: HTTP ${res.status}`,
 					res.status >= 500 ? 'error' : 'warning'
 				);
 			});
-			return { ok: false, message: err.message ?? 'Registration failed.' };
+			return { ok: false, message: err.message ?? 'Registration failed.', status: res.status };
 		}
 
 		const data = (await res.json()) as AuthResponse;

@@ -151,7 +151,10 @@ public class AuthService {
         String e = email != null ? email.trim().toLowerCase() : "";
         boolean usernameAvailable = u.isEmpty() || !userRepository.existsByUsernameIgnoreCase(u);
         boolean emailAvailable = e.isEmpty() || !isCustomerOrAdminSignInEmailTaken(e);
-        return new RegisterAvailabilityResponse(usernameAvailable, emailAvailable);
+        boolean employeeLinkOffered = !e.isEmpty()
+                && emailAvailable
+                && employeeCustomerLinkService.findSingleUnlinkedEmployeeByWorkEmail(e).isPresent();
+        return new RegisterAvailabilityResponse(usernameAvailable, emailAvailable, employeeLinkOffered);
     }
 
     private boolean isCustomerOrAdminSignInEmailTaken(String emailNorm) {
@@ -171,6 +174,22 @@ public class AuthService {
         String emailNorm = request.getEmail().trim().toLowerCase();
         if (isCustomerOrAdminSignInEmailTaken(emailNorm)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
+        }
+
+        java.util.Optional<Employee> linkEmployee =
+                employeeCustomerLinkService.findSingleUnlinkedEmployeeByWorkEmail(emailNorm);
+        if (linkEmployee.isPresent()) {
+            String elp = request.getEmployeeLinkPassword();
+            if (!StringUtils.hasText(elp)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Employee password required to link your customer account.");
+            }
+            User empUser = linkEmployee.get().getUser();
+            if (empUser == null || !StringUtils.hasText(empUser.getUserPasswordHash())
+                    || !passwordEncoder.matches(elp, empUser.getUserPasswordHash())) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "Employee password does not match this work email.");
+            }
         }
 
         boolean priorGuestCheckout = !customerRepository.findGuestCustomersByEmailNormalized(emailNorm).isEmpty();

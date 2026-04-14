@@ -17,4 +17,9 @@ import lombok.Setter;
 public class RegisterAvailabilityResponse {
     private boolean usernameAvailable;
     private boolean emailAvailable;
+    /**
+     * True when this email can be used for a new customer account and matches exactly one unlinked employee work email,
+     * so the client should collect the employee account password before calling {@code register}.
+     */
+    private boolean employeeLinkOffered;
 }
