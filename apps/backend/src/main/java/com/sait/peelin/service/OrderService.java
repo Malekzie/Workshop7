@@ -20,10 +20,13 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
@@ -55,6 +58,7 @@ public class OrderService {
     private final ReviewRepository reviewRepository;
     private final ProductSpecialService productSpecialService;
     private final EmployeeCustomerLinkService employeeCustomerLinkService;
+    private final BakeryHourRepository bakeryHourRepository;
 
     private static final ZoneId DEFAULT_PRICING_ZONE = ZoneId.of("America/Edmonton");
     private static final BigDecimal DELIVERY_FEE = new BigDecimal("7.00");
@@ -140,6 +144,8 @@ public class OrderService {
 
         Bakery bakery = bakeryRepository.findById(req.getBakeryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Bakery not found"));
+
+        requireScheduledTimeWithinHours(req.getScheduledAt(), bakery.getId());
 
         if (req.getOrderMethod() == OrderMethod.delivery
                 && req.getAddressId() == null
@@ -463,6 +469,47 @@ public class OrderService {
             } catch (StripeException e2) {
                 log.error("Could not create replacement PaymentIntent for order {}", orderId, e2);
                 throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Payment provider unavailable");
+            }
+        }
+    }
+
+    /**
+     * Validates that {@code scheduledAt} falls within the bakery's recorded hours of operation for
+     * that day of week. Throws {@link ResponseStatusException} 400 when the time is outside hours
+     * or the bakery is closed. A {@code null} scheduled time or an empty hours configuration are
+     * both treated as valid (no restriction).
+     */
+    private void requireScheduledTimeWithinHours(OffsetDateTime scheduledAt, Integer bakeryId) {
+        if (scheduledAt == null || bakeryId == null) return;
+
+        List<BakeryHour> hours = bakeryHourRepository.findByBakery_IdOrderByDayOfWeekAsc(bakeryId);
+        if (hours.isEmpty()) return; // no hours configured — skip
+
+        // Convert to bakery-local time zone for day-of-week + time comparison
+        java.time.LocalDateTime local = scheduledAt.atZoneSameInstant(DEFAULT_PRICING_ZONE).toLocalDateTime();
+        int dow = local.getDayOfWeek().getValue(); // 1=Mon … 7=Sun (ISO)
+        LocalTime schedTime = local.toLocalTime();
+
+        BakeryHour dayHour = hours.stream()
+                .filter(h -> h.getDayOfWeek() != null && h.getDayOfWeek().intValue() == dow)
+                .findFirst()
+                .orElse(null);
+
+        if (dayHour == null) {
+            String dayName = local.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Bakery has no hours configured for " + dayName);
+        }
+        if (Boolean.TRUE.equals(dayHour.getIsClosed())) {
+            String dayName = local.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Bakery is closed on " + dayName);
+        }
+        if (dayHour.getOpenTime() != null && dayHour.getCloseTime() != null) {
+            if (schedTime.isBefore(dayHour.getOpenTime()) || schedTime.isAfter(dayHour.getCloseTime())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Scheduled time must be within bakery hours ("
+                                + dayHour.getOpenTime() + " – " + dayHour.getCloseTime() + ")");
             }
         }
     }
