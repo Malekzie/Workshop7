@@ -22,7 +22,8 @@
 
 		if (username && role && userId) {
 			setAuth({ username, role, userId });
-			goto(resolve(getDefaultPostAuthRoute(role)));
+			const redirectTo = params.get('redirectTo');
+			goto(resolve(redirectTo ?? getDefaultPostAuthRoute(role)));
 		} else {
 			goto(resolve('/login?error=oauth_failed'));
 		}

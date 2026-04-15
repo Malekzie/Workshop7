@@ -43,7 +43,8 @@
 	<h2 class="mb-1 text-lg font-semibold text-foreground">Contact</h2>
 	<p class="mb-4 text-sm text-muted-foreground">
 		Already have an account?
-		<a href={resolve('/login')} class="text-primary hover:underline">Sign in</a>
+		<a href={resolve('/login?redirectTo=/checkout')} class="text-primary hover:underline">Sign in</a
+		>
 	</p>
 	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 		<div class="flex flex-col gap-1">
