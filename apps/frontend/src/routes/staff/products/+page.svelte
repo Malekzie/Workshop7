@@ -33,6 +33,35 @@
 	let editDraft = $state({ name: '', description: '', basePrice: '' });
 	let createDraft = $state({ name: '', description: '', basePrice: '' });
 
+	let createErrors = $state({ name: '', basePrice: '', description: '' });
+	let editErrors = $state({ name: '', basePrice: '', description: '' });
+
+	function validateProductField(name, value) {
+		switch (name) {
+			case 'name':
+				if (!value.trim()) return 'Name is required.';
+				if (value.trim().length < 2) return 'Must be at least 2 characters.';
+				return '';
+			case 'basePrice':
+				if (!value) return 'Price is required.';
+				if (isNaN(parseFloat(value)) || parseFloat(value) <= 0)
+					return 'Enter a valid positive price.';
+				return '';
+			case 'description':
+				if (value.length > 500) return 'Max 500 characters.';
+				return '';
+			default:
+				return '';
+		}
+	}
+
+	function validateProductForm(draft, errors) {
+		errors.name = validateProductField('name', draft.name);
+		errors.basePrice = validateProductField('basePrice', draft.basePrice);
+		errors.description = validateProductField('description', draft.description);
+		return !errors.name && !errors.basePrice && !errors.description;
+	}
+
 	onMount(async () => {
 		if ($user?.role !== 'admin') {
 			goto(resolve('/staff/dashboard'), { replaceState: true });
@@ -58,6 +87,7 @@
 	}
 
 	async function handleUpdate(id) {
+		if (!validateProductForm(editDraft, editErrors)) return;
 		saving = true;
 		try {
 			let updated = await updateProduct(id, {
@@ -80,6 +110,7 @@
 	}
 
 	async function handleCreate() {
+		if (!validateProductForm(createDraft, createErrors)) return;
 		saving = true;
 		try {
 			const created = await createProduct({
@@ -141,17 +172,43 @@
 			>
 				<p class="text-sm font-semibold text-foreground">New Product</p>
 				<div class="grid grid-cols-2 gap-3">
-					<Input bind:value={createDraft.name} placeholder="Name" required />
-					<Input
-						bind:value={createDraft.basePrice}
-						placeholder="Price (e.g. 4.99)"
-						type="number"
-						step="0.01"
-						min="0"
-						required
-					/>
+					<div class="flex flex-col gap-1">
+						<Input
+							bind:value={createDraft.name}
+							placeholder="Name"
+							oninput={() => (createErrors.name = validateProductField('name', createDraft.name))}
+						/>
+						{#if createErrors.name}<p class="text-xs text-red-500">{createErrors.name}</p>{/if}
+					</div>
+					<div class="flex flex-col gap-1">
+						<Input
+							bind:value={createDraft.basePrice}
+							placeholder="Price (e.g. 4.99)"
+							type="number"
+							step="0.01"
+							min="0"
+							oninput={() =>
+								(createErrors.basePrice = validateProductField('basePrice', createDraft.basePrice))}
+						/>
+						{#if createErrors.basePrice}<p class="text-xs text-red-500">
+								{createErrors.basePrice}
+							</p>{/if}
+					</div>
 				</div>
-				<Input bind:value={createDraft.description} placeholder="Description (optional)" />
+				<div class="flex flex-col gap-1">
+					<Input
+						bind:value={createDraft.description}
+						placeholder="Description (optional)"
+						oninput={() =>
+							(createErrors.description = validateProductField(
+								'description',
+								createDraft.description
+							))}
+					/>
+					{#if createErrors.description}<p class="text-xs text-red-500">
+							{createErrors.description}
+						</p>{/if}
+				</div>
 
 				<div class="flex flex-col gap-1">
 					<p class="text-xs font-medium text-muted-foreground">
@@ -225,17 +282,49 @@
 									}}
 								>
 									<div class="grid grid-cols-2 gap-2">
-										<Input bind:value={editDraft.name} placeholder="Name" required />
-										<Input
-											bind:value={editDraft.basePrice}
-											placeholder="Price"
-											type="number"
-											step="0.01"
-											min="0"
-											required
-										/>
+										<div class="flex flex-col gap-1">
+											<Input
+												bind:value={editDraft.name}
+												placeholder="Name"
+												oninput={() =>
+													(editErrors.name = validateProductField('name', editDraft.name))}
+											/>
+											{#if editErrors.name}<p class="text-xs text-red-500">
+													{editErrors.name}
+												</p>{/if}
+										</div>
+										<div class="flex flex-col gap-1">
+											<Input
+												bind:value={editDraft.basePrice}
+												placeholder="Price"
+												type="number"
+												step="0.01"
+												min="0"
+												oninput={() =>
+													(editErrors.basePrice = validateProductField(
+														'basePrice',
+														editDraft.basePrice
+													))}
+											/>
+											{#if editErrors.basePrice}<p class="text-xs text-red-500">
+													{editErrors.basePrice}
+												</p>{/if}
+										</div>
 									</div>
-									<Input bind:value={editDraft.description} placeholder="Description" />
+									<div class="flex flex-col gap-1">
+										<Input
+											bind:value={editDraft.description}
+											placeholder="Description"
+											oninput={() =>
+												(editErrors.description = validateProductField(
+													'description',
+													editDraft.description
+												))}
+										/>
+										{#if editErrors.description}<p class="text-xs text-red-500">
+												{editErrors.description}
+											</p>{/if}
+									</div>
 
 									<div class="flex flex-col gap-1">
 										<p class="text-xs font-medium text-muted-foreground">
