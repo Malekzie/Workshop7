@@ -116,11 +116,20 @@
 	function addSelectedToCart() {
 		if (!selectedProduct) return;
 
+		const isSpecial = todaySpecial?.productId === selectedProduct.id;
+		const discountPercent = isSpecial ? todaySpecial.discountPercent : null;
+		const originalPrice = isSpecial ? selectedProduct.basePrice : undefined;
+		const unitPrice =
+			isSpecial && discountPercent
+				? +(selectedProduct.basePrice * (1 - discountPercent / 100)).toFixed(2)
+				: selectedProduct.basePrice;
+
 		cart.addItem({
 			productId: selectedProduct.id,
 			productName: selectedProduct.name,
 			productImageUrl: selectedProduct.imageUrl ?? null,
-			unitPrice: selectedProduct.basePrice,
+			unitPrice,
+			originalPrice,
 			quantity: sheetQty
 		});
 		sheetAdded = true;
