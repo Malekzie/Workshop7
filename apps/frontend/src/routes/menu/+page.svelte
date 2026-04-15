@@ -10,6 +10,7 @@
 	import ReviewSubmissionOverlay from '$lib/components/review/ReviewSubmissionOverlay.svelte';
 	import { Separator } from '$lib/components/ui/separator';
 	import { cart } from '$lib/stores/cart';
+	import { user } from '$lib/stores/authStore';
 	import {
 		filterMenuProducts,
 		loadMenuCatalog,
@@ -37,6 +38,7 @@
 	let reviewSubmitting = $state(false);
 	let reviewError = $state(null);
 	let reviewSuccess = $state(false);
+	let reviewGuestName = $state('');
 
 	let sheetOpen = $state(false);
 	let selectedProduct = $state(null);
@@ -67,6 +69,7 @@
 	function openReviewModal() {
 		reviewRating = 0;
 		reviewComment = '';
+		reviewGuestName = '';
 		reviewError = null;
 		reviewSuccess = false;
 		reviewModal = true;
@@ -75,6 +78,7 @@
 
 	function closeReviewModal() {
 		reviewModal = false;
+		reviewGuestName = '';
 	}
 
 	async function submitProductReview() {
@@ -91,7 +95,8 @@
 			const result = await submitMenuProductReview({
 				productId: selectedProduct.id,
 				rating: reviewRating,
-				comment: reviewComment
+				comment: reviewComment,
+				guestName: reviewGuestName || ''
 			});
 
 			if (result.ok) {
@@ -214,8 +219,10 @@
 <MenuReviewModal
 	bind:open={reviewModal}
 	productName={selectedProduct?.name ?? ''}
+	isLoggedIn={Boolean($user)}
 	bind:rating={reviewRating}
 	bind:comment={reviewComment}
+	bind:guestName={reviewGuestName}
 	bind:submitting={reviewSubmitting}
 	bind:error={reviewError}
 	bind:success={reviewSuccess}
