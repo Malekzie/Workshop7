@@ -94,9 +94,12 @@
 					: "We couldn't post that review. Try different wording.";
 			} else {
 				reviewSuccess = true;
-				const freshReviews = await getBakeryReviews(reviewModal.bakeryId).catch(() => []);
+				const [freshReviews, freshAverage] = await Promise.all([
+					getBakeryReviews(reviewModal.bakeryId).catch(() => []),
+					getBakeryAverage(reviewModal.bakeryId).catch(() => null)
+				]);
 				bakeries = bakeries.map((b) =>
-					b.id === reviewModal.bakeryId ? { ...b, reviews: freshReviews } : b
+					b.id === reviewModal.bakeryId ? { ...b, reviews: freshReviews, average: freshAverage } : b
 				);
 				setTimeout(() => closeReviewModal(), 1500);
 			}
