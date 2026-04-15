@@ -28,6 +28,7 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -367,6 +368,11 @@ public class CustomerService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "customers", keyGenerator = "userIdKeyGenerator"),
+            @CacheEvict(value = "employees", keyGenerator = "userIdKeyGenerator"),
+            @CacheEvict(value = "customers", key = "'pending-photos'")
+    })
     public ProfilePhotoResponse uploadMyProfilePhoto(MultipartFile photo) {
         User u = currentUserService.requireUser();
         validateProfilePhotoFile(photo);

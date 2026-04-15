@@ -95,6 +95,7 @@ public class ChatService {
                 .map(this::threadDto)
                 .orElseGet(() -> {
                     ChatThread created = createThreadEntity(u, "general");
+                    created = applyAutoRouting(created);
                     chatLookupCacheService.evictOpenThreadForCustomer(u.getUserId());
                     ChatThreadDto dto = threadDto(created);
                     messagingTemplate.convertAndSend("/topic/chat/threads", dto);
@@ -116,22 +117,25 @@ public class ChatService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         ChatThread created = createThreadEntity(u, category);
-
-        // Auto-route: pick an active specialist (fallback to any active staff).
-        Optional<User> picked = chatRoutingService.pickStaff(created.getCategory());
-        if (picked.isPresent()) {
-            created.setEmployeeUser(picked.get());
-            created.setUpdatedAt(OffsetDateTime.now());
-            created = chatThreadRepository.save(created);
-            postSystemMessage(created, "Assigned to " + displayNameFor(picked.get()));
-        } else {
-            postSystemMessage(created, "No staff online right now, we'll respond as soon as possible.");
-        }
+        created = applyAutoRouting(created);
 
         chatLookupCacheService.evictOpenThreadForCustomer(u.getUserId());
         ChatThreadDto dto = threadDto(created);
         messagingTemplate.convertAndSend("/topic/chat/threads", dto);
         return dto;
+    }
+
+    private ChatThread applyAutoRouting(ChatThread thread) {
+        Optional<User> picked = chatRoutingService.pickStaff(thread.getCategory());
+        if (picked.isPresent()) {
+            thread.setEmployeeUser(picked.get());
+            thread.setUpdatedAt(OffsetDateTime.now());
+            thread = chatThreadRepository.save(thread);
+            postSystemMessage(thread, "Assigned to " + displayNameFor(picked.get()));
+        } else {
+            postSystemMessage(thread, "No staff online right now, we'll respond as soon as possible.");
+        }
+        return thread;
     }
 
     private ChatThread createThreadEntity(User customer, String category) {
