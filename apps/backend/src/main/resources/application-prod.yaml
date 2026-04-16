@@ -32,12 +32,9 @@ spring:
     secret-key: ${DO_SPACES_SECRET:}
     base_url: ${DO_SPACES_BASE_URL:}
     prefix: ${DO_SPACES_PREFIX:customers}
-  data:
-    redis:
-      host: ${REDIS_HOST:${VALKEY_HOST:localhost}}
-      username: ${REDIS_USERNAME:${VALKEY_USERNAME:}}
-      password: ${REDIS_PASSWORD:${VALKEY_PASSWORD:}}
-      port: ${REDIS_PORT:${VALKEY_PORT:6379}}
+  # Redis/Valkey connection is inherited from application.yaml (VALKEY_* env vars).
+  # The nested ${REDIS_*:${VALKEY_*:}} fallback here was breaking port binding when DO
+  # surfaced the outer var as an empty string, so let the base config win.
 management:
   endpoints:
     web:
