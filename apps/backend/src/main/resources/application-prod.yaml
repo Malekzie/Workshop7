@@ -14,7 +14,8 @@ spring:
     show-sql: false
   flyway:
     enabled: true
-    locations: classpath:db/migration/core
+    # Migrations live flat under db/migration/ (no core/ subfolder) — load the parent so V46/V47 are picked up.
+    locations: classpath:db/migration
     default-schema: public
     schemas: public
     # DB holds history rows (V0-V45) from prior seed migrations no longer in classpath.
