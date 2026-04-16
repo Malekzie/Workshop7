@@ -49,6 +49,44 @@
 	const taxAmountDisplay = $derived(Number(taxAmount ?? subtotal * 0.05));
 	const totalDisplay = $derived(Number(grandTotal ?? subtotal + deliveryAmount + taxAmountDisplay));
 
+	function buildAppearance() {
+		// Read resolved --background lightness — immune to whichever class/attribute
+		// the theme lib uses (mode-watcher, Tailwind dark variant, prefers-color-scheme).
+		const bgVar = getComputedStyle(document.documentElement)
+			.getPropertyValue('--background')
+			.trim();
+		const lightnessMatch = bgVar.match(/oklch\(\s*([\d.]+)/);
+		const isDark = lightnessMatch ? parseFloat(lightnessMatch[1]) < 0.5 : false;
+		return {
+			theme: (isDark ? 'night' : 'stripe') as 'night' | 'stripe',
+			variables: {
+				colorPrimary: '#C4714A',
+				colorBackground: isDark ? '#3A2419' : '#FFFFFF',
+				colorText: isDark ? '#F5EDE4' : '#2C1A0E',
+				colorTextSecondary: isDark ? '#D9C9BC' : '#6B5849',
+				colorTextPlaceholder: isDark ? '#A0897A' : '#9A8876',
+				colorDanger: '#C4554A',
+				colorIconTab: isDark ? '#D9C9BC' : '#2C1A0E',
+				colorIconTabSelected: '#C4714A',
+				fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
+				borderRadius: '8px'
+			},
+			rules: {
+				'.Input': {
+					border: isDark ? '1px solid rgba(255,255,255,0.15)' : '1px solid #E5DFD7'
+				},
+				'.Input:focus': {
+					border: '1px solid #C4714A',
+					boxShadow: '0 0 0 1px #C4714A'
+				},
+				'.Label': {
+					color: isDark ? '#F5EDE4' : '#2C1A0E',
+					fontWeight: '500'
+				}
+			}
+		};
+	}
+
 	onMount(async () => {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		if (!(window as any).Stripe) {
@@ -62,9 +100,19 @@
 		}
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		stripeInstance = (window as any).Stripe(publishableKey);
-		stripeElements = stripeInstance.elements({ clientSecret });
+		stripeElements = stripeInstance.elements({ clientSecret, appearance: buildAppearance() });
 		stripeElements.create('payment').mount(paymentContainer);
 		loading = false;
+
+		// Re-skin when the theme class/attribute flips on <html>.
+		const observer = new MutationObserver(() => {
+			stripeElements?.update({ appearance: buildAppearance() });
+		});
+		observer.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ['class', 'data-theme', 'style']
+		});
+		return () => observer.disconnect();
 	});
 
 	async function pay() {
