@@ -76,7 +76,9 @@ public class OrderService {
     public CheckoutSessionResponse checkout(CheckoutRequest req) {
         User user = currentUserService.currentUserOrNull();
         Customer customer;
+        Employee staffEmployee = null;
         boolean guestCheckout = false;
+
         if (user == null) {
             if (req.getGuest() == null) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication or guest details are required");
@@ -95,12 +97,16 @@ public class OrderService {
             }
             customer = customerRepository.findById(req.getCustomerId())
                     .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
-            if (user.getUserRole() == UserRole.employee) {
-                Employee staff = employeeRepository.findByUser_UserId(user.getUserId())
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN));
-                if (!staff.getBakery().getId().equals(req.getBakeryId())) {
-                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bakery does not match your assignment");
-                }
+
+            staffEmployee = employeeRepository.findByUser_UserId(user.getUserId())
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.FORBIDDEN,
+                            "Staff account is not linked to an employee profile"
+                    ));
+
+            if (user.getUserRole() == UserRole.employee
+                    && !staffEmployee.getBakery().getId().equals(req.getBakeryId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bakery does not match your assignment");
             }
         } else {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot place order with this role");
@@ -187,11 +193,35 @@ public class OrderService {
         List<OrderItem> savedItems = new ArrayList<>();
         for (CheckoutRequest.CheckoutLineRequest line : req.getItems()) {
             Product p = productRepository.findById(line.getProductId()).orElseThrow();
+
             Batch batch = null;
+
             if (line.getBatchId() != null) {
                 batch = batchRepository.findById(line.getBatchId())
                         .orElseThrow(() -> new ResourceNotFoundException("Batch not found"));
+            } else if (user != null && user.getUserRole() == UserRole.admin) {
+                batch = batchRepository
+                        .findFirstByBakery_IdAndProduct_IdOrderByIdDesc(
+                                bakery.getId(),
+                                p.getId()
+                        )
+                        .orElseThrow(() -> new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST,
+                                "No batch found for this product in the selected bakery"
+                        ));
+            } else if (user != null && user.getUserRole() == UserRole.employee && staffEmployee != null) {
+                batch = batchRepository
+                        .findFirstByBakery_IdAndProduct_IdAndEmployee_IdOrderByIdDesc(
+                                bakery.getId(),
+                                p.getId(),
+                                staffEmployee.getId()
+                        )
+                        .orElseThrow(() -> new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST,
+                                "No batch found for this product for current employee"
+                        ));
             }
+
             BigDecimal unit = p.getProductBasePrice();
             BigDecimal lineTotal = unit.multiply(BigDecimal.valueOf(line.getQuantity()));
             OrderItem oi = new OrderItem();

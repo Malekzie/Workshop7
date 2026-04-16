@@ -7,6 +7,8 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 public interface BatchRepository extends JpaRepository<Batch, Integer> {
 
@@ -16,4 +18,15 @@ public interface BatchRepository extends JpaRepository<Batch, Integer> {
 
     @Query("SELECT b FROM Batch b WHERE b.bakery.id = :bakeryId AND b.batchExpiryDate >= :now ORDER BY b.batchExpiryDate ASC")
     List<Batch> findActiveByBakery(@Param("bakeryId") Integer bakeryId, @Param("now") OffsetDateTime now);
+
+    Optional<Batch> findFirstByBakery_IdAndProduct_IdAndEmployee_IdOrderByIdDesc(
+            Integer bakeryId,
+            Integer productId,
+            UUID employeeId
+    );
+
+    Optional<Batch> findFirstByBakery_IdAndProduct_IdOrderByIdDesc(
+            Integer bakeryId,
+            Integer productId
+    );
 }
