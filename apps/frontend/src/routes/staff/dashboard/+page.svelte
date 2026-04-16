@@ -3,7 +3,8 @@
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { Badge } from '$lib/components/ui/badge';
 	import KpiCard from '$lib/components/staff/KpiCard.svelte';
-	import { getDashboardSummary } from '$lib/services/dashboard.js';
+	import { getDashboardSummary } from '$lib/services/dashboard';
+	import { formatPriceCad } from '$lib/utils/money';
 
 	let summary = $state(null);
 	let loading = $state(true);
@@ -29,7 +30,7 @@
 
 	function formatCurrency(val) {
 		if (val == null) return '—';
-		return `$${Number(val).toFixed(2)}`;
+		return formatPriceCad(val);
 	}
 
 	function formatDate(dt) {
@@ -51,7 +52,7 @@
 
 		{#if loading}
 			<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-				{#each Array(4) as _, i (i)}
+				{#each Array.from({ length: 4 }, (_, i) => i) as i (i)}
 					<Skeleton class="h-28 rounded-xl" />
 				{/each}
 			</div>

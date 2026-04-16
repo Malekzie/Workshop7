@@ -2,23 +2,24 @@
 	import { resolve } from '$app/paths';
 </script>
 
-<section class="bg-[#FAF7F2] px-6 py-20">
+<section class="bg-background px-6 py-20">
 	<div class="mx-auto grid max-w-7xl grid-cols-1 items-center gap-16 md:grid-cols-2">
-		<!-- Image placeholder -->
-		<div
-			class="flex h-80 items-center justify-center overflow-hidden rounded-xl border border-border bg-[#F5EFE6]"
-		>
-			<p class="text-sm text-muted-foreground">Photo coming soon</p>
+		<div class="overflow-hidden rounded-xl border border-border">
+			<img
+				src="https://peelin-good-storage.tor1.cdn.digitaloceanspaces.com/misc/bakery.jpg"
+				alt="Peelin' Good Bakery"
+				class="h-80 w-full object-cover"
+			/>
 		</div>
 
 		<!-- Text -->
 		<div class="flex flex-col gap-4">
-			<p class="text-[11px] font-semibold tracking-[0.2em] text-[#C4714A] uppercase">About us</p>
+			<p class="text-[11px] font-semibold tracking-[0.2em] text-primary uppercase">About us</p>
 
-			<h2 class="text-4xl leading-tight font-black tracking-tight text-[#2C1A0E]">
+			<h2 class="text-4xl leading-tight font-black tracking-tight text-foreground">
 				Baked fresh.<br />
 				Made with
-				<span class="text-[#C4714A]">care.</span>
+				<span class="text-primary">care.</span>
 			</h2>
 
 			<p class="text-sm leading-relaxed text-muted-foreground">
@@ -29,12 +30,12 @@
 
 			<p class="text-sm leading-relaxed text-muted-foreground">
 				From handcrafted breads to daily pastries, every item is made in small batches with
-				attention to detail—no shortcuts, just honest baking.
+				attention to detail, no shortcuts, just honest baking.
 			</p>
 
 			<a
 				href={resolve('/about')}
-				class="mt-1 self-start text-sm font-semibold text-[#C4714A] underline decoration-[#C4714A]/40 underline-offset-4 hover:decoration-[#C4714A]"
+				class="mt-1 self-start text-sm font-semibold text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary"
 			>
 				Learn more about us →
 			</a>

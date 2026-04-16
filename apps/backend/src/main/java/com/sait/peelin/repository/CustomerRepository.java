@@ -16,6 +16,8 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
     @EntityGraph(attributePaths = {"address", "rewardTier", "user"})
     Optional<Customer> findByUser_UserId(UUID userId);
 
+    boolean existsByUser_UserId(UUID userId);
+
     @EntityGraph(attributePaths = {"address", "rewardTier", "user"})
     @Query("SELECT c FROM Customer c WHERE c.user IS NOT NULL AND c.user.photoApprovalPending = true")
     List<Customer> findByUserPhotoApprovalPendingTrue();
@@ -126,4 +128,7 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
             WHERE regexp_replace(btrim(c.customer_phone), '\\D', '', 'g') = :digits
             """, nativeQuery = true)
     long countCustomersWithPhoneDigits(@Param("digits") String digits);
+
+    @Query("select distinct c.user.userId from Customer c where c.user is not null")
+    List<UUID> findDistinctLinkedUserIds();
 }

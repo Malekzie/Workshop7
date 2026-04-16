@@ -26,6 +26,7 @@ public class EmployeeProfileService {
     private final EmployeeRepository employeeRepository;
     private final AddressRepository addressRepository;
     private final CurrentUserService currentUserService;
+    private final LinkedProfileSyncService linkedProfileSyncService;
 
     @Transactional(readOnly = true)
     @Cacheable(value = "employees", keyGenerator = "userIdKeyGenerator")
@@ -73,10 +74,12 @@ public class EmployeeProfileService {
             }
         }
 
-        employeeRepository.save(e);
-        return toDto(e);
+        Employee saved = employeeRepository.save(e);
+        linkedProfileSyncService.afterEmployeeProfilePatch(saved);
+        return toDto(saved);
     }
     @Transactional(readOnly = true)
+    @Cacheable(value = "employees", key = "'all'")
     public List<EmployeeDto> listAll() {
         return employeeRepository.findAll().stream().map(this::toDto).toList();
     }

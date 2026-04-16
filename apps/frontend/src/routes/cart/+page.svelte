@@ -1,7 +1,17 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { cart } from '$lib/stores/cart';
+	import { formatDiscountCad, formatPriceCad } from '$lib/utils/money';
 	import { ShoppingCart, Trash2, Plus, Minus } from '@lucide/svelte';
+	import { user } from '$lib/stores/authStore';
+
+	let { data } = $props();
+	// data.user comes from the JWT cookie (server-side). Fall back to the localStorage
+	// store in case the cookie isn't readable by SvelteKit (e.g. OAuth flow, cookie path).
+
+	const isUserSignedIn = $derived($user || data.user);
+
+	const checkoutHref = '/checkout';
 </script>
 
 <main class="mx-auto max-w-4xl px-6 py-16">
@@ -12,7 +22,7 @@
 			<ShoppingCart size={48} class="text-muted-foreground" />
 			<p class="text-lg text-muted-foreground">Your cart is empty.</p>
 			<a
-				href={resolve('/')}
+				href={resolve('/menu')}
 				class="rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90"
 			>
 				Browse the Menu
@@ -26,11 +36,11 @@
 						<img
 							src={item.productImageUrl}
 							alt={item.productName}
-							class="h-20 w-20 flex-shrink-0 rounded-lg object-cover"
+							class="h-20 w-20 shrink-0 rounded-lg object-cover"
 						/>
 					{:else}
 						<div
-							class="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-lg bg-muted text-3xl"
+							class="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-muted text-3xl"
 						>
 							🥐
 						</div>
@@ -38,7 +48,7 @@
 
 					<div class="min-w-0 flex-1">
 						<p class="truncate font-semibold text-foreground">{item.productName}</p>
-						<p class="text-sm text-muted-foreground">${item.unitPrice.toFixed(2)} each</p>
+						<p class="text-sm text-muted-foreground">{formatPriceCad(item.unitPrice)} each</p>
 					</div>
 
 					<div class="flex items-center gap-2">
@@ -60,7 +70,7 @@
 					</div>
 
 					<p class="w-20 text-right font-semibold text-foreground">
-						${item.lineTotal.toFixed(2)}
+						{formatPriceCad(item.lineTotal)}
 					</p>
 
 					<button
@@ -78,18 +88,18 @@
 			<div class="flex flex-col gap-2 text-sm">
 				<div class="flex justify-between text-muted-foreground">
 					<span>Subtotal</span>
-					<span>${$cart.subtotal.toFixed(2)}</span>
+					<span>{formatPriceCad($cart.subtotal)}</span>
 				</div>
 				{#if $cart.discount > 0}
 					<div class="flex justify-between text-accent">
 						<span>Discount</span>
-						<span>−${$cart.discount.toFixed(2)}</span>
+						<span>{formatDiscountCad($cart.discount)}</span>
 					</div>
 				{/if}
 				<hr class="my-2 border-border" />
 				<div class="flex justify-between text-base font-bold text-foreground">
 					<span>Total</span>
-					<span>${$cart.total.toFixed(2)}</span>
+					<span>{formatPriceCad($cart.total)}</span>
 				</div>
 			</div>
 
@@ -101,7 +111,7 @@
 					Continue Shopping
 				</a>
 				<a
-					href={resolve('/checkout')}
+					href={resolve(checkoutHref)}
 					class="rounded-lg bg-primary px-6 py-3 text-center text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90"
 				>
 					Proceed to Checkout

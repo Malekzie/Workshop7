@@ -13,9 +13,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "\"user\"", uniqueConstraints = {
         @UniqueConstraint(name = "user_username_key",
-                columnNames = {"username"}),
-        @UniqueConstraint(name = "user_user_email_key",
-                columnNames = {"user_email"})})
+                columnNames = {"username"})})
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -61,6 +59,16 @@ public class User {
     @ColumnDefault("false")
     @Column(name = "photo_approval_pending", nullable = false)
     private Boolean photoApprovalPending;
+
+    /** OAuth2 registration id (e.g. google, microsoft). Null for password-based accounts. */
+    @Size(max = 50)
+    @Column(name = "provider", length = 50)
+    private String provider;
+
+    /** Stable subject id from the OAuth2 provider. Null for password-based accounts. */
+    @Size(max = 255)
+    @Column(name = "provider_id", length = 255)
+    private String providerId;
 
     public UUID getUserId() {
         return userId;
@@ -132,5 +140,21 @@ public class User {
 
     public void setPhotoApprovalPending(Boolean photoApprovalPending) {
         this.photoApprovalPending = photoApprovalPending;
+    }
+
+    public String getProvider() {
+        return provider;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
+    }
+
+    public String getProviderId() {
+        return providerId;
+    }
+
+    public void setProviderId(String providerId) {
+        this.providerId = providerId;
     }
 }

@@ -3,6 +3,10 @@
 	import { resolve } from '$app/paths';
 	import { ShoppingCart, User, Menu, X } from '@lucide/svelte';
 	import { isLoggedIn, user } from '$lib/stores/authStore';
+	import { page } from '$app/state';
+	import { SunIcon, MoonIcon } from '@lucide/svelte';
+	import { toggleMode } from 'mode-watcher';
+	import { Button } from '$lib/components/ui/button/index';
 
 	interface Props {
 		cartCount?: number;
@@ -17,6 +21,13 @@
 		if (!target.closest('.category-dropdown')) {
 			categoryOpen = false;
 		}
+		if (!target.closest('nav')) {
+			menuOpen = false;
+		}
+	}
+
+	function handleCartClick() {
+		goto(resolve('/cart'));
 	}
 
 	// handles where to direct user when clicking profile based on if they are logged in or not
@@ -33,8 +44,6 @@
 	function handleMenuClick() {
 		goto(resolve('/menu'));
 	}
-
-	const isStaffUser = $derived($user?.role === 'admin' || $user?.role === 'employee');
 </script>
 
 <svelte:window onclick={handleClickOutside} />
@@ -47,42 +56,63 @@
 		</a>
 
 		<!-- Desktop Nav -->
-		<div class="hidden items-center gap-8 md:flex">
-			<!-- Menu -->
-			<div class="relative">
-				<button
-					class="flex items-center gap-1 text-sm font-medium text-foreground transition-colors hover:cursor-pointer hover:text-primary"
-					aria-expanded={categoryOpen}
-					onclick={handleMenuClick}
-				>
-					Menu
-				</button>
-			</div>
-
-			<a
-				href={resolve('/about')}
-				class="text-sm font-medium text-foreground transition-colors hover:text-primary">About</a
+		<div class="hidden items-center gap-12 md:flex">
+			<Button
+				class="flex items-center gap-1 text-sm font-medium transition-colors hover:cursor-pointer hover:text-primary
+        		{page.url.pathname === '/menu' ? 'text-primary' : 'text-foreground'}"
+				aria-expanded={categoryOpen}
+				onclick={handleMenuClick}
+				variant="ghost"
 			>
-			{#if !isStaffUser}
-				<a
-					href={resolve('/orders')}
-					class="text-sm font-medium text-foreground transition-colors hover:text-primary">Orders</a
-				>
-			{/if}
+				Menu
+			</Button>
+			<Button
+				href={resolve('/about')}
+				class="text-sm font-medium transition-colors hover:text-primary
+        		{page.url.pathname === '/about' ? 'text-primary' : 'text-foreground'}"
+				variant="ghost"
+			>
+				About
+			</Button>
+			<Button
+				href={resolve('/locations')}
+				class="text-sm font-medium transition-colors hover:text-primary
+        		{page.url.pathname === '/locations' ? 'text-primary' : 'text-foreground'}"
+				variant="ghost"
+			>
+				Locations
+			</Button>
 		</div>
 
 		<!-- Right icons -->
-		<div class="hidden items-center gap-4 md:flex">
-			<button
+		<div class="hidden items-center gap-6 md:flex">
+			<!-- Dark Mode Buttons -->
+			<Button onclick={toggleMode} variant="outline" size="icon">
+				<SunIcon
+					class="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all! dark:scale-0 dark:-rotate-90"
+				/>
+				<MoonIcon
+					class="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all! dark:scale-100 dark:rotate-0"
+				/>
+				<span class="sr-only">Toggle Theme</span>
+			</Button>
+			<Button
 				onclick={handleProfileClick}
 				aria-label="Account"
-				class="text-foreground transition-colors hover:cursor-pointer hover:text-primary"
+				class="transition-colors hover:cursor-pointer hover:text-primary
+        		{page.url.pathname.startsWith('/profile') || page.url.pathname.startsWith('/staff')
+					? 'text-primary'
+					: 'text-foreground'}"
+				variant="outline"
 			>
 				<User size={20} />
-			</button>
-			<button
+			</Button>
+			<Button
+				onclick={handleCartClick}
 				aria-label="Cart ({cartCount} items)"
-				class="relative text-foreground transition-colors hover:text-primary"
+				class="relative transition-colors hover:text-primary
+        		{page.url.pathname === '/cart' ? 'text-primary' : 'text-foreground'}"
+				variant="outline"
 			>
 				<ShoppingCart size={20} />
 				{#if cartCount > 0}
@@ -92,11 +122,11 @@
 						{cartCount}
 					</span>
 				{/if}
-			</button>
+			</Button>
 		</div>
 
 		<!-- Mobile hamburger -->
-		<button
+		<Button
 			aria-label={menuOpen ? 'Close menu' : 'Open menu'}
 			class="text-foreground md:hidden"
 			onclick={() => (menuOpen = !menuOpen)}
@@ -106,29 +136,53 @@
 			{:else}
 				<Menu size={22} />
 			{/if}
-		</button>
+		</Button>
 	</div>
 
 	<!-- Mobile menu -->
 	{#if menuOpen}
 		<div class="flex flex-col gap-4 border-t border-border bg-background px-6 py-4 md:hidden">
-			<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">Menu</p>
+			<a
+				href={resolve('/menu')}
+				onclick={() => (menuOpen = false)}
+				class="text-xs font-semibold tracking-widest uppercase transition-colors
+        {page.url.pathname === '/menu' ? 'text-primary' : 'text-foreground'}">Menu</a
+			>
+			<a
+				href={resolve('/about')}
+				onclick={() => (menuOpen = false)}
+				class="text-sm transition-colors hover:text-primary
+        {page.url.pathname === '/about' ? 'text-primary' : 'text-foreground'}">About</a
+			>
+			<a
+				href={resolve('/locations')}
+				onclick={() => (menuOpen = false)}
+				class="text-sm transition-colors hover:text-primary
+        {page.url.pathname === '/locations' ? 'text-primary' : 'text-foreground'}">Locations</a
+			>
 
-			<hr class="border-border" />
-			<a href={resolve('/about')} class="text-sm text-foreground hover:text-primary">About</a>
-			<!-- show order if user is logged in -->
-			{#if $isLoggedIn && !isStaffUser}
-				<a href={resolve('/orders')} class="text-sm text-foreground hover:text-primary">Orders</a>
-			{/if}
 			<div class="flex gap-4 pt-2">
-				<button
-					onclick={handleProfileClick}
+				<Button
+					onclick={() => {
+						handleProfileClick();
+						menuOpen = false;
+					}}
 					aria-label="Account"
-					class="text-foreground hover:text-primary"><User size={20} /></button
+					class="transition-colors hover:text-primary
+        {page.url.pathname.startsWith('/profile') || page.url.pathname.startsWith('/staff')
+						? 'text-primary'
+						: 'text-foreground'}"
 				>
-				<button
+					<User size={20} />
+				</Button>
+				<Button
+					onclick={() => {
+						handleCartClick();
+						menuOpen = false;
+					}}
 					aria-label="Cart ({cartCount} items)"
-					class="relative text-foreground hover:text-primary"
+					class="relative transition-colors hover:text-primary
+        {page.url.pathname === '/cart' ? 'text-primary' : 'text-foreground'}"
 				>
 					<ShoppingCart size={20} />
 					{#if cartCount > 0}
@@ -138,7 +192,7 @@
 							{cartCount}
 						</span>
 					{/if}
-				</button>
+				</Button>
 			</div>
 		</div>
 	{/if}

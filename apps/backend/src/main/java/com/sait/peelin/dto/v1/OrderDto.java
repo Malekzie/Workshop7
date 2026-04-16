@@ -27,5 +27,11 @@ public record OrderDto(
         OffsetDateTime scheduledAt,
         OffsetDateTime deliveredAt,
         String comment,
+        /** True if this customer has a pending or approved location/service review for this order (rejected attempts may retry). */
+        boolean locationReviewSubmitted,
+        BigDecimal orderSpecialDiscountAmount,
+        BigDecimal orderTierDiscountAmount,
+        BigDecimal orderEmployeeDiscountAmount,
+        BigDecimal deliveryFee,
         List<OrderItemDto> items
 ) {}

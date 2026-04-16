@@ -1,10 +1,12 @@
 <script>
-	import { registerUser } from '$lib/services/auth.js';
-	import { updateProfile } from '$lib/services/profile.js';
+	import { fetchRegisterAvailability, registerUser } from '$lib/services/auth';
+	import { updateProfile } from '$lib/services/profile';
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { user } from '$lib/stores/authStore';
 	import { Eye, EyeOff } from '@lucide/svelte';
+	import { formatCanadianPostalInput } from '$lib/utils/canadianPostalCode';
+	import { FormValidationUtil } from '$lib/utils/formValidation';
 
 	let fields = {
 		firstName: '',
@@ -13,6 +15,9 @@
 		email: '',
 		username: '',
 		password: '',
+		passwordConfirm: '',
+		employeeLinkPassword: '',
+		employeeLinkPasswordConfirm: '',
 		phone: '',
 		businessPhone: '',
 		addressLine1: '',
@@ -28,6 +33,9 @@
 		email: '',
 		username: '',
 		password: '',
+		passwordConfirm: '',
+		employeeLinkPassword: '',
+		employeeLinkPasswordConfirm: '',
 		phone: '',
 		addressLine1: '',
 		city: '',
@@ -41,6 +49,9 @@
 		email: false,
 		username: false,
 		password: false,
+		passwordConfirm: false,
+		employeeLinkPassword: false,
+		employeeLinkPasswordConfirm: false,
 		phone: false,
 		addressLine1: false,
 		city: false,
@@ -50,10 +61,19 @@
 
 	let step = 1;
 	let showPassword = false;
+	let showPasswordConfirm = false;
+	let showEmployeeLinkPassword = false;
+	let showEmployeeLinkPasswordConfirm = false;
+	/** True while calling register/availability before advancing to step 2 */
+	let step1Checking = false;
+	/** From availability API: email matches one unlinked employee work email */
+	let employeeLinkOffered = false;
 
-	const stepOneFields = ['firstName', 'lastName', 'email', 'username', 'password'];
-	const stepTwoFields = ['phone', 'addressLine1', 'city', 'province', 'postalCode'];
+	const stepOneFields = ['firstName', 'lastName', 'email', 'username', 'password', 'passwordConfirm'];
+	const stepTwoProfileFields = ['phone', 'addressLine1', 'city', 'province', 'postalCode'];
+	const employeeLinkStepFields = ['employeeLinkPassword', 'employeeLinkPasswordConfirm'];
 	let submitError = '';
+	let registrationSuccess = false;
 
 	function validateField(name, value) {
 		switch (name) {
@@ -61,15 +81,18 @@
 			case 'lastName':
 				if (!value.trim()) return 'This field is required.';
 				if (value.trim().length < 2) return 'Must be at least 2 characters.';
+				if (!/^[a-zA-ZÀ-ÖØ-öø-ÿ'\- ]+$/.test(value.trim()))
+					return 'Only letters, hyphens, and apostrophes allowed.';
 				return '';
 			case 'email':
 				if (!value.trim()) return 'Email is required.';
-				if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) return 'Enter a valid email address.';
+				if (!FormValidationUtil.isValidEmail(value)) return 'Enter a valid email address.';
 				return '';
 			case 'username':
 				if (!value.trim()) return 'Username is required.';
 				if (value.trim().length < 3) return 'Must be at least 3 characters.';
-				if (!/^[a-zA-Z0-9_]+$/.test(value)) return 'Only letters, numbers, and underscores.';
+				if (!/^[a-zA-Z0-9_.\-]+$/.test(value))
+					return 'Only letters, numbers, underscores, periods, and hyphens.';
 				return '';
 			case 'password':
 				if (!value) return 'Password is required.';
@@ -78,22 +101,36 @@
 				if (!/[0-9]/.test(value)) return 'Must include a number.';
 				if (!/[^a-zA-Z0-9]/.test(value)) return 'Must include a special character.';
 				return '';
+			case 'passwordConfirm':
+				if (!value) return 'Please confirm your password.';
+				if (value !== fields.password) return 'Passwords do not match.';
+				return '';
+			case 'employeeLinkPassword':
+				if (!value.trim()) return 'Employee account password is required.';
+				return '';
+			case 'employeeLinkPasswordConfirm':
+				if (!value.trim()) return 'Confirm your employee password.';
+				if (value !== fields.employeeLinkPassword)
+					return 'The two employee password fields do not match.';
+				return '';
 			case 'phone':
 				if (!value.trim()) return 'Phone number is required.';
-				if (!/^\+?[\d\s\-().]{7,15}$/.test(value)) return 'Enter a valid phone number.';
+				if (!FormValidationUtil.isValidPhone(value)) return 'Enter a valid phone number.';
 				return '';
 			case 'addressLine1':
 				if (!value.trim()) return 'Address is required.';
+				if (value.trim().length < 5) return 'Enter a valid address.';
 				return '';
 			case 'city':
 				if (!value.trim()) return 'City is required.';
+				if (!/^[a-zA-ZÀ-ÖØ-öø-ÿ'\-. ]+$/.test(value.trim())) return 'Enter a valid city name.';
 				return '';
 			case 'province':
 				if (!value) return 'Please select a province.';
 				return '';
 			case 'postalCode':
 				if (!value.trim()) return 'Postal code is required.';
-				if (!/^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/.test(value.trim()))
+				if (!FormValidationUtil.isValidCanadianPostalCode(value))
 					return 'Enter a valid Canadian postal code (e.g. T2P 1J9).';
 				return '';
 			default:
@@ -110,6 +147,9 @@
 		if (touched[name]) {
 			errors[name] = validateField(name, fields[name]);
 		}
+		if (name === 'password' && touched.passwordConfirm) {
+			errors.passwordConfirm = validateField('passwordConfirm', fields.passwordConfirm);
+		}
 	}
 
 	function validateStep(fieldNames) {
@@ -121,22 +161,42 @@
 		return !fieldNames.some((name) => errors[name]);
 	}
 
-	function nextStep() {
+	async function nextStep() {
 		if (!validateStep(stepOneFields)) return;
-		step = 2;
+		step1Checking = true;
+		submitError = '';
+		try {
+			const result = await fetchRegisterAvailability(fields.username, fields.email);
+			if (!result.ok) {
+				submitError = result.message;
+				return;
+			}
+			if (!result.usernameAvailable) {
+				errors.username = 'That username is already taken.';
+				touched.username = true;
+				return;
+			}
+			if (!result.emailAvailable) {
+				errors.email = 'That email is already registered.';
+				touched.email = true;
+				return;
+			}
+			employeeLinkOffered = result.employeeLinkOffered;
+			fields.employeeLinkPassword = '';
+			fields.employeeLinkPasswordConfirm = '';
+			errors.employeeLinkPassword = '';
+			errors.employeeLinkPasswordConfirm = '';
+			touched.employeeLinkPassword = false;
+			touched.employeeLinkPasswordConfirm = false;
+			step = 2;
+		} finally {
+			step1Checking = false;
+		}
 	}
 
 	function prevStep() {
 		step = 1;
-	}
-
-	function formatPhone(value) {
-		const digits = value.replace(/\D/g, '').substring(0, 10);
-		const parts = [];
-		if (digits.length > 0) parts.push('(' + digits.substring(0, 3));
-		if (digits.length >= 4) parts.push(') ' + digits.substring(3, 6));
-		if (digits.length >= 7) parts.push('-' + digits.substring(6, 10));
-		return parts.join('');
+		submitError = '';
 	}
 
 	function getDefaultPostAuthRoute(role) {
@@ -153,15 +213,10 @@
 		event.preventDefault();
 		submitError = '';
 
-		const requiredFields = [...stepOneFields, ...stepTwoFields];
-
-		requiredFields.forEach((name) => {
-			touched[name] = true;
-			errors[name] = validateField(name, fields[name]);
-		});
-
-		const hasErrors = Object.values(errors).some((e) => e !== '');
-		if (hasErrors) return;
+		const fieldsToValidate = employeeLinkOffered
+			? [...stepOneFields, ...employeeLinkStepFields]
+			: [...stepOneFields, ...stepTwoProfileFields];
+		if (!validateStep(fieldsToValidate)) return;
 
 		const payload = {
 			firstName: fields.firstName.trim(),
@@ -179,43 +234,103 @@
 			postalCode: fields.postalCode.trim().toUpperCase()
 		};
 
-		const registrationPayload = {
-			username: payload.username,
-			email: payload.email,
-			password: payload.password,
-			phone: payload.phone
-		};
-
-		const { ok, message } = await registerUser(registrationPayload);
-
-		if (!ok) {
-			errors.email = message ?? 'Registration failed.';
-			return;
-		}
-
-		try {
-			await updateProfile({
-				firstName: payload.firstName,
-				middleInitial: payload.middleInitial,
-				lastName: payload.lastName,
-				phone: payload.phone,
-				businessPhone: payload.businessPhone,
-				email: payload.email,
-				username: payload.username,
-				address: {
-					line1: payload.addressLine1,
-					line2: payload.addressLine2,
-					city: payload.city,
-					province: payload.province,
-					postalCode: payload.postalCode
+		const registrationPayload = employeeLinkOffered
+			? {
+					username: payload.username,
+					email: payload.email,
+					password: payload.password,
+					phone: null,
+					employeeLinkPassword: fields.employeeLinkPassword
 				}
-			});
-		} catch (error) {
-			submitError =
-				'Account created, but profile setup failed. Please sign in and complete your profile.';
+			: {
+					username: payload.username,
+					email: payload.email,
+					password: payload.password,
+					phone: payload.phone || null
+				};
+
+		const registerResult = await registerUser(registrationPayload);
+
+		if (!registerResult.ok) {
+			const { message, status } = registerResult;
+			if (employeeLinkOffered && status === 401) {
+				errors.employeeLinkPassword =
+					message?.trim() || 'That password does not match the staff account for this email.';
+				touched.employeeLinkPassword = true;
+				submitError = '';
+				return;
+			}
+			if (employeeLinkOffered && message && message.includes('Employee password')) {
+				errors.employeeLinkPassword = message;
+				touched.employeeLinkPassword = true;
+				submitError = '';
+				return;
+			}
+
+			const msg = message ?? 'Registration failed. Please check your details and try again.';
+			submitError = msg;
+			const lower = msg.toLowerCase();
+			if (lower.includes('username')) {
+				errors.username = msg;
+				touched.username = true;
+				step = 1;
+			} else if (lower.includes('email')) {
+				errors.email = msg;
+				touched.email = true;
+				step = 1;
+			} else if (status === 409) {
+				submitError = 'Username or email is already taken.';
+				errors.username = 'May already be taken.';
+				errors.email = 'May already be taken.';
+				touched.username = true;
+				touched.email = true;
+				step = 1;
+			} else {
+				errors.email = msg;
+				touched.email = true;
+			}
 			return;
 		}
 
+		const { employeeDiscountLinkEstablished, employeeDiscountLinkMessage } = registerResult;
+
+		if (employeeDiscountLinkEstablished) {
+			const msg =
+				employeeDiscountLinkMessage?.trim() ||
+				'Your account is linked to your employee profile. You get 20% off eligible orders at checkout (after today’s specials and your loyalty tier).';
+			alert(msg);
+		}
+
+		const skipProfilePatch =
+			employeeDiscountLinkEstablished === true || employeeLinkOffered === true;
+
+		if (!skipProfilePatch) {
+			try {
+				await updateProfile({
+					firstName: payload.firstName,
+					middleInitial: payload.middleInitial,
+					lastName: payload.lastName,
+					phone: payload.phone,
+					businessPhone: payload.businessPhone,
+					email: payload.email,
+					username: payload.username,
+					address: {
+						line1: payload.addressLine1,
+						line2: payload.addressLine2,
+						city: payload.city,
+						province: payload.province,
+						postalCode: payload.postalCode
+					}
+				});
+			} catch (error) {
+				submitError =
+					'Account created, but profile setup failed. Please sign in and complete your profile.';
+				return;
+			}
+		}
+
+		registrationSuccess = true;
+		await new Promise((r) => setTimeout(r, 2000));
 		goto(resolve(getDefaultPostAuthRoute($user?.role)));
 	}
 </script>
@@ -226,7 +341,13 @@
 			<h2 class="font-headline mb-3 text-4xl font-bold text-primary">Create Account</h2>
 			<p class="text-sm text-muted-foreground">
 				Step {step} of 2
-				{step === 1 ? '· Account details' : '· Contact and address'}
+				{#if step === 1}
+					· Account details
+				{:else if employeeLinkOffered}
+					· Link staff account
+				{:else}
+					· Contact and address
+				{/if}
 			</p>
 		</header>
 
@@ -373,6 +494,41 @@
 								<p class="px-1 text-xs text-red-500">{errors.password}</p>
 							{/if}
 						</div>
+
+						<div class="space-y-1.5 md:col-span-2">
+							<label
+								for="register-passwordConfirm"
+								class="text-on-surface-variant px-1 text-sm font-bold">Confirm Password</label
+							>
+							<div class="relative mt-1">
+								<input
+									id="register-passwordConfirm"
+									type={showPasswordConfirm ? 'text' : 'password'}
+									autocomplete="new-password"
+									placeholder="Re-enter password"
+									bind:value={fields.passwordConfirm}
+									onblur={() => handleBlur('passwordConfirm')}
+									oninput={() => handleInput('passwordConfirm')}
+									class="bg-surface-container-highest w-full rounded-xl px-4 py-3 pr-12 font-medium ring-1 ring-border transition
+										{errors.passwordConfirm && touched.passwordConfirm ? 'ring-2 ring-red-400' : ''}"
+								/>
+								<button
+									type="button"
+									onclick={() => (showPasswordConfirm = !showPasswordConfirm)}
+									class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition hover:text-foreground"
+									aria-label={showPasswordConfirm ? 'Hide password' : 'Show password'}
+								>
+									{#if showPasswordConfirm}
+										<EyeOff size={18} />
+									{:else}
+										<Eye size={18} />
+									{/if}
+								</button>
+							</div>
+							{#if errors.passwordConfirm && touched.passwordConfirm}
+								<p class="px-1 text-xs text-red-500">{errors.passwordConfirm}</p>
+							{/if}
+						</div>
 					</div>
 
 					<div class="flex items-center justify-between pt-2">
@@ -381,162 +537,261 @@
 						</a>
 						<button
 							type="button"
-							onclick={nextStep}
-							class="text-on-primary rounded-full bg-primary px-6 py-2.5 text-sm font-bold transition hover:cursor-pointer hover:opacity-90"
+							disabled={step1Checking}
+							onclick={() => void nextStep()}
+							class="text-on-primary rounded-full bg-primary px-6 py-2.5 text-sm font-bold transition hover:cursor-pointer hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
 						>
-							Continue
+							{step1Checking ? 'Checking…' : 'Continue'}
 						</button>
 					</div>
 				{:else}
-					<div class="grid gap-5 md:grid-cols-2">
-						<div class="space-y-1.5 md:col-span-2">
-							<label for="register-phone" class="text-on-surface-variant px-1 text-sm font-bold"
-								>Phone Number</label
-							>
-							<input
-								id="register-phone"
-								type="tel"
-								placeholder="(403) 555-0100"
-								bind:value={fields.phone}
-								oninput={(e) => {
-									fields.phone = formatPhone(e.target.value);
-									handleInput('phone');
-								}}
-								onblur={() => handleBlur('phone')}
-								class="bg-surface-container-highest mt-1 w-full rounded-xl px-4 py-3 font-medium ring-1 ring-border transition
+					{#if employeeLinkOffered}
+						<div class="space-y-5">
+							<p class="text-on-surface-variant text-sm leading-relaxed">
+								This matches a staff work email. Enter your <strong>employee</strong> password twice to
+								link. We copy your name, phone, and address from staff records.
+							</p>
+
+							<div class="space-y-1.5">
+								<label
+									for="register-employee-link-password"
+									class="text-on-surface-variant px-1 text-sm font-bold"
+									>Employee account password</label
+								>
+								<div class="relative mt-1">
+									<input
+										id="register-employee-link-password"
+										type={showEmployeeLinkPassword ? 'text' : 'password'}
+										autocomplete="current-password"
+										placeholder="Staff sign-in password"
+										bind:value={fields.employeeLinkPassword}
+										onblur={() => handleBlur('employeeLinkPassword')}
+										oninput={() => handleInput('employeeLinkPassword')}
+										class="bg-surface-container-highest w-full rounded-xl px-4 py-3 pr-12 font-medium ring-1 ring-border transition
+										{errors.employeeLinkPassword && touched.employeeLinkPassword ? 'ring-2 ring-red-400' : ''}"
+									/>
+									<button
+										type="button"
+										onclick={() => (showEmployeeLinkPassword = !showEmployeeLinkPassword)}
+										class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition hover:text-foreground"
+										aria-label={showEmployeeLinkPassword ? 'Hide password' : 'Show password'}
+									>
+										{#if showEmployeeLinkPassword}
+											<EyeOff size={18} />
+										{:else}
+											<Eye size={18} />
+										{/if}
+									</button>
+								</div>
+								{#if errors.employeeLinkPassword && touched.employeeLinkPassword}
+									<p class="px-1 text-xs text-red-500">{errors.employeeLinkPassword}</p>
+								{/if}
+							</div>
+
+							<div class="space-y-1.5">
+								<label
+									for="register-employee-link-confirm"
+									class="text-on-surface-variant px-1 text-sm font-bold"
+									>Confirm employee password</label
+								>
+								<div class="relative mt-1">
+									<input
+										id="register-employee-link-confirm"
+										type={showEmployeeLinkPasswordConfirm ? 'text' : 'password'}
+										autocomplete="new-password"
+										placeholder="Re-enter staff password"
+										bind:value={fields.employeeLinkPasswordConfirm}
+										onblur={() => handleBlur('employeeLinkPasswordConfirm')}
+										oninput={() => handleInput('employeeLinkPasswordConfirm')}
+										class="bg-surface-container-highest w-full rounded-xl px-4 py-3 pr-12 font-medium ring-1 ring-border transition
+										{errors.employeeLinkPasswordConfirm && touched.employeeLinkPasswordConfirm
+											? 'ring-2 ring-red-400'
+											: ''}"
+									/>
+									<button
+										type="button"
+										onclick={() =>
+											(showEmployeeLinkPasswordConfirm = !showEmployeeLinkPasswordConfirm)}
+										class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition hover:text-foreground"
+										aria-label={showEmployeeLinkPasswordConfirm ? 'Hide password' : 'Show password'}
+									>
+										{#if showEmployeeLinkPasswordConfirm}
+											<EyeOff size={18} />
+										{:else}
+											<Eye size={18} />
+										{/if}
+									</button>
+								</div>
+								{#if errors.employeeLinkPasswordConfirm && touched.employeeLinkPasswordConfirm}
+									<p class="px-1 text-xs text-red-500">{errors.employeeLinkPasswordConfirm}</p>
+								{/if}
+							</div>
+						</div>
+					{:else}
+						<div class="grid gap-5 md:grid-cols-2">
+							<div class="space-y-1.5 md:col-span-2">
+								<label for="register-phone" class="text-on-surface-variant px-1 text-sm font-bold"
+									>Phone Number</label
+								>
+								<input
+									id="register-phone"
+									type="tel"
+									placeholder="(403) 555-0100"
+									bind:value={fields.phone}
+									oninput={(e) => {
+										fields.phone = FormValidationUtil.formatPhone(e.target.value);
+										handleInput('phone');
+									}}
+									onblur={() => handleBlur('phone')}
+									class="bg-surface-container-highest mt-1 w-full rounded-xl px-4 py-3 font-medium ring-1 ring-border transition
 									{errors.phone && touched.phone ? 'ring-2 ring-red-400' : ''}"
-							/>
-							{#if errors.phone && touched.phone}
-								<p class="px-1 text-xs text-red-500">{errors.phone}</p>
-							{/if}
-						</div>
+								/>
+								{#if errors.phone && touched.phone}
+									<p class="px-1 text-xs text-red-500">{errors.phone}</p>
+								{/if}
+							</div>
 
-						<div class="space-y-1.5 md:col-span-2">
-							<label
-								for="register-businessPhone"
-								class="text-on-surface-variant px-1 text-sm font-bold"
-							>
-								Business Phone <span class="text-outline font-normal">(optional)</span>
-							</label>
-							<input
-								id="register-businessPhone"
-								type="tel"
-								placeholder="(403) 555-0100"
-								bind:value={fields.businessPhone}
-								oninput={(e) => {
-									fields.businessPhone = formatPhone(e.target.value);
-								}}
-								class="bg-surface-container-highest mt-1 w-full rounded-xl px-4 py-3 font-medium ring-1 ring-border transition"
-							/>
-						</div>
+							<div class="space-y-1.5 md:col-span-2">
+								<label
+									for="register-businessPhone"
+									class="text-on-surface-variant px-1 text-sm font-bold"
+								>
+									Business Phone <span class="text-outline font-normal">(optional)</span>
+								</label>
+								<input
+									id="register-businessPhone"
+									type="tel"
+									placeholder="(403) 555-0100"
+									bind:value={fields.businessPhone}
+									oninput={(e) => {
+										fields.businessPhone = FormValidationUtil.formatPhone(e.target.value);
+									}}
+									class="bg-surface-container-highest mt-1 w-full rounded-xl px-4 py-3 font-medium ring-1 ring-border transition"
+								/>
+							</div>
 
-						<div class="space-y-1.5 md:col-span-2">
-							<label
-								for="register-addressLine1"
-								class="text-on-surface-variant px-1 text-sm font-bold">Address</label
-							>
-							<input
-								id="register-addressLine1"
-								type="text"
-								placeholder="123 Main St"
-								bind:value={fields.addressLine1}
-								onblur={() => handleBlur('addressLine1')}
-								oninput={() => handleInput('addressLine1')}
-								class="bg-surface-container-highest mt-1 w-full rounded-xl px-4 py-3 font-medium ring-1 ring-border transition
-									{errors.addressLine1 && touched.addressLine1 ? 'ring-2 ring-red-400' : ''}"
-							/>
-							{#if errors.addressLine1 && touched.addressLine1}
-								<p class="px-1 text-xs text-red-500">{errors.addressLine1}</p>
-							{/if}
-						</div>
+							<div class="space-y-1.5 md:col-span-2">
+								<label
+									for="register-addressLine1"
+									class="text-on-surface-variant px-1 text-sm font-bold">Address</label
+								>
+								<input
+									id="register-addressLine1"
+									type="text"
+									placeholder="123 Main St"
+									bind:value={fields.addressLine1}
+									onblur={() => handleBlur('addressLine1')}
+									oninput={() => handleInput('addressLine1')}
+									class="bg-surface-container-highest mt-1 w-full rounded-xl px-4 py-3 font-medium ring-1 ring-border transition
+        {errors.addressLine1 && touched.addressLine1 ? 'ring-2 ring-red-400' : ''}"
+								/>
+								{#if errors.addressLine1 && touched.addressLine1}
+									<p class="px-1 text-xs text-red-500">{errors.addressLine1}</p>
+								{/if}
+							</div>
 
-						<div class="space-y-1.5 md:col-span-2">
-							<label
-								for="register-addressLine2"
-								class="text-on-surface-variant px-1 text-sm font-bold"
-							>
-								Address Line 2 <span class="text-outline font-normal">(optional)</span>
-							</label>
-							<input
-								id="register-addressLine2"
-								type="text"
-								placeholder="Apt, suite, unit..."
-								bind:value={fields.addressLine2}
-								class="bg-surface-container-highest mt-1 w-full rounded-xl px-4 py-3 font-medium ring-1 ring-border transition"
-							/>
-						</div>
+							<div class="space-y-1.5 md:col-span-2">
+								<label
+									for="register-addressLine2"
+									class="text-on-surface-variant px-1 text-sm font-bold"
+								>
+									Address Line 2 <span class="text-outline font-normal">(optional)</span>
+								</label>
+								<input
+									id="register-addressLine2"
+									type="text"
+									placeholder="Apt, suite, unit..."
+									bind:value={fields.addressLine2}
+									class="bg-surface-container-highest mt-1 w-full rounded-xl px-4 py-3 font-medium ring-1 ring-border transition"
+								/>
+							</div>
 
-						<div class="space-y-1.5">
-							<label for="register-city" class="text-on-surface-variant px-1 text-sm font-bold"
-								>City</label
-							>
-							<input
-								id="register-city"
-								type="text"
-								placeholder="Calgary"
-								bind:value={fields.city}
-								onblur={() => handleBlur('city')}
-								oninput={() => handleInput('city')}
-								class="bg-surface-container-highest mt-1 w-full rounded-xl px-4 py-3 font-medium ring-1 ring-border transition
+							<div class="space-y-1.5">
+								<label for="register-city" class="text-on-surface-variant px-1 text-sm font-bold"
+									>City</label
+								>
+								<input
+									id="register-city"
+									type="text"
+									placeholder="Calgary"
+									bind:value={fields.city}
+									onblur={() => handleBlur('city')}
+									oninput={() => handleInput('city')}
+									class="bg-surface-container-highest mt-1 w-full rounded-xl px-4 py-3 font-medium ring-1 ring-border transition
 									{errors.city && touched.city ? 'ring-2 ring-red-400' : ''}"
-							/>
-							{#if errors.city && touched.city}
-								<p class="px-1 text-xs text-red-500">{errors.city}</p>
-							{/if}
-						</div>
+								/>
+								{#if errors.city && touched.city}
+									<p class="px-1 text-xs text-red-500">{errors.city}</p>
+								{/if}
+							</div>
 
-						<div class="space-y-1.5">
-							<label for="register-province" class="text-on-surface-variant px-1 text-sm font-bold"
-								>Province</label
-							>
-							<select
-								id="register-province"
-								bind:value={fields.province}
-								onblur={() => handleBlur('province')}
-								onchange={() => handleInput('province')}
-								class="bg-surface-container-highest mt-1 w-full rounded-xl px-4 py-3 font-medium ring-1 ring-border transition
-									{errors.province && touched.province ? 'ring-2 ring-red-400' : ''}"
-							>
-								<option value="AB">Alberta</option>
-								<option value="BC">British Columbia</option>
-								<option value="MB">Manitoba</option>
-								<option value="NB">New Brunswick</option>
-								<option value="NL">Newfoundland and Labrador</option>
-								<option value="NS">Nova Scotia</option>
-								<option value="NT">Northwest Territories</option>
-								<option value="NU">Nunavut</option>
-								<option value="ON">Ontario</option>
-								<option value="PE">Prince Edward Island</option>
-								<option value="QC">Quebec</option>
-								<option value="SK">Saskatchewan</option>
-								<option value="YT">Yukon</option>
-							</select>
-							{#if errors.province && touched.province}
-								<p class="px-1 text-xs text-red-500">{errors.province}</p>
-							{/if}
-						</div>
+							<div class="space-y-1.5">
+								<label
+									for="register-province"
+									class="text-on-surface-variant px-1 text-sm font-bold">Province</label
+								>
+								<select
+									id="register-province"
+									bind:value={fields.province}
+									onblur={() => handleBlur('province')}
+									onchange={() => handleInput('province')}
+									class="mt-1 w-full rounded-xl bg-background px-4 py-3 font-medium text-foreground ring-1 ring-border transition
+    								{errors.province && touched.province ? 'ring-2 ring-red-400' : ''}"
+								>
+									<option value="AB">Alberta</option>
+									<option value="BC">British Columbia</option>
+									<option value="MB">Manitoba</option>
+									<option value="NB">New Brunswick</option>
+									<option value="NL">Newfoundland and Labrador</option>
+									<option value="NS">Nova Scotia</option>
+									<option value="NT">Northwest Territories</option>
+									<option value="NU">Nunavut</option>
+									<option value="ON">Ontario</option>
+									<option value="PE">Prince Edward Island</option>
+									<option value="QC">Quebec</option>
+									<option value="SK">Saskatchewan</option>
+									<option value="YT">Yukon</option>
+								</select>
+								{#if errors.province && touched.province}
+									<p class="px-1 text-xs text-red-500">{errors.province}</p>
+								{/if}
+							</div>
 
-						<div class="space-y-1.5 md:col-span-2">
-							<label
-								for="register-postalCode"
-								class="text-on-surface-variant px-1 text-sm font-bold">Postal Code</label
-							>
-							<input
-								id="register-postalCode"
-								type="text"
-								placeholder="T2P 1J9"
-								maxlength="7"
-								bind:value={fields.postalCode}
-								onblur={() => handleBlur('postalCode')}
-								oninput={() => handleInput('postalCode')}
-								class="bg-surface-container-highest mt-1 w-full rounded-xl px-4 py-3 font-medium ring-1 ring-border transition
+							<div class="space-y-1.5 md:col-span-2">
+								<label
+									for="register-postalCode"
+									class="text-on-surface-variant px-1 text-sm font-bold">Postal Code</label
+								>
+								<input
+									id="register-postalCode"
+									type="text"
+									inputmode="text"
+									autocomplete="postal-code"
+									placeholder="T2P 1J9"
+									maxlength="7"
+									value={fields.postalCode}
+									oninput={(e) => {
+										fields.postalCode = formatCanadianPostalInput(e.currentTarget.value);
+										handleInput('postalCode');
+									}}
+									onblur={() => handleBlur('postalCode')}
+									class="bg-surface-container-highest mt-1 w-full rounded-xl px-4 py-3 font-medium ring-1 ring-border transition
 									{errors.postalCode && touched.postalCode ? 'ring-2 ring-red-400' : ''}"
-							/>
-							{#if errors.postalCode && touched.postalCode}
-								<p class="px-1 text-xs text-red-500">{errors.postalCode}</p>
-							{/if}
+								/>
+								{#if errors.postalCode && touched.postalCode}
+									<p class="px-1 text-xs text-red-500">{errors.postalCode}</p>
+								{/if}
+							</div>
 						</div>
-					</div>
+					{/if}
+
+					{#if registrationSuccess}
+						<div
+							class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
+						>
+							Account created! A welcome email has been sent to {fields.email}.
+						</div>
+					{/if}
 
 					<div class="flex items-center justify-between gap-3 pt-2">
 						<button

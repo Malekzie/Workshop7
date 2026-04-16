@@ -76,4 +76,5 @@ public class CustomerSelfController {
     public List<CustomerPreferenceDto> savePreferences(@RequestBody CustomerPreferenceSaveRequest request) {
         return customerPreferenceService.saveMyPreferences(request);
     }
+
 }

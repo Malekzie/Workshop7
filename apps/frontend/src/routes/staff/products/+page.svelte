@@ -10,8 +10,11 @@
 		listProducts,
 		createProduct,
 		updateProduct,
-		deleteProduct
-	} from '$lib/services/staff-products.js';
+		deleteProduct,
+		uploadProductImage
+	} from '$lib/services/staff-products';
+	import { getTags } from '$lib/services/tags';
+	import { formatPriceCad } from '$lib/utils/money';
 
 	let products = $state([]);
 	let loading = $state(true);
@@ -20,9 +23,44 @@
 	let showCreate = $state(false);
 	let saving = $state(false);
 	let deleting = $state({});
+	let createImageFile = $state(null);
+	let editImageFile = $state(null);
+	let uploadingImage = $state(false);
+	let tags = $state([]);
+	let createTagIds = $state([]);
+	let editTagIds = $state([]);
 
 	let editDraft = $state({ name: '', description: '', basePrice: '' });
 	let createDraft = $state({ name: '', description: '', basePrice: '' });
+
+	let createErrors = $state({ name: '', basePrice: '', description: '' });
+	let editErrors = $state({ name: '', basePrice: '', description: '' });
+
+	function validateProductField(name, value) {
+		switch (name) {
+			case 'name':
+				if (!value.trim()) return 'Name is required.';
+				if (value.trim().length < 2) return 'Must be at least 2 characters.';
+				return '';
+			case 'basePrice':
+				if (!value) return 'Price is required.';
+				if (isNaN(parseFloat(value)) || parseFloat(value) <= 0)
+					return 'Enter a valid positive price.';
+				return '';
+			case 'description':
+				if (value.length > 500) return 'Max 500 characters.';
+				return '';
+			default:
+				return '';
+		}
+	}
+
+	function validateProductForm(draft, errors) {
+		errors.name = validateProductField('name', draft.name);
+		errors.basePrice = validateProductField('basePrice', draft.basePrice);
+		errors.description = validateProductField('description', draft.description);
+		return !errors.name && !errors.basePrice && !errors.description;
+	}
 
 	onMount(async () => {
 		if ($user?.role !== 'admin') {
@@ -30,7 +68,7 @@
 			return;
 		}
 		try {
-			products = await listProducts();
+			[products, tags] = await Promise.all([listProducts(), getTags()]);
 		} catch {
 			error = true;
 		} finally {
@@ -45,16 +83,23 @@
 			description: product.description ?? '',
 			basePrice: String(product.basePrice)
 		};
+		editTagIds = product.tagIds ?? [];
 	}
 
 	async function handleUpdate(id) {
+		if (!validateProductForm(editDraft, editErrors)) return;
 		saving = true;
 		try {
-			const updated = await updateProduct(id, {
+			let updated = await updateProduct(id, {
 				name: editDraft.name,
 				description: editDraft.description,
-				basePrice: parseFloat(editDraft.basePrice)
+				basePrice: parseFloat(editDraft.basePrice),
+				tagIds: editTagIds
 			});
+			if (editImageFile) {
+				updated = await uploadProductImage(id, editImageFile);
+				editImageFile = null;
+			}
 			products = products.map((p) => (p.id === id ? updated : p));
 			editingId = null;
 		} catch {
@@ -65,16 +110,25 @@
 	}
 
 	async function handleCreate() {
+		if (!validateProductForm(createDraft, createErrors)) return;
 		saving = true;
 		try {
 			const created = await createProduct({
 				name: createDraft.name,
 				description: createDraft.description,
-				basePrice: parseFloat(createDraft.basePrice)
+				basePrice: parseFloat(createDraft.basePrice),
+				tagIds: createTagIds
 			});
-			products = [created, ...products];
+			if (createImageFile) {
+				const withImage = await uploadProductImage(created.id, createImageFile);
+				products = [withImage, ...products];
+			} else {
+				products = [created, ...products];
+			}
 			showCreate = false;
 			createDraft = { name: '', description: '', basePrice: '' };
+			createImageFile = null;
+			createTagIds = [];
 		} catch {
 			// leave form open
 		} finally {
@@ -118,17 +172,84 @@
 			>
 				<p class="text-sm font-semibold text-foreground">New Product</p>
 				<div class="grid grid-cols-2 gap-3">
-					<Input bind:value={createDraft.name} placeholder="Name" required />
+					<div class="flex flex-col gap-1">
+						<Input
+							bind:value={createDraft.name}
+							placeholder="Name"
+							oninput={() => (createErrors.name = validateProductField('name', createDraft.name))}
+						/>
+						{#if createErrors.name}<p class="text-xs text-red-500">{createErrors.name}</p>{/if}
+					</div>
+					<div class="flex flex-col gap-1">
+						<Input
+							bind:value={createDraft.basePrice}
+							placeholder="Price (e.g. 4.99)"
+							type="number"
+							step="0.01"
+							min="0"
+							oninput={() =>
+								(createErrors.basePrice = validateProductField('basePrice', createDraft.basePrice))}
+						/>
+						{#if createErrors.basePrice}<p class="text-xs text-red-500">
+								{createErrors.basePrice}
+							</p>{/if}
+					</div>
+				</div>
+				<div class="flex flex-col gap-1">
 					<Input
-						bind:value={createDraft.basePrice}
-						placeholder="Price (e.g. 4.99)"
-						type="number"
-						step="0.01"
-						min="0"
-						required
+						bind:value={createDraft.description}
+						placeholder="Description (optional)"
+						oninput={() =>
+							(createErrors.description = validateProductField(
+								'description',
+								createDraft.description
+							))}
+					/>
+					{#if createErrors.description}<p class="text-xs text-red-500">
+							{createErrors.description}
+						</p>{/if}
+				</div>
+
+				<div class="flex flex-col gap-1">
+					<p class="text-xs font-medium text-muted-foreground">
+						Product Image <span class="font-normal">(optional)</span>
+					</p>
+					<input
+						type="file"
+						accept="image/jpeg,image/png,image/webp"
+						onchange={(e) => (createImageFile = e.target.files?.[0] ?? null)}
+						class="text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-border file:bg-background file:px-3 file:py-1 file:text-xs file:font-medium"
 					/>
 				</div>
-				<Input bind:value={createDraft.description} placeholder="Description (optional)" />
+
+				{#if tags.length > 0}
+					<div class="flex flex-col gap-1">
+						<p class="text-xs font-medium text-muted-foreground">Categories</p>
+						<div class="flex flex-wrap gap-2">
+							{#each tags as tag (tag.id)}
+								<label
+									class="flex cursor-pointer items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-medium transition-colors
+                    {createTagIds.includes(tag.id)
+										? 'border-primary bg-primary text-primary-foreground'
+										: 'bg-background text-muted-foreground hover:bg-muted'}"
+								>
+									<input
+										type="checkbox"
+										class="hidden"
+										checked={createTagIds.includes(tag.id)}
+										onchange={() => {
+											createTagIds = createTagIds.includes(tag.id)
+												? createTagIds.filter((id) => id !== tag.id)
+												: [...createTagIds, tag.id];
+										}}
+									/>
+									{tag.name}
+								</label>
+							{/each}
+						</div>
+					</div>
+				{/if}
+
 				<Button type="submit" size="sm" disabled={saving}>
 					{saving ? 'Creating...' : 'Create'}
 				</Button>
@@ -161,17 +282,90 @@
 									}}
 								>
 									<div class="grid grid-cols-2 gap-2">
-										<Input bind:value={editDraft.name} placeholder="Name" required />
+										<div class="flex flex-col gap-1">
+											<Input
+												bind:value={editDraft.name}
+												placeholder="Name"
+												oninput={() =>
+													(editErrors.name = validateProductField('name', editDraft.name))}
+											/>
+											{#if editErrors.name}<p class="text-xs text-red-500">
+													{editErrors.name}
+												</p>{/if}
+										</div>
+										<div class="flex flex-col gap-1">
+											<Input
+												bind:value={editDraft.basePrice}
+												placeholder="Price"
+												type="number"
+												step="0.01"
+												min="0"
+												oninput={() =>
+													(editErrors.basePrice = validateProductField(
+														'basePrice',
+														editDraft.basePrice
+													))}
+											/>
+											{#if editErrors.basePrice}<p class="text-xs text-red-500">
+													{editErrors.basePrice}
+												</p>{/if}
+										</div>
+									</div>
+									<div class="flex flex-col gap-1">
 										<Input
-											bind:value={editDraft.basePrice}
-											placeholder="Price"
-											type="number"
-											step="0.01"
-											min="0"
-											required
+											bind:value={editDraft.description}
+											placeholder="Description"
+											oninput={() =>
+												(editErrors.description = validateProductField(
+													'description',
+													editDraft.description
+												))}
+										/>
+										{#if editErrors.description}<p class="text-xs text-red-500">
+												{editErrors.description}
+											</p>{/if}
+									</div>
+
+									<div class="flex flex-col gap-1">
+										<p class="text-xs font-medium text-muted-foreground">
+											Replace Image <span class="font-normal">(optional)</span>
+										</p>
+										<input
+											type="file"
+											accept="image/jpeg,image/png,image/webp"
+											onchange={(e) => (editImageFile = e.target.files?.[0] ?? null)}
+											class="text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-border file:bg-background file:px-3 file:py-1 file:text-xs file:font-medium"
 										/>
 									</div>
-									<Input bind:value={editDraft.description} placeholder="Description" />
+
+									{#if tags.length > 0}
+										<div class="flex flex-col gap-1">
+											<p class="text-xs font-medium text-muted-foreground">Categories</p>
+											<div class="flex flex-wrap gap-2">
+												{#each tags as tag (tag.id)}
+													<label
+														class="flex cursor-pointer items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-medium transition-colors
+                    {editTagIds.includes(tag.id)
+															? 'border-primary bg-primary text-primary-foreground'
+															: 'bg-background text-muted-foreground hover:bg-muted'}"
+													>
+														<input
+															type="checkbox"
+															class="hidden"
+															checked={editTagIds.includes(tag.id)}
+															onchange={() => {
+																editTagIds = editTagIds.includes(tag.id)
+																	? editTagIds.filter((id) => id !== tag.id)
+																	: [...editTagIds, tag.id];
+															}}
+														/>
+														{tag.name}
+													</label>
+												{/each}
+											</div>
+										</div>
+									{/if}
+
 									<div class="flex gap-2">
 										<Button type="submit" size="sm" disabled={saving}>
 											{saving ? '...' : 'Save'}
@@ -191,7 +385,7 @@
 									<div>
 										<p class="text-sm font-medium text-foreground">{product.name}</p>
 										<p class="text-xs text-muted-foreground">
-											${Number(product.basePrice).toFixed(2)}
+											{formatPriceCad(product.basePrice)}
 											{#if product.description}
 												· {product.description.slice(0, 60)}{product.description.length > 60
 													? '…'
@@ -200,11 +394,7 @@
 										</p>
 									</div>
 									<div class="flex gap-2">
-										<Button
-											size="sm"
-											variant="outline"
-											onclick={() => startEdit(product)}
-										>
+										<Button size="sm" variant="outline" onclick={() => startEdit(product)}>
 											Edit
 										</Button>
 										<Button

@@ -1,10 +1,18 @@
 package com.sait.peelin.controller.v1;
 
-import com.sait.peelin.dto.v1.auth.*;
+import com.sait.peelin.dto.v1.auth.AuthResponse;
+import com.sait.peelin.dto.v1.auth.ForgotPasswordRequest;
+import com.sait.peelin.dto.v1.auth.LoginRequest;
+import com.sait.peelin.dto.v1.auth.RegisterAvailabilityResponse;
+import com.sait.peelin.dto.v1.auth.RegisterRequest;
+import com.sait.peelin.dto.v1.auth.ResetPasswordRequest;
+import com.sait.peelin.model.User;
 import com.sait.peelin.service.AuthService;
+import com.sait.peelin.service.CurrentUserService;
 import com.sait.peelin.service.JwtService;
 import com.sait.peelin.service.PasswordResetService;
 import com.sait.peelin.service.TokenDenylistService;
+import com.sait.peelin.service.WelcomeEmailService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -23,7 +31,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Optional;
 
 
 @RestController
@@ -36,6 +47,8 @@ public class AuthController {
     private final TokenDenylistService tokenDenylistService;
     private final PasswordResetService passwordResetService;
     private final JwtService jwtService;
+    private final WelcomeEmailService welcomeEmailService;
+    private final CurrentUserService currentUserService;
 
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
@@ -46,24 +59,46 @@ public class AuthController {
     @Value("${app.cookie.secure:false}")
     private boolean cookieSecure;
 
-    private void setTokenCookie(HttpServletResponse response, String token) {
+    private void setTokenCookie(HttpServletResponse response, String token, boolean rememberMe) {
         ResponseCookie cookie = ResponseCookie.from("token", token)
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .path("/")
-                .maxAge(Duration.ofMillis(jwtExpiration))
+                .maxAge(rememberMe ? Duration.ofMillis(jwtExpiration) : Duration.ofSeconds(-1))
                 .sameSite("Lax")
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    @GetMapping("/whoami")
+    public ResponseEntity<java.util.Map<String, Object>> whoami() {
+        User u = currentUserService.currentUserOrNull();
+        if (u == null) {
+            return ResponseEntity.ok(java.util.Map.of("authenticated", false));
+        }
+        return ResponseEntity.ok(java.util.Map.of(
+                "authenticated", true,
+                "userId", u.getUserId().toString(),
+                "username", u.getUsername(),
+                "role", u.getUserRole().name()
+        ));
     }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest, HttpServletResponse response) {
         AuthResponse authResponse = authService.login(loginRequest);
 
-        setTokenCookie(response, authResponse.getToken());
+        setTokenCookie(response, authResponse.getToken(), loginRequest.isRememberMe());
 
         return ResponseEntity.ok(authResponse);
+    }
+
+    @Operation(summary = "Register availability", description = "Check username and email before completing a multi-step registration (case-insensitive).")
+    @GetMapping("/register/availability")
+    public ResponseEntity<RegisterAvailabilityResponse> registerAvailability(
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String email) {
+        return ResponseEntity.ok(authService.getRegisterAvailability(username, email));
     }
 
     @Operation(summary = "Register", description = "Create a new customer account. Returns a JWT token immediately upon success.")
@@ -76,7 +111,7 @@ public class AuthController {
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest registerRequest, HttpServletResponse response) {
         AuthResponse authResponse = authService.register(registerRequest);
 
-        setTokenCookie(response, authResponse.getToken());
+        setTokenCookie(response, authResponse.getToken(), true);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(authResponse);
     }
@@ -150,10 +185,17 @@ public class AuthController {
             return;
         }
         request.getSession().removeAttribute("oauth2_pending_token");
-        setTokenCookie(response, token);
+        setTokenCookie(response, token, true);
         AuthResponse auth = authService.getUserInfoFromToken(token);
-        response.sendRedirect(frontendUrl + "/auth/callback?username=" + auth.getUsername()
-                + "&role=" + auth.getRole()
-                + "&userId=" + auth.getUserId());
+        String q = "username=" + URLEncoder.encode(auth.getUsername(), StandardCharsets.UTF_8)
+                + "&role=" + URLEncoder.encode(auth.getRole(), StandardCharsets.UTF_8)
+                + "&userId=" + URLEncoder.encode(String.valueOf(auth.getUserId()), StandardCharsets.UTF_8);
+        response.sendRedirect(frontendUrl + "/auth/callback?" + q);
+    }
+
+    @GetMapping("/reset-password/validate")
+    public ResponseEntity<Void> validateResetToken(@RequestParam String token) {
+        passwordResetService.validateToken(token);
+        return ResponseEntity.ok().build();
     }
 }

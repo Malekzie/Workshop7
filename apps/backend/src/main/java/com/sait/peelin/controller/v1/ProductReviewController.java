@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +22,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
-@Tag(name = "Reviews", description = "Customer reviews for bakery products. Moderation requires ADMIN or EMPLOYEE role.")
+@Tag(name = "Reviews", description = "Customer reviews for products and bakery locations. New reviews are moderated by AI; manual status changes are admin-only.")
 public class ProductReviewController {
 
     private final ReviewService reviewService;
@@ -46,13 +47,10 @@ public class ProductReviewController {
         return reviewService.averageForProduct(productId);
     }
 
-    @Operation(summary = "Submit a review", description = "Submit a customer review for a product. Requires authentication.")
+    @Operation(summary = "List reviews for bakery", description = "Returns all approved reviews for a bakery location.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Review submitted"),
-            @ApiResponse(responseCode = "400", description = "Validation error", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content)
+            @ApiResponse(responseCode = "200", description = "Reviews returned")
     })
-    @SecurityRequirement(name = "bearer-jwt")
     @GetMapping("/bakeries/{bakeryId}/reviews")
     public List<ReviewDto> listForBakery(@PathVariable Integer bakeryId) {
         return reviewService.forBakery(bakeryId);
@@ -63,12 +61,18 @@ public class ProductReviewController {
         return reviewService.averageForBakery(bakeryId);
     }
 
+    @Operation(summary = "Submit a product review", description = "Submit a review for a product. Signed-in customers use their profile; guests may send optional guestName in the body.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Review submitted"),
+            @ApiResponse(responseCode = "400", description = "Validation error", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Conflict (e.g. rare DB constraint)", content = @Content)
+    })
     @PostMapping("/products/{productId}/reviews")
     public ReviewDto create(@PathVariable Integer productId, @Valid @RequestBody ReviewCreateRequest req) {
         return reviewService.create(productId, req);
     }
 
-    @Operation(summary = "Update review status", description = "Approve or reject a review. Requires ADMIN or EMPLOYEE role.")
+    @Operation(summary = "Update review status", description = "Approve or reject a review (override). Requires ADMIN role.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Review status updated"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content),
@@ -83,13 +87,15 @@ public class ProductReviewController {
     }
 
     @PatchMapping("/reviews/{reviewId}/status")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
-    public ReviewDto patchStatus(@PathVariable UUID reviewId, @Valid @RequestBody ReviewStatusPatchRequest req) {
-        return reviewService.patchStatus(reviewId, req);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ReviewDto> patchStatus(@PathVariable UUID reviewId, @Valid @RequestBody ReviewStatusPatchRequest req) {
+        return reviewService.patchStatus(reviewId, req)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @GetMapping("/reviews/pending")
-    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
+    @PreAuthorize("hasRole('ADMIN')")
     public List<ReviewDto> pending() {
         return reviewService.pending();
     }
@@ -97,5 +103,16 @@ public class ProductReviewController {
     @GetMapping("/reviews/top")
     public List<ReviewDto> top(@RequestParam(defaultValue = "3") int limit) {
         return reviewService.topReviews(limit);
+    }
+
+    @Operation(summary = "Submit a bakery / location review", description = "Submit a review for a location. Optional guestName when not authenticated.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Review submitted"),
+            @ApiResponse(responseCode = "400", description = "Validation error", content = @Content)
+    })
+    @PostMapping("/bakeries/{bakeryId}/reviews")
+    public ReviewDto createForBakery(@PathVariable Integer bakeryId,
+                                     @Valid @RequestBody ReviewCreateRequest req) {
+        return reviewService.createForBakery(bakeryId, req);
     }
 }

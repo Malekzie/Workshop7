@@ -3,8 +3,9 @@
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
-	import { getDashboardSummary } from '$lib/services/dashboard.js';
-	import { updateOrderStatus, markDelivered } from '$lib/services/staff-orders.js';
+	import { getDashboardSummary } from '$lib/services/dashboard';
+	import { updateOrderStatus } from '$lib/services/staff-orders';
+	import { formatPriceCad } from '$lib/utils/money';
 
 	let orders = $state([]);
 	let loading = $state(true);
@@ -22,35 +23,36 @@
 		}
 	});
 
-	const STATUS_FLOW = {
+	const LINEAR_FLOW = {
 		placed: 'pending_payment',
 		pending_payment: 'paid',
 		paid: 'preparing',
-		preparing: 'ready',
-		ready: 'picked_up'
+		preparing: 'ready'
 	};
 
-	function nextStatus(current) {
-		return STATUS_FLOW[current] ?? null;
+	/** After ready/scheduled, staff use Delivered (delivery) or Picked up (pickup)—not interchangeable. */
+	function nextStatus(order) {
+		const current = order.status;
+		if (!current) return null;
+		const method = (order.orderMethod ?? '').toLowerCase();
+		if (current === 'ready' || current === 'scheduled') {
+			return method === 'delivery' ? 'delivered' : 'picked_up';
+		}
+		return LINEAR_FLOW[current] ?? null;
 	}
 
-	function nextLabel(current) {
-		const next = nextStatus(current);
+	function nextLabel(order) {
+		const next = nextStatus(order);
 		if (!next) return null;
 		return next.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 	}
 
 	async function advance(order) {
-		const next = nextStatus(order.status);
+		const next = nextStatus(order);
 		if (!next) return;
 		updating[order.id] = true;
 		try {
-			let updated;
-			if (next === 'delivered') {
-				updated = await markDelivered(order.id);
-			} else {
-				updated = await updateOrderStatus(order.id, next);
-			}
+			const updated = await updateOrderStatus(order.id, next);
 			orders = orders.map((o) => (o.id === order.id ? updated : o));
 		} catch {
 			// badge stays unchanged on failure
@@ -78,7 +80,7 @@
 
 	function formatCurrency(val) {
 		if (val == null) return '—';
-		return `$${Number(val).toFixed(2)}`;
+		return formatPriceCad(val);
 	}
 </script>
 
@@ -87,7 +89,7 @@
 		<div>
 			<h1 class="text-2xl font-bold tracking-tight text-foreground">Orders</h1>
 			<p class="mt-1 text-sm text-muted-foreground">
-				Recent orders — update status as work progresses
+				Recent orders. Update status as work progresses.
 			</p>
 		</div>
 
@@ -107,7 +109,7 @@
 			<div class="space-y-3">
 				{#each orders as order (order.id)}
 					<div
-						class="flex items-center justify-between rounded-xl border border-border bg-card px-5 py-4"
+						class="flex flex-col gap-3 rounded-xl border border-border bg-card px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
 					>
 						<div class="space-y-0.5">
 							<p class="text-sm font-semibold text-foreground">#{order.orderNumber}</p>
@@ -120,18 +122,18 @@
 								{formatCurrency(order.orderGrandTotal)}
 							</p>
 						</div>
-						<div class="flex items-center gap-3">
+						<div class="flex shrink-0 items-center gap-3">
 							<Badge variant={statusVariant(order.status)}>
 								{order.status?.replace(/_/g, ' ') ?? '—'}
 							</Badge>
-							{#if nextStatus(order.status)}
+							{#if nextStatus(order)}
 								<Button
 									size="sm"
 									variant="outline"
 									onclick={() => advance(order)}
 									disabled={!!updating[order.id]}
 								>
-									{updating[order.id] ? 'Updating...' : `Mark ${nextLabel(order.status)}`}
+									{updating[order.id] ? 'Updating...' : `Mark ${nextLabel(order)}`}
 								</Button>
 							{/if}
 						</div>

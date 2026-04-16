@@ -5,6 +5,7 @@ import com.sait.peelin.exception.ResourceNotFoundException;
 import com.sait.peelin.model.*;
 import com.sait.peelin.repository.*;
 import com.sait.peelin.support.PhoneNumberFormatter;
+import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -18,9 +19,15 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -42,9 +49,21 @@ public class OrderService {
     private final TaxRateRepository taxRateRepository;
     private final CustomerService customerService;
     private final CurrentUserService currentUserService;
+    private final CustomerLookupCacheService customerLookupCacheService;
     private final StripeService stripeService;
+    private final StripePaymentFulfillmentService stripePaymentFulfillmentService;
     private final RewardAccrualService rewardAccrualService;
-    private final RewardTierRepository rewardTierRepository;
+    private final RewardTierService rewardTierService;
+    private final RecommendationService recommendationService;
+    private final ReviewRepository reviewRepository;
+    private final ProductSpecialService productSpecialService;
+    private final EmployeeCustomerLinkService employeeCustomerLinkService;
+    private final BakeryHourRepository bakeryHourRepository;
+
+    private static final ZoneId DEFAULT_PRICING_ZONE = ZoneId.of("America/Edmonton");
+    private static final BigDecimal DELIVERY_FEE = new BigDecimal("7.00");
+    private static final BigDecimal DELIVERY_FREE_THRESHOLD = new BigDecimal("50.00");
+    static final BigDecimal TAX_RATE_PERCENT = new BigDecimal("5");
 
     @Transactional(readOnly = true)
     @Cacheable(value = "orders", keyGenerator = "userIdKeyGenerator")
@@ -71,6 +90,21 @@ public class OrderService {
         return toDto(o);
     }
 
+    @Transactional(readOnly = true)
+    public OrderDto getByOrderNumber(String orderNumber) {
+        Order o = orderRepository.findByOrderNumber(orderNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+        // Logged-in customers may only view their own order; guests identify by knowing the order number
+        User u = currentUserService.currentUserOrNull();
+        if (u != null && u.getUserRole() == UserRole.customer) {
+            if (o.getCustomer() == null || o.getCustomer().getUser() == null
+                    || !o.getCustomer().getUser().getUserId().equals(u.getUserId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your order");
+            }
+        }
+        return toDto(o);
+    }
+
     @Transactional
     @CacheEvict(value = {"orders", "analytics", "dashboard"}, allEntries = true)
     public CheckoutSessionResponse checkout(CheckoutRequest req) {
@@ -87,8 +121,10 @@ public class OrderService {
             customer = customerService.resolveOrCreateGuestCustomer(req.getGuest());
             guestCheckout = true;
         } else if (user.getUserRole() == UserRole.customer) {
-            customer = customerRepository.findByUser_UserId(user.getUserId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile not found"));
+            customer = customerLookupCacheService.findByUserId(user.getUserId());
+            if (customer == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer profile not found");
+            }
         } else if (user.getUserRole() == UserRole.admin || user.getUserRole() == UserRole.employee) {
             if (req.getCustomerId() == null) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "customerId is required for staff checkout");
@@ -109,8 +145,11 @@ public class OrderService {
         Bakery bakery = bakeryRepository.findById(req.getBakeryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Bakery not found"));
 
+        requireScheduledTimeWithinHours(req.getScheduledAt(), bakery.getId());
+
         if (req.getOrderMethod() == OrderMethod.delivery
                 && req.getAddressId() == null
+                && req.getDeliveryAddress() == null
                 && customer.getAddress() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Delivery requires address information");
         }
@@ -118,40 +157,95 @@ public class OrderService {
         if (req.getAddressId() != null) {
             address = addressRepository.findById(req.getAddressId())
                     .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
+        } else if (req.getDeliveryAddress() != null) {
+            Address a = new Address();
+            a.setAddressLine1(req.getDeliveryAddress().getLine1());
+            a.setAddressLine2(req.getDeliveryAddress().getLine2());
+            a.setAddressCity(req.getDeliveryAddress().getCity());
+            a.setAddressProvince(req.getDeliveryAddress().getProvince());
+            a.setAddressPostalCode(req.getDeliveryAddress().getPostalCode());
+            address = addressRepository.save(a);
         } else if (req.getOrderMethod() == OrderMethod.delivery) {
             address = customer.getAddress();
         }
 
-        BigDecimal subtotal = BigDecimal.ZERO;
+        LocalDate pricingDate = req.getPricingLocalDate() != null
+                ? req.getPricingLocalDate()
+                : LocalDate.now(DEFAULT_PRICING_ZONE);
+
+        BigDecimal listSubtotal = BigDecimal.ZERO;
         for (CheckoutRequest.CheckoutLineRequest line : req.getItems()) {
             Product p = productRepository.findById(line.getProductId())
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + line.getProductId()));
             BigDecimal unit = p.getProductBasePrice();
-            BigDecimal lineTotal = unit.multiply(BigDecimal.valueOf(line.getQuantity()));
-            subtotal = subtotal.add(lineTotal);
+            listSubtotal = listSubtotal.add(unit.multiply(BigDecimal.valueOf(line.getQuantity())));
         }
 
-        BigDecimal discount = BigDecimal.ZERO;
+        BigDecimal specialDiscount = BigDecimal.ZERO;
+        BigDecimal tierDiscount = BigDecimal.ZERO;
+        BigDecimal employeeDiscount = BigDecimal.ZERO;
+        BigDecimal total;
+
         if (req.getManualDiscount() != null) {
-            discount = req.getManualDiscount().max(BigDecimal.ZERO);
-        } else if (!guestCheckout
-                && customer.getRewardTier() != null
-                && customer.getRewardTier().getRewardTierDiscountRate() != null) {
-            discount = subtotal.multiply(customer.getRewardTier().getRewardTierDiscountRate())
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            BigDecimal manual = req.getManualDiscount().max(BigDecimal.ZERO).min(listSubtotal);
+            total = listSubtotal.subtract(manual).max(BigDecimal.ZERO);
+            tierDiscount = manual;
+        } else {
+            var todaySpecial = productSpecialService.findFirstForDate(pricingDate);
+            Integer specialPid = todaySpecial != null ? todaySpecial.productId() : null;
+            BigDecimal specialPct = todaySpecial != null && todaySpecial.discountPercent() != null
+                    ? todaySpecial.discountPercent()
+                    : null;
+
+            BigDecimal afterSpecial = BigDecimal.ZERO;
+            for (CheckoutRequest.CheckoutLineRequest line : req.getItems()) {
+                Product p = productRepository.findById(line.getProductId()).orElseThrow();
+                BigDecimal unitList = p.getProductBasePrice();
+                BigDecimal lineList = unitList.multiply(BigDecimal.valueOf(line.getQuantity()));
+                BigDecimal lineAfter = lineList;
+                if (specialPid != null && specialPid.equals(p.getId())
+                        && specialPct != null && specialPct.compareTo(BigDecimal.ZERO) > 0) {
+                    BigDecimal factor = BigDecimal.ONE.subtract(
+                            specialPct.divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP));
+                    lineAfter = lineList.multiply(factor).setScale(2, RoundingMode.HALF_UP);
+                    specialDiscount = specialDiscount.add(lineList.subtract(lineAfter));
+                }
+                afterSpecial = afterSpecial.add(lineAfter);
+            }
+
+            if (!guestCheckout) {
+                int pts = customer.getCustomerRewardBalance() != null ? customer.getCustomerRewardBalance() : 0;
+                RewardTier tierForDiscount = rewardTierService.tierForBalance(pts).orElse(customer.getRewardTier());
+                if (tierForDiscount != null && tierForDiscount.getRewardTierDiscountRate() != null) {
+                    tierDiscount = afterSpecial.multiply(tierForDiscount.getRewardTierDiscountRate())
+                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                }
+            }
+            if (tierDiscount.compareTo(afterSpecial) > 0) {
+                tierDiscount = afterSpecial;
+            }
+            BigDecimal afterTier = afterSpecial.subtract(tierDiscount).max(BigDecimal.ZERO);
+
+            if (!guestCheckout && employeeCustomerLinkService.isEligibleForEmployeeDiscount(customer.getId())) {
+                employeeDiscount = afterTier.multiply(EmployeeCustomerLinkService.EMPLOYEE_DISCOUNT_PERCENT)
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            }
+            if (employeeDiscount.compareTo(afterTier) > 0) {
+                employeeDiscount = afterTier;
+            }
+            total = afterTier.subtract(employeeDiscount).max(BigDecimal.ZERO);
         }
-        if (discount.compareTo(subtotal) > 0) {
-            discount = subtotal;
-        }
-        BigDecimal total = subtotal.subtract(discount);
-        if (total.compareTo(BigDecimal.ZERO) < 0) {
-            total = BigDecimal.ZERO;
-        }
-        BigDecimal taxRatePercent = resolveTaxRatePercent(
-                resolveTaxProvinceForCheckout(customer, address, bakery));
+
+        BigDecimal discount = tierDiscount.add(employeeDiscount);
+        BigDecimal taxRatePercent = TAX_RATE_PERCENT;
         BigDecimal taxAmount = total.multiply(taxRatePercent)
                 .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-        BigDecimal grandTotal = total.add(taxAmount);
+        BigDecimal deliveryFee = BigDecimal.ZERO;
+        if (OrderMethod.delivery.equals(req.getOrderMethod())
+                && total.compareTo(DELIVERY_FREE_THRESHOLD) < 0) {
+            deliveryFee = DELIVERY_FEE;
+        }
+        BigDecimal grandTotal = total.add(taxAmount).add(deliveryFee);
 
         Order order = new Order();
         order.setOrderNumber("ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
@@ -164,6 +258,9 @@ public class OrderService {
         order.setOrderPlacedDatetime(OffsetDateTime.now());
         order.setOrderTotal(total);
         order.setOrderDiscount(discount);
+        order.setOrderSpecialDiscountAmount(specialDiscount);
+        order.setOrderTierDiscountAmount(tierDiscount);
+        order.setOrderEmployeeDiscountAmount(employeeDiscount);
         order.setOrderTaxRate(taxRatePercent);
         order.setOrderTaxAmount(taxAmount);
         if (guestCheckout && req.getGuest() != null) {
@@ -231,7 +328,190 @@ public class OrderService {
 
         paymentRepository.save(pay);
 
-        return new CheckoutSessionResponse(order.getId(), order.getOrderNumber(), clientSecret, paymentIntentId);
+        if (!guestCheckout && customer.getId() != null) {
+            recommendationService.evictRecommendations(customer.getId());
+        }
+
+        return new CheckoutSessionResponse(order.getId(), order.getOrderNumber(), clientSecret, paymentIntentId, total, discount, deliveryFee, taxAmount, grandTotal);
+    }
+
+    /**
+     * After Payment Sheet completes, verifies the PaymentIntent with Stripe and marks the order paid.
+     * Use when webhooks are unavailable (e.g. local dev without {@code stripe listen}); production may still rely on webhooks.
+     */
+    @Transactional
+    @CacheEvict(value = {"orders", "analytics", "dashboard"}, allEntries = true)
+    public OrderDto confirmStripePayment(UUID orderId, ConfirmStripePaymentRequest req) {
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+        User u = currentUserService.currentUserOrNull();
+        if (order.getCustomer() != null && order.getCustomer().getUser() != null
+                && u != null && u.getUserRole() == UserRole.customer
+                && !order.getCustomer().getUser().getUserId().equals(u.getUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your order");
+        }
+
+        Payment payment = paymentRepository.findByOrder_Id(orderId).stream()
+                .filter(p -> req.paymentIntentId().equals(p.getStripeSessionId()))
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Payment intent does not match this order"));
+
+        if (payment.getPaymentStatus() == PaymentStatus.completed) {
+            return toDto(orderRepository.findById(orderId).orElseThrow());
+        }
+
+        if (!stripeService.isConfigured()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Stripe is not configured");
+        }
+
+        try {
+            PaymentIntent pi = stripeService.retrievePaymentIntent(req.paymentIntentId());
+            if (!"succeeded".equals(pi.getStatus())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Payment not completed");
+            }
+            String metaOrderId = pi.getMetadata() != null ? pi.getMetadata().get("orderId") : null;
+            if (metaOrderId == null || !orderId.toString().equals(metaOrderId)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Payment does not match order");
+            }
+        } catch (StripeException e) {
+            log.error("Stripe retrieve failed for order {}", orderId, e);
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Unable to verify payment with provider");
+        }
+
+        stripePaymentFulfillmentService.fulfillOrderByPaymentIntentId(req.paymentIntentId());
+        return toDto(orderRepository.findById(orderId).orElseThrow());
+    }
+
+    /**
+     * Returns a PaymentIntent client secret to resume the sheet for {@link OrderStatus#pending_payment},
+     * or fulfills immediately if Stripe already shows the intent succeeded.
+     */
+    @Transactional
+    public ResumePaymentSessionResponse resumeStripePayment(UUID orderId) {
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+        assertCanView(order);
+
+        if (order.getOrderStatus() != OrderStatus.pending_payment) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order is not awaiting payment");
+        }
+
+        Payment payment = paymentRepository.findByOrder_Id(orderId).stream()
+                .filter(p -> p.getPaymentStatus() == PaymentStatus.pending)
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "No pending payment for this order"));
+
+        String existingPi = payment.getStripeSessionId();
+        if (existingPi == null || existingPi.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Payment session missing");
+        }
+
+        if (!stripeService.isConfigured()) {
+            if (existingPi.startsWith("dev_pi_")) {
+                String clientSecret = existingPi + "_secret_dev";
+                return new ResumePaymentSessionResponse(order.getId(), order.getOrderNumber(), clientSecret, existingPi, false);
+            }
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Stripe is not configured");
+        }
+
+        try {
+            PaymentIntent intent = stripeService.retrievePaymentIntent(existingPi);
+            String status = intent.getStatus();
+
+            if ("succeeded".equals(status)) {
+                stripePaymentFulfillmentService.fulfillOrderByPaymentIntentId(existingPi);
+                Order refreshed = orderRepository.findById(orderId).orElseThrow();
+                return new ResumePaymentSessionResponse(refreshed.getId(), refreshed.getOrderNumber(), null, existingPi, true);
+            }
+
+            if ("canceled".equals(status)) {
+                PaymentIntent created = stripeService.createPaymentIntent(order.getId(), payment.getPaymentAmount());
+                payment.setStripeSessionId(created.getId());
+                paymentRepository.save(payment);
+                return new ResumePaymentSessionResponse(
+                        order.getId(),
+                        order.getOrderNumber(),
+                        created.getClientSecret(),
+                        created.getId(),
+                        false);
+            }
+
+            String clientSecret = intent.getClientSecret();
+            if (clientSecret == null || clientSecret.isBlank()) {
+                PaymentIntent created = stripeService.createPaymentIntent(order.getId(), payment.getPaymentAmount());
+                payment.setStripeSessionId(created.getId());
+                paymentRepository.save(payment);
+                return new ResumePaymentSessionResponse(
+                        order.getId(),
+                        order.getOrderNumber(),
+                        created.getClientSecret(),
+                        created.getId(),
+                        false);
+            }
+
+            return new ResumePaymentSessionResponse(
+                    order.getId(),
+                    order.getOrderNumber(),
+                    clientSecret,
+                    existingPi,
+                    false);
+        } catch (StripeException e) {
+            log.warn("Stripe retrieve failed for resume on order {}, creating new PaymentIntent", orderId, e);
+            try {
+                PaymentIntent created = stripeService.createPaymentIntent(order.getId(), payment.getPaymentAmount());
+                payment.setStripeSessionId(created.getId());
+                paymentRepository.save(payment);
+                return new ResumePaymentSessionResponse(
+                        order.getId(),
+                        order.getOrderNumber(),
+                        created.getClientSecret(),
+                        created.getId(),
+                        false);
+            } catch (StripeException e2) {
+                log.error("Could not create replacement PaymentIntent for order {}", orderId, e2);
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Payment provider unavailable");
+            }
+        }
+    }
+
+    /**
+     * Validates that {@code scheduledAt} falls within the bakery's recorded hours of operation for
+     * that day of week. Throws {@link ResponseStatusException} 400 when the time is outside hours
+     * or the bakery is closed. A {@code null} scheduled time or an empty hours configuration are
+     * both treated as valid (no restriction).
+     */
+    private void requireScheduledTimeWithinHours(OffsetDateTime scheduledAt, Integer bakeryId) {
+        if (scheduledAt == null || bakeryId == null) return;
+
+        List<BakeryHour> hours = bakeryHourRepository.findByBakery_IdOrderByDayOfWeekAsc(bakeryId);
+        if (hours.isEmpty()) return; // no hours configured — skip
+
+        // Convert to bakery-local time zone for day-of-week + time comparison
+        java.time.LocalDateTime local = scheduledAt.atZoneSameInstant(DEFAULT_PRICING_ZONE).toLocalDateTime();
+        int dow = local.getDayOfWeek().getValue(); // 1=Mon … 7=Sun (ISO)
+        LocalTime schedTime = local.toLocalTime();
+
+        BakeryHour dayHour = hours.stream()
+                .filter(h -> h.getDayOfWeek() != null && h.getDayOfWeek().intValue() == dow)
+                .findFirst()
+                .orElse(null);
+
+        if (dayHour == null) {
+            String dayName = local.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Bakery has no hours configured for " + dayName);
+        }
+        if (Boolean.TRUE.equals(dayHour.getIsClosed())) {
+            String dayName = local.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Bakery is closed on " + dayName);
+        }
+        if (dayHour.getOpenTime() != null && dayHour.getCloseTime() != null) {
+            if (schedTime.isBefore(dayHour.getOpenTime()) || schedTime.isAfter(dayHour.getCloseTime())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Scheduled time must be within bakery hours ("
+                                + dayHour.getOpenTime() + " – " + dayHour.getCloseTime() + ")");
+            }
+        }
     }
 
     /**
@@ -249,7 +529,9 @@ public class OrderService {
         if (bakeryAddr != null && hasProvince(bakeryAddr)) {
             return bakeryAddr.getAddressProvince();
         }
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Province is required for tax calculation");
+        // Default to Alberta when no province is determinable (staff-created orders, incomplete data)
+        log.warn("No province found for order (customer={}, bakery={}); defaulting to AB", customer.getId(), bakery.getId());
+        return "AB";
     }
 
     private static boolean hasProvince(Address address) {
@@ -308,6 +590,14 @@ public class OrderService {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             }
         }
+        if (req.getStatus() == OrderStatus.delivered && o.getOrderMethod() == OrderMethod.pickup) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Delivered applies to delivery orders only; use picked_up for pickup.");
+        }
+        if (req.getStatus() == OrderStatus.picked_up && o.getOrderMethod() == OrderMethod.delivery) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Picked up applies to pickup orders only; use delivered for delivery.");
+        }
         OrderStatus previous = o.getOrderStatus();
         o.setOrderStatus(req.getStatus());
         Order saved = orderRepository.save(o);
@@ -359,6 +649,7 @@ public class OrderService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Only delivered or picked_up orders can be accepted");
         }
+        o.setOrderStatus(OrderStatus.completed);
         Order saved = orderRepository.save(o);
         awardRewardPoints(saved);
         return toDto(saved);
@@ -383,16 +674,15 @@ public class OrderService {
         customer.setCustomerRewardBalance(newBalance);
         recalculateCustomerTier(customer);
         customerRepository.save(customer);
+        if (customer.getUser() != null && customer.getUser().getUserId() != null) {
+            customerLookupCacheService.evictByUserId(customer.getUser().getUserId());
+        }
         log.info("Awarded {} points to customer {} for order {}", points, customer.getId(), order.getId());
     }
 
     private void recalculateCustomerTier(Customer customer) {
         int balance = customer.getCustomerRewardBalance() != null ? customer.getCustomerRewardBalance() : 0;
-        rewardTierRepository.findAll().stream()
-                .filter(t -> balance >= t.getRewardTierMinPoints()
-                        && (t.getRewardTierMaxPoints() == null || balance <= t.getRewardTierMaxPoints()))
-                .findFirst()
-                .ifPresent(customer::setRewardTier);
+        rewardTierService.tierForBalance(balance).ifPresent(customer::setRewardTier);
     }
 
     private void assertCanView(Order o) {
@@ -415,6 +705,6 @@ public class OrderService {
     }
 
     private OrderDto toDto(Order o) {
-        return OrderMapper.toDto(o, orderItemRepository);
+        return OrderMapper.toDto(o, orderItemRepository, reviewRepository);
     }
 }

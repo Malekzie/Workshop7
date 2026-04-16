@@ -2,7 +2,9 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { onMount } from 'svelte';
 	import { logoutUser } from '$lib/services/auth';
+	import { getProfile } from '$lib/services/profile';
 	import { user } from '$lib/stores/authStore';
 	import { Button } from '$lib/components/ui/button';
 	import { Separator } from '$lib/components/ui/separator';
@@ -18,7 +20,7 @@
 
 	const allNavLinks = [
 		{ label: 'Profile', href: '/profile', icon: User, roles: null },
-		{ label: 'Orders', href: '/orders', icon: ShoppingBag, roles: ['customer'] },
+		{ label: 'Order History', href: '/profile/orders', icon: ShoppingBag, roles: ['customer'] },
 		{
 			label: 'Preferences',
 			href: '/profile/preferences',
@@ -31,7 +33,27 @@
 		allNavLinks.filter((l) => l.roles === null || l.roles.includes($user?.role ?? ''))
 	);
 
-	const initials = $derived([$user?.username?.[0]].filter(Boolean).join('').toUpperCase() || '?');
+	let profileFirstName = $state('');
+	let profileLastName = $state('');
+
+	onMount(async () => {
+		try {
+			const profile = await getProfile();
+			profileFirstName = (profile?.firstName ?? '').trim();
+			profileLastName = (profile?.lastName ?? '').trim();
+		} catch {
+			profileFirstName = '';
+			profileLastName = '';
+		}
+	});
+
+	const initials = $derived.by(() => {
+		const first = (profileFirstName || $user?.firstName || '').trim();
+		const last = (profileLastName || $user?.lastName || '').trim();
+		const fromNames = [first[0], last[0]].filter(Boolean).join('').toUpperCase();
+		if (fromNames) return fromNames;
+		return '?';
+	});
 
 	async function handleLogout() {
 		await logoutUser();
@@ -39,48 +61,104 @@
 	}
 </script>
 
-<aside class="hidden h-full w-72 flex-col overflow-y-auto border-r border-border bg-card md:flex">
-	<div class="flex flex-col gap-6 p-6 pt-8">
-		<!-- User identity -->
-		<div class="flex items-center gap-3">
-			<Avatar class="h-10 w-10">
-				<AvatarFallback class="bg-primary text-sm font-semibold text-primary-foreground">
-					{initials}
-				</AvatarFallback>
-			</Avatar>
-			<div class="min-w-0">
-				<p class="truncate text-sm font-semibold text-foreground">{$user?.username ?? 'Account'}</p>
-				<p class="text-xs text-muted-foreground capitalize">{$user?.role?.toLowerCase() ?? ''}</p>
+<!-- Mobile top nav -->
+<div class="relative flex items-center border-b border-border bg-card md:hidden">
+	<button
+		type="button"
+		onclick={() =>
+			document.getElementById('profile-mobile-nav').scrollBy({ left: -120, behavior: 'smooth' })}
+		class="shrink-0 px-2 py-3 text-muted-foreground hover:text-foreground"
+	>
+		‹
+	</button>
+	<nav
+		id="profile-mobile-nav"
+		class="flex flex-1 items-center gap-1 overflow-x-auto px-1 py-2"
+		style="scrollbar-width: none;"
+	>
+		{#each navLinks as link (link.href)}
+			{@const active = page.url.pathname === link.href}
+			<a
+				href={resolve(link.href)}
+				class="flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors
+					{active
+					? 'bg-primary text-primary-foreground'
+					: 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+			>
+				<link.icon class="h-4 w-4 shrink-0" />
+				{link.label}
+			</a>
+		{/each}
+		<button
+			onclick={handleLogout}
+			class="flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
+		>
+			<LogOut class="h-4 w-4 shrink-0" />
+			Log out
+		</button>
+	</nav>
+	<button
+		type="button"
+		onclick={() =>
+			document.getElementById('profile-mobile-nav').scrollBy({ left: 120, behavior: 'smooth' })}
+		class="shrink-0 px-2 py-3 text-muted-foreground hover:text-foreground"
+	>
+		›
+	</button>
+</div>
+
+<aside
+	class="hidden h-full w-72 shrink-0 flex-col border-r border-border bg-card md:flex"
+	aria-label="Account navigation"
+>
+	<!-- Scrollable top: identity + nav (fills space above footer actions) -->
+	<div class="flex min-h-0 flex-1 flex-col">
+		<div class="shrink-0 space-y-6 p-6 pt-8">
+			<div class="flex items-center gap-3">
+				<Avatar class="h-10 w-10">
+					<AvatarFallback class="bg-primary text-sm font-semibold text-primary-foreground">
+						{initials}
+					</AvatarFallback>
+				</Avatar>
+				<div class="min-w-0">
+					<p class="truncate text-sm font-semibold text-foreground">
+						{$user?.username ?? 'Account'}
+					</p>
+					<p class="text-xs text-muted-foreground capitalize">{$user?.role?.toLowerCase() ?? ''}</p>
+				</div>
 			</div>
-		</div>
 
-		<Separator />
+			<Separator />
 
-		<!-- Nav -->
-		<nav class="flex flex-col gap-1">
-			{#each navLinks as link (link.href)}
-				{@const active = page.url.pathname === link.href}
-				<a
-					href={resolve(link.href)}
-					class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
+			<nav class="flex flex-col gap-1">
+				{#each navLinks as link (link.href)}
+					{@const active = page.url.pathname === link.href}
+					<a
+						href={resolve(link.href)}
+						class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors
 						{active
-						? 'bg-primary text-primary-foreground'
-						: 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-				>
-					<link.icon class="h-4 w-4 shrink-0" />
-					{link.label}
-				</a>
-			{/each}
-		</nav>
+							? 'bg-primary text-primary-foreground'
+							: 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+					>
+						<link.icon class="h-4 w-4 shrink-0" />
+						{link.label}
+					</a>
+				{/each}
+			</nav>
+		</div>
 	</div>
 
-	<!-- Bottom actions -->
-	<div class="mt-auto flex flex-col gap-2 border-t border-border p-6">
+	<!-- Pinned bottom (same visual anchor on Profile, Orders, Preferences) -->
+	<div class="shrink-0 space-y-2 border-t border-border p-6">
 		<Button href={resolve('/menu')} class="w-full gap-2">
 			<ShoppingCart class="h-4 w-4" />
 			New Order
 		</Button>
-		<Button variant="ghost" class="w-full justify-start gap-2 text-muted-foreground">
+		<Button
+			variant="ghost"
+			href="mailto:peelingoodbakery@gmail.com"
+			class="w-full justify-start gap-2 text-muted-foreground"
+		>
 			<HelpCircle class="h-4 w-4" />
 			Support
 		</Button>

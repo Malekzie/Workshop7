@@ -47,6 +47,17 @@ public class OrderController {
         return orderService.get(id);
     }
 
+    @Operation(summary = "Get order by order number", description = "Returns an order by its human-readable order number. Guests may look up by number; logged-in customers must own the order.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Order found"),
+            @ApiResponse(responseCode = "403", description = "Order belongs to another customer", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Order not found", content = @Content)
+    })
+    @GetMapping("/by-number/{orderNumber}")
+    public OrderDto getByOrderNumber(@PathVariable String orderNumber) {
+        return orderService.getByOrderNumber(orderNumber);
+    }
+
     @Operation(summary = "Checkout", description = "Place a new order. Cart items, delivery method, and bakery are included in the request body.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Order placed successfully"),
@@ -57,6 +68,33 @@ public class OrderController {
     @ResponseStatus(HttpStatus.CREATED)
     public CheckoutSessionResponse checkout(@Valid @RequestBody CheckoutRequest req) {
         return orderService.checkout(req);
+    }
+
+    @Operation(summary = "Confirm Stripe payment", description = "Verifies the PaymentIntent succeeded and marks the order paid. "
+            + "Call after Payment Sheet completes; complements webhooks (e.g. for local development).")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Order returned with updated status"),
+            @ApiResponse(responseCode = "400", description = "Intent does not match order", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Logged-in customer does not own this order", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Payment not succeeded at Stripe", content = @Content)
+    })
+    @PostMapping("/{id}/confirm-stripe-payment")
+    public OrderDto confirmStripePayment(
+            @PathVariable UUID id,
+            @Valid @RequestBody ConfirmStripePaymentRequest body) {
+        return orderService.confirmStripePayment(id, body);
+    }
+
+    @Operation(summary = "Resume Stripe payment", description = "For an order in pending_payment: returns a PaymentIntent client secret to open the Payment Sheet again, "
+            + "or marks the order paid if Stripe already captured payment.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Client secret to present the sheet, or order already paid"),
+            @ApiResponse(responseCode = "400", description = "Order not awaiting payment", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Not allowed to view this order", content = @Content)
+    })
+    @PostMapping("/{id}/resume-stripe-payment")
+    public ResumePaymentSessionResponse resumeStripePayment(@PathVariable UUID id) {
+        return orderService.resumeStripePayment(id);
     }
 
     @Operation(summary = "Update order status", description = "Change the status of an order (e.g. PREPARING → READY). Requires ADMIN or EMPLOYEE role.")

@@ -1,4 +1,24 @@
+# OPENROUTER_API_KEY (environment): backend-only secret for Spring AI (OpenRouter). Used for automated review
+# moderation and product recommendations. Do not embed this key in mobile or web clients.
 spring:
+  ai:
+    retry:
+      max-attempts: 3
+      backoff:
+        initial-interval: 2000ms
+        multiplier: 2
+      exclude-on-http-codes: 429,503
+    openai:
+      api-key: ${OPENROUTER_API_KEY}
+      base-url: https://openrouter.ai/api
+      chat:
+        options:
+          model: openrouter/free
+          temperature: 0.2
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
   data:
     redis:
       host: ${VALKEY_HOST:localhost}
@@ -12,11 +32,25 @@ spring:
   application:
     name: Peelin' Good
   config:
-    import: optional:file:.env.local[.properties]
+    import: optional:file:.env[.properties],optional:file:.env.local[.properties]
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
   jpa:
     open-in-view: false
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: "5000"
+          timeout: "5000"
+          writetimeout: "5000"
   # OAuth
   security:
     oauth2:
@@ -27,6 +61,7 @@ spring:
             client-secret: ${GOOGLE_CLIENT_SECRET}
             scope: openid, email, profile
           microsoft:
+            provider: microsoft
             client-id: ${MICROSOFT_CLIENT_ID}
             client-secret: ${MICROSOFT_CLIENT_SECRET}
             scope: openid, email, profile
@@ -47,12 +82,15 @@ app:
     issuer: ${JWT_ISSUER:peelin-good}
   cors:
     allowed-origins: ${APP_CORS_ORIGINS:http://localhost:3000,http://localhost:8080,http://10.0.2.2:8080,http://localhost:5173}
-  resend:
-    enabled: ${RESEND_ENABLED:false}
-    api-key: ${RESEND_API_KEY:}
-    from-email: onboarding@resend.dev
+
   frontend:
     url: ${FRONTEND_URL:http://localhost:5173}
+  email:
+    logo-path: ${EMAIL_LOGO_PATH:../frontend/static/images/Peelin' Good.png}
+
+server:
+  error:
+    include-message: always
 
 management:
   endpoints:

@@ -26,9 +26,8 @@ public class Review {
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "product_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id")
     private Product product;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -38,10 +37,9 @@ public class Review {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id")
     private Order order;
-
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "bakery_id", nullable = false)
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bakery_id")
     private Bakery bakery;
 
     @NotNull
@@ -66,6 +64,11 @@ public class Review {
 
     @Column(name = "review_approval_date")
     private OffsetDateTime reviewApprovalDate;
+
+    /** When {@link #reviewStatus} is rejected (e.g. AI moderation), optional reason shown once to the customer. */
+    @Size(max = 500)
+    @Column(name = "moderation_rejection_reason", length = 500)
+    private String moderationRejectionReason;
 
     public UUID getId() {
         return id;
@@ -153,6 +156,14 @@ public class Review {
 
     public void setReviewApprovalDate(OffsetDateTime reviewApprovalDate) {
         this.reviewApprovalDate = reviewApprovalDate;
+    }
+
+    public String getModerationRejectionReason() {
+        return moderationRejectionReason;
+    }
+
+    public void setModerationRejectionReason(String moderationRejectionReason) {
+        this.moderationRejectionReason = moderationRejectionReason;
     }
 
 }

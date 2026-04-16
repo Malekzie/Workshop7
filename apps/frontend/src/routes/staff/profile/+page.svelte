@@ -6,7 +6,7 @@
 	import { Separator } from '$lib/components/ui/separator';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Avatar, AvatarImage, AvatarFallback } from '$lib/components/ui/avatar';
-	import { getProfile, uploadProfilePhoto } from '$lib/services/profile.js';
+	import { getProfile, uploadProfilePhoto } from '$lib/services/profile';
 
 	let profile = $state(null);
 	let bakeryName = $state(null);
@@ -142,10 +142,16 @@
 			<p class="text-sm text-destructive">Failed to load profile.</p>
 		{:else}
 			<!-- Header -->
-			<div class="flex items-center gap-6 rounded-xl border border-border bg-card p-6">
+			<div
+				class="flex flex-col gap-4 rounded-xl border border-border bg-card p-6 sm:flex-row sm:items-center sm:gap-6"
+			>
 				<div class="relative">
 					<Avatar class="h-20 w-20">
-						<AvatarImage src={profile.profilePhotoPath} alt={fullName} />
+						<AvatarImage
+							src={profile.profilePhotoPath}
+							alt={fullName}
+							class={profile.photoApprovalPending ? 'opacity-60 grayscale' : ''}
+						/>
 						<AvatarFallback class="bg-primary text-2xl font-bold text-primary-foreground">
 							{initials}
 						</AvatarFallback>
@@ -165,7 +171,7 @@
 					{/if}
 				</div>
 
-				<div class="flex flex-col items-end gap-2">
+				<div class="flex flex-row gap-2 sm:flex-col sm:items-end">
 					<input
 						bind:this={fileInput}
 						type="file"
@@ -197,13 +203,13 @@
 					}}
 				>
 					<p class="text-sm font-semibold text-foreground">Edit Details</p>
-					<div class="grid grid-cols-3 gap-3">
+					<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
 						<Input bind:value={draft.firstName} placeholder="First name" />
 						<Input bind:value={draft.middleInitial} placeholder="M.I." maxlength="1" />
 						<Input bind:value={draft.lastName} placeholder="Last name" />
 					</div>
 					<Separator />
-					<div class="grid grid-cols-2 gap-3">
+					<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 						<Input bind:value={draft.workEmail} placeholder="Work email" type="email" />
 						<Input bind:value={draft.phone} placeholder="Phone" />
 						<Input bind:value={draft.businessPhone} placeholder="Business phone (optional)" />
@@ -231,7 +237,7 @@
 					<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
 						Contact
 					</p>
-					<div class="grid grid-cols-2 gap-4 text-sm">
+					<div class="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
 						<div>
 							<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
 								Work Email
@@ -266,7 +272,7 @@
 					<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
 						Assignment
 					</p>
-					<div class="grid grid-cols-2 gap-4 text-sm">
+					<div class="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
 						<div>
 							<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
 								Bakery

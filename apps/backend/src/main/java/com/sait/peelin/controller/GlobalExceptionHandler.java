@@ -1,11 +1,15 @@
 package com.sait.peelin.controller;
 
 import com.sait.peelin.dto.ApiError;
+import com.sait.peelin.dto.v1.auth.LoginRoleChoiceResponse;
+import com.sait.peelin.exception.AmbiguousLinkedLoginException;
 import com.sait.peelin.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -51,10 +55,22 @@ public class GlobalExceptionHandler {
                 .body(apiError(HttpStatus.FORBIDDEN, "Access denied", List.of()));
     }
 
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ApiError> authorizationDenied(AuthorizationDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(apiError(HttpStatus.FORBIDDEN, "Access denied", List.of()));
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiError> badCredentials(BadCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(apiError(HttpStatus.UNAUTHORIZED, "Bad credentials", List.of()));
+    }
+
+    @ExceptionHandler(AmbiguousLinkedLoginException.class)
+    public ResponseEntity<LoginRoleChoiceResponse> ambiguousLinkedLogin(AmbiguousLinkedLoginException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new LoginRoleChoiceResponse(ex.getMessage(), ex.getChoices()));
     }
 
     @ExceptionHandler(Exception.class)
@@ -65,5 +81,11 @@ public class GlobalExceptionHandler {
 
     private static ApiError apiError(HttpStatus status, String message, List<String> details) {
         return new ApiError(status.value(), message, details, OffsetDateTime.now());
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<ApiError> disabled(DisabledException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(apiError(HttpStatus.UNAUTHORIZED, "Account is disabled", List.of()));
     }
 }
