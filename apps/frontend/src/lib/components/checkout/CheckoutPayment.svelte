@@ -87,23 +87,7 @@
 		};
 	}
 
-	onMount(async () => {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		if (!(window as any).Stripe) {
-			await new Promise<void>((res, rej) => {
-				const s = document.createElement('script');
-				s.src = 'https://js.stripe.com/v3/';
-				s.onload = () => res();
-				s.onerror = () => rej(new Error('Failed to load Stripe.js'));
-				document.head.appendChild(s);
-			});
-		}
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		stripeInstance = (window as any).Stripe(publishableKey);
-		stripeElements = stripeInstance.elements({ clientSecret, appearance: buildAppearance() });
-		stripeElements.create('payment').mount(paymentContainer);
-		loading = false;
-
+	onMount(() => {
 		// Re-skin when the theme class/attribute flips on <html>.
 		const observer = new MutationObserver(() => {
 			stripeElements?.update({ appearance: buildAppearance() });
@@ -112,6 +96,25 @@
 			attributes: true,
 			attributeFilter: ['class', 'data-theme', 'style']
 		});
+
+		(async () => {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			if (!(window as any).Stripe) {
+				await new Promise<void>((res, rej) => {
+					const s = document.createElement('script');
+					s.src = 'https://js.stripe.com/v3/';
+					s.onload = () => res();
+					s.onerror = () => rej(new Error('Failed to load Stripe.js'));
+					document.head.appendChild(s);
+				});
+			}
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			stripeInstance = (window as any).Stripe(publishableKey);
+			stripeElements = stripeInstance.elements({ clientSecret, appearance: buildAppearance() });
+			stripeElements.create('payment').mount(paymentContainer);
+			loading = false;
+		})().catch((err) => console.error('Stripe init failed', err));
+
 		return () => observer.disconnect();
 	});
 
