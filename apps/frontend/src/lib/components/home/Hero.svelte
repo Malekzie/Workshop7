@@ -1,6 +1,58 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button/index';
+	import { Skeleton } from '$lib/components/ui/skeleton';
+	import SpecialCard from '$lib/components/product/SpecialCard.svelte';
+	import { getTodaySpecial } from '$lib/services/product-specials';
+	import { getProductById } from '$lib/services/products';
+
+	type Special = {
+		productSpecialId: number;
+		productId: number;
+		productName: string;
+		productDescription: string | null;
+		productBasePrice: number;
+		discountPercent: number | null;
+		productImageUrl: string | null;
+	};
+
+	let special = $state<Special | null>(null);
+	let loading = $state(true);
+
+	function localDateIso() {
+		const d = new Date();
+		const y = d.getFullYear();
+		const m = String(d.getMonth() + 1).padStart(2, '0');
+		const day = String(d.getDate()).padStart(2, '0');
+		return `${y}-${m}-${day}`;
+	}
+
+	onMount(async () => {
+		try {
+			const today = await getTodaySpecial(localDateIso());
+			const pid = today?.productId;
+			if (pid == null) {
+				special = null;
+				return;
+			}
+			const product = await getProductById(pid);
+			const pct = today.discountPercent != null ? Number(today.discountPercent) : null;
+			special = {
+				productSpecialId: pid,
+				productId: product.id,
+				productName: product.name,
+				productDescription: product.description,
+				productBasePrice: product.basePrice,
+				discountPercent: pct,
+				productImageUrl: product.imageUrl
+			};
+		} catch {
+			special = null;
+		} finally {
+			loading = false;
+		}
+	});
 </script>
 
 <section class="grid min-h-125 grid-cols-1 bg-background md:grid-cols-2">
@@ -38,33 +90,51 @@
 		</div>
 	</div>
 
-	<!-- Photo + type overlay panel -->
+	<!-- Photo backdrop + Today's Special overlay -->
 	<div class="relative hidden overflow-hidden md:block">
-		<!-- Unsplash bakery photo -->
 		<img
 			src="https://peelin-good-storage.tor1.cdn.digitaloceanspaces.com/misc/bakery-header.png"
 			alt="Fresh baked goods at Peelin' Good"
 			class="absolute inset-0 h-full w-full object-cover brightness-95"
 		/>
+		<div class="absolute inset-0 bg-black/55"></div>
 
-		<!-- Dark scrim so text is readable -->
-		<div class="absolute inset-0 bg-black/45"></div>
-
-		<!-- Typographic overlay -->
-		<div class="relative flex h-full flex-col justify-between p-10">
-			<div class="leading-none">
-				<p class="text-[72px] font-black tracking-tight text-white/90 lg:text-[88px]">BAKED</p>
-				<p class="text-[72px] font-black tracking-tight text-primary lg:text-[88px]">FRESH</p>
-				<p class="text-[72px] font-black tracking-tight text-white/50 lg:text-[88px]">DAILY</p>
+		<div class="relative flex h-full flex-col justify-center gap-6 p-10">
+			<div>
+				<p class="text-[11px] font-semibold tracking-[0.25em] text-primary uppercase">
+					Out of the oven
+				</p>
+				<h2 class="mt-1 text-3xl font-black tracking-tight text-white lg:text-4xl">
+					Today's special
+				</h2>
+				<p class="mt-1 text-sm text-white/80">Our featured product for today.</p>
 			</div>
 
-			<div class="flex items-end justify-end">
-				<a href={resolve('/menu')} class="rounded-full bg-primary px-4 py-2">
-					<p class="text-xs font-bold tracking-widest text-primary-foreground uppercase">
-						Order today
-					</p>
-				</a>
-			</div>
+			{#if loading}
+				<Skeleton class="mx-auto h-64 w-full max-w-sm rounded-2xl bg-white/20" />
+			{:else if special}
+				<div class="mx-auto w-full max-w-sm">
+					<SpecialCard
+						name={special.productName}
+						description={special.productDescription}
+						price={special.productBasePrice}
+						discountPercent={special.discountPercent}
+						imageUrl={special.productImageUrl}
+						productId={special.productId}
+					/>
+				</div>
+			{:else}
+				<p class="text-sm text-white/80">
+					No special is available today. Check back another day!
+				</p>
+				<div class="flex items-end justify-end">
+					<a href={resolve('/menu')} class="rounded-full bg-primary px-4 py-2">
+						<p class="text-xs font-bold tracking-widest text-primary-foreground uppercase">
+							Order today
+						</p>
+					</a>
+				</div>
+			{/if}
 		</div>
 	</div>
 </section>

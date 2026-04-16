@@ -15,6 +15,7 @@
 		email: '',
 		username: '',
 		password: '',
+		passwordConfirm: '',
 		employeeLinkPassword: '',
 		employeeLinkPasswordConfirm: '',
 		phone: '',
@@ -32,6 +33,7 @@
 		email: '',
 		username: '',
 		password: '',
+		passwordConfirm: '',
 		employeeLinkPassword: '',
 		employeeLinkPasswordConfirm: '',
 		phone: '',
@@ -47,6 +49,7 @@
 		email: false,
 		username: false,
 		password: false,
+		passwordConfirm: false,
 		employeeLinkPassword: false,
 		employeeLinkPasswordConfirm: false,
 		phone: false,
@@ -58,6 +61,7 @@
 
 	let step = 1;
 	let showPassword = false;
+	let showPasswordConfirm = false;
 	let showEmployeeLinkPassword = false;
 	let showEmployeeLinkPasswordConfirm = false;
 	/** True while calling register/availability before advancing to step 2 */
@@ -65,7 +69,7 @@
 	/** From availability API: email matches one unlinked employee work email */
 	let employeeLinkOffered = false;
 
-	const stepOneFields = ['firstName', 'lastName', 'email', 'username', 'password'];
+	const stepOneFields = ['firstName', 'lastName', 'email', 'username', 'password', 'passwordConfirm'];
 	const stepTwoProfileFields = ['phone', 'addressLine1', 'city', 'province', 'postalCode'];
 	const employeeLinkStepFields = ['employeeLinkPassword', 'employeeLinkPasswordConfirm'];
 	let submitError = '';
@@ -96,6 +100,10 @@
 				if (!/[A-Z]/.test(value)) return 'Must include an uppercase letter.';
 				if (!/[0-9]/.test(value)) return 'Must include a number.';
 				if (!/[^a-zA-Z0-9]/.test(value)) return 'Must include a special character.';
+				return '';
+			case 'passwordConfirm':
+				if (!value) return 'Please confirm your password.';
+				if (value !== fields.password) return 'Passwords do not match.';
 				return '';
 			case 'employeeLinkPassword':
 				if (!value.trim()) return 'Employee account password is required.';
@@ -138,6 +146,9 @@
 	function handleInput(name) {
 		if (touched[name]) {
 			errors[name] = validateField(name, fields[name]);
+		}
+		if (name === 'password' && touched.passwordConfirm) {
+			errors.passwordConfirm = validateField('passwordConfirm', fields.passwordConfirm);
 		}
 	}
 
@@ -476,6 +487,41 @@
 							</div>
 							{#if errors.password && touched.password}
 								<p class="px-1 text-xs text-red-500">{errors.password}</p>
+							{/if}
+						</div>
+
+						<div class="space-y-1.5 md:col-span-2">
+							<label
+								for="register-passwordConfirm"
+								class="text-on-surface-variant px-1 text-sm font-bold">Confirm Password</label
+							>
+							<div class="relative mt-1">
+								<input
+									id="register-passwordConfirm"
+									type={showPasswordConfirm ? 'text' : 'password'}
+									autocomplete="new-password"
+									placeholder="Re-enter password"
+									bind:value={fields.passwordConfirm}
+									onblur={() => handleBlur('passwordConfirm')}
+									oninput={() => handleInput('passwordConfirm')}
+									class="bg-surface-container-highest w-full rounded-xl px-4 py-3 pr-12 font-medium ring-1 ring-border transition
+										{errors.passwordConfirm && touched.passwordConfirm ? 'ring-2 ring-red-400' : ''}"
+								/>
+								<button
+									type="button"
+									onclick={() => (showPasswordConfirm = !showPasswordConfirm)}
+									class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition hover:text-foreground"
+									aria-label={showPasswordConfirm ? 'Hide password' : 'Show password'}
+								>
+									{#if showPasswordConfirm}
+										<EyeOff size={18} />
+									{:else}
+										<Eye size={18} />
+									{/if}
+								</button>
+							</div>
+							{#if errors.passwordConfirm && touched.passwordConfirm}
+								<p class="px-1 text-xs text-red-500">{errors.passwordConfirm}</p>
 							{/if}
 						</div>
 					</div>
