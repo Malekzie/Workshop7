@@ -67,74 +67,78 @@
 	}
 </script>
 
-<section class="border-y border-border bg-muted/40 px-6 py-6">
-	<div class="mx-auto flex max-w-7xl flex-wrap items-center gap-6">
-		<div class="flex items-center gap-3">
-			<span
-				class="rounded-full bg-primary px-3 py-1 text-[10px] font-bold tracking-widest text-primary-foreground uppercase"
-			>
-				Today's special
-			</span>
-			<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-				Out of the oven
-			</p>
+<section
+	class="border-y-2 border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-background px-6 py-10"
+>
+	<div class="mx-auto max-w-5xl">
+		<!-- Stacked header -->
+		<div class="mb-6 text-center">
+			<p class="text-[11px] font-bold tracking-[0.25em] text-primary uppercase">Out of the oven</p>
+			<h2 class="mt-2 text-3xl font-black tracking-tight text-foreground lg:text-4xl">
+				Today's Special
+			</h2>
 		</div>
 
-		{#if loading}
-			<Skeleton class="h-16 flex-1 rounded-xl" />
-		{:else if special}
-			<div class="flex flex-1 flex-wrap items-center gap-4">
-				{#if special.imageUrl}
-					<img
-						src={special.imageUrl}
-						alt={special.name}
-						class="h-16 w-16 rounded-xl object-cover"
-					/>
-				{/if}
-				<div class="min-w-0 flex-1">
-					<h3 class="truncate font-bold text-foreground">{special.name}</h3>
-					<div class="flex items-baseline gap-2">
-						<span class="text-lg font-bold text-primary">{formatPriceCad(finalPrice)}</span>
-						{#if special.discountPercent}
-							<span class="text-xs text-muted-foreground line-through">
-								{formatPriceCad(special.basePrice)}
-							</span>
-							<span
-								class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary"
-							>
-								{special.discountPercent}% off
-							</span>
-						{/if}
+		<!-- Elevated card -->
+		<div
+			class="rounded-2xl border border-border bg-card p-5 shadow-lg ring-1 ring-primary/10"
+		>
+			{#if loading}
+				<Skeleton class="h-20 w-full rounded-xl" />
+			{:else if special}
+				<div class="flex flex-wrap items-center gap-5">
+					{#if special.imageUrl}
+						<img
+							src={special.imageUrl}
+							alt={special.name}
+							class="h-20 w-20 rounded-xl object-cover shadow-sm sm:h-24 sm:w-24"
+						/>
+					{/if}
+					<div class="min-w-0 flex-1">
+						<h3 class="truncate text-lg font-bold text-foreground">{special.name}</h3>
+						<div class="mt-1 flex flex-wrap items-baseline gap-2">
+							<span class="text-2xl font-black text-primary">{formatPriceCad(finalPrice)}</span>
+							{#if special.discountPercent}
+								<span class="text-sm text-muted-foreground line-through">
+									{formatPriceCad(special.basePrice)}
+								</span>
+								<span
+									class="rounded-full bg-primary px-2.5 py-0.5 text-xs font-bold text-primary-foreground"
+								>
+									{special.discountPercent}% off
+								</span>
+							{/if}
+						</div>
+					</div>
+					<div class="flex items-center gap-2">
+						<button
+							onclick={addToCart}
+							class="flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-md transition
+								{added ? 'bg-emerald-600' : 'hover:opacity-90'}"
+						>
+							{#if added}
+								<Check class="h-4 w-4" />
+								Added
+							{:else}
+								<ShoppingBag class="h-4 w-4" />
+								Add to cart
+							{/if}
+						</button>
+						<a
+							href={resolve('/menu')}
+							class="rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted"
+						>
+							See menu
+						</a>
 					</div>
 				</div>
-				<div class="flex items-center gap-2">
-					<button
-						onclick={addToCart}
-						class="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-bold tracking-wide text-primary-foreground transition
-							{added ? 'bg-emerald-600' : 'hover:opacity-90'}"
-					>
-						{#if added}
-							<Check class="h-3.5 w-3.5" />
-							Added
-						{:else}
-							<ShoppingBag class="h-3.5 w-3.5" />
-							Add to cart
-						{/if}
-					</button>
-					<a
-						href={resolve('/menu')}
-						class="rounded-full border border-border px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-background"
-					>
-						See menu
-					</a>
-				</div>
-			</div>
-		{:else}
-			<p class="flex-1 text-sm text-muted-foreground">
-				No special today — <a href={resolve('/menu')} class="text-primary hover:underline"
-					>browse the full menu</a
-				>.
-			</p>
-		{/if}
+			{:else}
+				<p class="text-center text-sm text-muted-foreground">
+					No special today — <a href={resolve('/menu')} class="text-primary hover:underline"
+						>browse the full menu</a
+					>.
+				</p>
+			{/if}
+		</div>
 	</div>
 </section>
