@@ -3,7 +3,6 @@
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import * as Chart from '$lib/components/ui/chart/index.js';
 	import { BarChart, LineChart } from 'layerchart';
-	import { scaleBand } from 'd3-scale';
 	import KpiCard from '$lib/components/staff/KpiCard.svelte';
 	import {
 		getBakeryNames,
@@ -191,12 +190,15 @@
 					{#if revenueByBakery.length === 0}
 						<p class="py-8 text-center text-xs text-muted-foreground">No data</p>
 					{:else}
-						<Chart.Container config={chartConfig} class="h-48 w-full">
+						<Chart.Container config={chartConfig} class="h-64 w-full">
 							<BarChart
 								data={revenueByBakery}
-								xScale={scaleBand().padding(0.3)}
-								x="label"
-								axis="x"
+								orientation="horizontal"
+								y="label"
+								x="value"
+								bandPadding={0.3}
+								axis="y"
+								padding={{ left: 120 }}
 								series={[{ key: 'value', label: 'Revenue', color: '#C25F1A' }]}
 							/>
 						</Chart.Container>
@@ -214,12 +216,15 @@
 					{#if topProducts.length === 0}
 						<p class="py-8 text-center text-xs text-muted-foreground">No data</p>
 					{:else}
-						<Chart.Container config={chartConfig} class="h-48 w-full">
+						<Chart.Container config={chartConfig} class="h-64 w-full">
 							<BarChart
 								data={topProducts}
-								xScale={scaleBand().padding(0.3)}
-								x="label"
-								axis="x"
+								orientation="horizontal"
+								y="label"
+								x="value"
+								bandPadding={0.3}
+								axis="y"
+								padding={{ left: 140 }}
 								series={[{ key: 'value', label: 'Units Sold', color: '#8A9E7F' }]}
 							/>
 						</Chart.Container>
@@ -237,12 +242,15 @@
 					{#if salesByEmployee.length === 0}
 						<p class="py-8 text-center text-xs text-muted-foreground">No data</p>
 					{:else}
-						<Chart.Container config={chartConfig} class="h-48 w-full">
+						<Chart.Container config={chartConfig} class="h-64 w-full">
 							<BarChart
 								data={salesByEmployee}
-								xScale={scaleBand().padding(0.3)}
-								x="label"
-								axis="x"
+								orientation="horizontal"
+								y="label"
+								x="value"
+								bandPadding={0.3}
+								axis="y"
+								padding={{ left: 120 }}
 								series={[{ key: 'value', label: 'Sales ($)', color: '#2C1A0E' }]}
 							/>
 						</Chart.Container>

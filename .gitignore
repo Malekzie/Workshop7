@@ -57,7 +57,7 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 # Agents
-.claude+
+.claude
 .gitnexus
 CLAUDE.md
 AGENTS.md
@@ -66,3 +66,5 @@ AGENTS.md
 scripts/*.exe
 scripts/stripe
 scripts/stripe.exe
+# Playwright
+.playwright-mcp
