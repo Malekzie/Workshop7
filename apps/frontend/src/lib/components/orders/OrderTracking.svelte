@@ -38,6 +38,7 @@
 		orderTaxAmount?: number;
 		orderGrandTotal?: number;
 		deliveryFee?: number;
+		comment?: string;
 		items: OrderItem[];
 	}
 
@@ -183,6 +184,15 @@
 					</p>
 					<p class="text-foreground">{new Date(order.placedAt).toLocaleString()}</p>
 				</div>
+
+				{#if order.comment}
+					<div class="col-span-2">
+						<p class="mb-1 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+							Notes
+						</p>
+						<p class="text-foreground">{order.comment}</p>
+					</div>
+				{/if}
 			</div>
 
 			<hr class="border-border" />

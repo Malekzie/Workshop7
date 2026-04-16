@@ -5,11 +5,14 @@
 		getBakeries,
 		getBakeryReviews,
 		getBakeryAverage,
+		getBakeryHours,
 		createBakeryReview
 	} from '$lib/services/bakeries';
 	import { MapPin, Phone, Mail } from '@lucide/svelte';
 	import ReviewSubmissionOverlay from '$lib/components/review/ReviewSubmissionOverlay.svelte';
 	import { truncateModerationMessage } from '$lib/utils/reviewMessage';
+	import { user } from '$lib/stores/authStore';
+	import { isOpenNow } from '$lib/services/checkout';
 
 	let bakeries = $state([]);
 	let loading = $state(true);
@@ -21,17 +24,19 @@
 	let reviewSuccess = $state(false);
 	let expandedBakeries = $state(new Set());
 	let reviewFilters = $state({});
+	let reviewGuestName = $state('');
 
 	onMount(async () => {
 		try {
 			const raw = await getBakeries();
 			bakeries = await Promise.all(
 				raw.map(async (b) => {
-					const [reviews, average] = await Promise.all([
+					const [reviews, average, hours] = await Promise.all([
 						getBakeryReviews(b.id).catch(() => []),
-						getBakeryAverage(b.id).catch(() => null)
+						getBakeryAverage(b.id).catch(() => null),
+						getBakeryHours(b.id).catch(() => [])
 					]);
-					return { ...b, reviews, average };
+					return { ...b, reviews, average, hours };
 				})
 			);
 		} catch (e) {
@@ -60,6 +65,7 @@
 		reviewModal = { bakeryId: bakery.id, bakeryName: bakery.name };
 		reviewRating = 0;
 		reviewComment = '';
+		reviewGuestName = '';
 		reviewError = null;
 		reviewSuccess = false;
 	}
@@ -80,7 +86,8 @@
 			const submitted = await createBakeryReview(
 				reviewModal.bakeryId,
 				reviewRating,
-				reviewComment
+				reviewComment,
+				reviewGuestName || null
 			);
 			const status = (submitted?.status ?? '').toLowerCase();
 			if (status === 'rejected') {
@@ -90,9 +97,12 @@
 					: "We couldn't post that review. Try different wording.";
 			} else {
 				reviewSuccess = true;
-				const freshReviews = await getBakeryReviews(reviewModal.bakeryId).catch(() => []);
+				const [freshReviews, freshAverage] = await Promise.all([
+					getBakeryReviews(reviewModal.bakeryId).catch(() => []),
+					getBakeryAverage(reviewModal.bakeryId).catch(() => null)
+				]);
 				bakeries = bakeries.map((b) =>
-					b.id === reviewModal.bakeryId ? { ...b, reviews: freshReviews } : b
+					b.id === reviewModal.bakeryId ? { ...b, reviews: freshReviews, average: freshAverage } : b
 				);
 				setTimeout(() => closeReviewModal(), 1500);
 			}
@@ -149,7 +159,18 @@
 						{/if}
 						<div class="flex flex-1 flex-col gap-5 p-8">
 							<div>
-								<h2 class="text-2xl font-bold text-foreground">{bakery.name}</h2>
+								<div class="flex items-center gap-2">
+									<h2 class="text-2xl font-bold text-foreground">{bakery.name}</h2>
+									<span
+										class="rounded-full px-2 py-0.5 text-xs font-semibold {isOpenNow(
+											bakery.hours ?? []
+										)
+											? 'bg-emerald-100 text-emerald-800'
+											: 'bg-red-100 text-red-800'}"
+									>
+										{isOpenNow(bakery.hours ?? []) ? 'Open' : 'Closed'}
+									</span>
+								</div>
 								{#if bakery.average !== null}
 									<p class="mt-1 text-base text-yellow-500">
 										{stars(Math.round(bakery.average))}
@@ -293,6 +314,16 @@
 					>
 				{/each}
 			</div>
+
+			{#if !$user}
+				<input
+					type="text"
+					bind:value={reviewGuestName}
+					placeholder="Your name (optional)"
+					disabled={reviewSubmitting}
+					class="mt-4 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+				/>
+			{/if}
 
 			<textarea
 				bind:value={reviewComment}

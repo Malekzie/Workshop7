@@ -181,17 +181,17 @@ public class ReviewService {
             var mod = reviewModerationService.moderateReview(comment, ReviewModerationService.ModerationKind.BAKERY_SERVICE);
             if (!mod.approved()) {
                 return persistModerationRejectedReview(
-                        customer, product, order.getBakery(), order, req, moderationReasonOrDefault(mod.reason()));
+                        customer, null, order.getBakery(), order, req, moderationReasonOrDefault(mod.reason()));
             }
         }
 
         Review r = new Review();
         r.setCustomer(customer);
-        r.setProduct(product);
+        r.setProduct(null);
         r.setReviewRating(req.getRating());
         r.setReviewComment(req.getComment());
         r.setReviewSubmittedDate(OffsetDateTime.now());
-        r.setOrder(null);  // Always null for product reviews
+        r.setOrder(order);  // Always null for product reviews
         r.setBakery(order.getBakery());
         r.setReviewStatus(ReviewStatus.approved);
         r.setReviewApprovalDate(OffsetDateTime.now());
@@ -230,9 +230,6 @@ public class ReviewService {
                 ? "You already submitted a location review for this order"
                 : "You already submitted a review for this product";
         Review saved = saveReviewOrConflict(rejected, conflictMessage);
-        if (orderOrNull != null) {
-            completeDeliveredOrderAfterLocationReview(saved.getOrder());
-        }
         return toDto(saved);
     }
 
@@ -245,8 +242,8 @@ public class ReviewService {
     }
 
     /**
-     * After a location/service review is submitted (approved or rejected), move delivered orders to completed
-     * so the customer cannot keep revisiting the review flow for this order.
+     * After an approved location/service review, move delivered/picked-up orders to completed
+     * so the customer does not keep revisiting the review flow. Rejected AI reviews do not complete the order.
      */
     private void completeDeliveredOrderAfterLocationReview(Order order) {
         if (order == null) {

@@ -21,6 +21,9 @@
 		if (!target.closest('.category-dropdown')) {
 			categoryOpen = false;
 		}
+		if (!target.closest('nav')) {
+			menuOpen = false;
+		}
 	}
 
 	function handleCartClick() {
@@ -141,23 +144,29 @@
 		<div class="flex flex-col gap-4 border-t border-border bg-background px-6 py-4 md:hidden">
 			<a
 				href={resolve('/menu')}
+				onclick={() => (menuOpen = false)}
 				class="text-xs font-semibold tracking-widest uppercase transition-colors
         {page.url.pathname === '/menu' ? 'text-primary' : 'text-foreground'}">Menu</a
 			>
 			<a
 				href={resolve('/about')}
+				onclick={() => (menuOpen = false)}
 				class="text-sm transition-colors hover:text-primary
         {page.url.pathname === '/about' ? 'text-primary' : 'text-foreground'}">About</a
 			>
 			<a
 				href={resolve('/locations')}
+				onclick={() => (menuOpen = false)}
 				class="text-sm transition-colors hover:text-primary
         {page.url.pathname === '/locations' ? 'text-primary' : 'text-foreground'}">Locations</a
 			>
 
 			<div class="flex gap-4 pt-2">
 				<Button
-					onclick={handleProfileClick}
+					onclick={() => {
+						handleProfileClick();
+						menuOpen = false;
+					}}
 					aria-label="Account"
 					class="transition-colors hover:text-primary
         {page.url.pathname.startsWith('/profile') || page.url.pathname.startsWith('/staff')
@@ -167,7 +176,10 @@
 					<User size={20} />
 				</Button>
 				<Button
-					onclick={handleCartClick}
+					onclick={() => {
+						handleCartClick();
+						menuOpen = false;
+					}}
 					aria-label="Cart ({cartCount} items)"
 					class="relative transition-colors hover:text-primary
         {page.url.pathname === '/cart' ? 'text-primary' : 'text-foreground'}"

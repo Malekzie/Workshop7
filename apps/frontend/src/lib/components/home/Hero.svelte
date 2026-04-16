@@ -3,9 +3,9 @@
 	import { Button } from '$lib/components/ui/button/index';
 </script>
 
-<section class="grid min-h-125 grid-cols-1 bg-background md:grid-cols-2">
+<section class="grid min-h-[70vh] grid-cols-1 bg-background md:grid-cols-2">
 	<!-- Text -->
-	<div class="flex flex-col justify-center gap-5 px-8 py-16 md:px-12 lg:px-16">
+	<div class="flex flex-col justify-center gap-5 px-8 py-12 md:px-12 lg:px-16">
 		<img
 			src="/images/Peelin' Good ~BAKERY~.png"
 			alt="Peelin' Good Bakery"
@@ -40,17 +40,14 @@
 
 	<!-- Photo + type overlay panel -->
 	<div class="relative hidden overflow-hidden md:block">
-		<!-- Unsplash bakery photo -->
 		<img
 			src="https://peelin-good-storage.tor1.cdn.digitaloceanspaces.com/misc/bakery-header.png"
 			alt="Fresh baked goods at Peelin' Good"
 			class="absolute inset-0 h-full w-full object-cover brightness-95"
 		/>
 
-		<!-- Dark scrim so text is readable -->
 		<div class="absolute inset-0 bg-black/45"></div>
 
-		<!-- Typographic overlay -->
 		<div class="relative flex h-full flex-col justify-between p-10">
 			<div class="leading-none">
 				<p class="text-[72px] font-black tracking-tight text-white/90 lg:text-[88px]">BAKED</p>

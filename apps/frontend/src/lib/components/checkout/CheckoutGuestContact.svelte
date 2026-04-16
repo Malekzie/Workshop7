@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { validateField, formatPhone, type ErrorKey } from '$lib/services/checkout';
+	import { FormValidationUtil } from '$lib/utils/formValidation';
 
 	interface Props {
 		firstName: string;
@@ -28,7 +29,8 @@
 
 	function handlePhoneInput(e: Event) {
 		const target = e.target as HTMLInputElement;
-		const formatted = formatPhone(target.value);
+		const formatted = FormValidationUtil.formatPhone(target.value);
+		target.value = formatted;
 		phone = formatted;
 		onPhoneInput(formatted);
 		if (touched.guestPhone) {
@@ -41,11 +43,14 @@
 	<h2 class="mb-1 text-lg font-semibold text-foreground">Contact</h2>
 	<p class="mb-4 text-sm text-muted-foreground">
 		Already have an account?
-		<a href={resolve('/login')} class="text-primary hover:underline">Sign in</a>
+		<a href={resolve('/login?redirectTo=/checkout')} class="text-primary hover:underline">Sign in</a
+		>
 	</p>
 	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 		<div class="flex flex-col gap-1">
-			<label for="guestFirst" class="text-sm font-medium text-foreground">First Name</label>
+			<label for="guestFirst" class="text-sm font-medium text-foreground"
+				>First Name <span class="text-red-500">*</span></label
+			>
 			<input
 				id="guestFirst"
 				type="text"
@@ -62,7 +67,9 @@
 			{/if}
 		</div>
 		<div class="flex flex-col gap-1">
-			<label for="guestLast" class="text-sm font-medium text-foreground">Last Name</label>
+			<label for="guestLast" class="text-sm font-medium text-foreground"
+				>Last Name <span class="text-red-500">*</span></label
+			>
 			<input
 				id="guestLast"
 				type="text"
@@ -98,9 +105,7 @@
 			{/if}
 		</div>
 		<div class="flex flex-col gap-1">
-			<label for="guestPhone" class="text-sm font-medium text-foreground">
-				Phone <span class="text-xs text-muted-foreground">(or email)</span>
-			</label>
+			<label for="guestPhone" class="text-sm font-medium text-foreground"> Phone </label>
 			<input
 				id="guestPhone"
 				type="tel"

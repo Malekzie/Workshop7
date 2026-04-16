@@ -1,7 +1,6 @@
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.User;
-import com.sait.peelin.model.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -46,20 +45,33 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByUserEmailIgnoreCaseAndUserIdNot(String userEmail, UUID userId);
 
-    /** True if a customer account already uses this sign-in email (case-insensitive). */
-    boolean existsByUserEmailIgnoreCaseAndUserRole(String userEmail, UserRole userRole);
+    /**
+     * {@code role} must be the PostgreSQL enum label (e.g. {@code "customer"}, {@code "admin"}).
+     * Native SQL avoids binding {@code UserRole} through JPA when {@code user_role} uses a custom converter.
+     */
+    @Query(value = """
+            SELECT EXISTS(
+                SELECT 1
+                FROM "user" u
+                WHERE LOWER(TRIM(u.user_email)) = LOWER(TRIM(:email))
+                  AND u.user_role = CAST(:role AS user_role)
+            )
+            """, nativeQuery = true)
+    boolean existsByUserEmailIgnoreCaseAndUserRole(@Param("email") String userEmail, @Param("role") String role);
 
     /**
      * Another customer or admin (not {@code excludeUserId}) already uses this email.
      * Employee rows may share the same address for linking; they do not block here.
      */
-    @Query("""
-            SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END
-            FROM User u
-            WHERE u.userId <> :excludeUserId
-              AND LOWER(TRIM(u.userEmail)) = LOWER(TRIM(:email))
-              AND u.userRole IN (com.sait.peelin.model.UserRole.customer, com.sait.peelin.model.UserRole.admin)
-            """)
+    @Query(value = """
+            SELECT EXISTS(
+                SELECT 1
+                FROM "user" u
+                WHERE u.user_id <> CAST(:excludeUserId AS uuid)
+                  AND LOWER(TRIM(u.user_email)) = LOWER(TRIM(:email))
+                  AND u.user_role IN ('customer'::user_role, 'admin'::user_role)
+            )
+            """, nativeQuery = true)
     boolean existsOtherCustomerOrAdminWithEmailIgnoreCase(
             @Param("email") String email,
             @Param("excludeUserId") UUID excludeUserId);
@@ -67,13 +79,48 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Modifying
     @Query(value = """
             UPDATE "user"
-            SET profile_photo_path = :photoPath,
-                photo_approval_pending = :pending
+            SET user_password_hash = :passwordHash
             WHERE user_id = :userId
             """, nativeQuery = true)
+    int updatePasswordHash(
+            @Param("userId") UUID userId,
+            @Param("passwordHash") String passwordHash
+    );
+
+    @Modifying
+    @Query(value = """
+            UPDATE "user"
+            SET is_active = :active
+            WHERE user_id = :userId
+            """, nativeQuery = true)
+    int updateActiveFlag(
+            @Param("userId") UUID userId,
+            @Param("active") boolean active
+    );
+
+    @Modifying
+    @Query(value = """
+        UPDATE "user"
+        SET profile_photo_path = :photoPath,
+            photo_approval_pending = :pending
+        WHERE user_id = :userId
+        """, nativeQuery = true)
     int updateProfilePhotoState(
             @Param("userId") UUID userId,
             @Param("photoPath") String photoPath,
             @Param("pending") boolean pending
+    );
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+        UPDATE "user"
+        SET username = :username,
+            user_email = :email
+        WHERE user_id = :userId
+        """, nativeQuery = true)
+    int updateAccountIdentity(
+            @Param("userId") UUID userId,
+            @Param("username") String username,
+            @Param("email") String email
     );
 }

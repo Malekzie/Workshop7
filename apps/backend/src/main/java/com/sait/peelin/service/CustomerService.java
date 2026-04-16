@@ -28,6 +28,7 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -90,6 +91,16 @@ public class CustomerService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No customer profile");
         }
         return toDto(c);
+    }
+
+    /**
+     * Evicts cached "me" projections after account-identity updates (username/email),
+     * so profile surfaces fresh data immediately.
+     */
+    @CacheEvict(value = "customers", keyGenerator = "userIdKeyGenerator")
+    public void evictCurrentCustomerCaches() {
+        User u = currentUserService.requireUser();
+        customerLookupCacheService.evictByUserId(u.getUserId());
     }
 
     @Transactional
@@ -357,6 +368,11 @@ public class CustomerService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "customers", keyGenerator = "userIdKeyGenerator"),
+            @CacheEvict(value = "employees", keyGenerator = "userIdKeyGenerator"),
+            @CacheEvict(value = "customers", key = "'pending-photos'")
+    })
     public ProfilePhotoResponse uploadMyProfilePhoto(MultipartFile photo) {
         User u = currentUserService.requireUser();
         validateProfilePhotoFile(photo);
@@ -401,7 +417,23 @@ public class CustomerService {
         if (req.getBusinessPhone() != null) {
             c.setCustomerBusinessPhone(PhoneNumberFormatter.formatStoredPhoneOrNull(req.getBusinessPhone()));
         }
-        if (req.getEmail() != null) c.setCustomerEmail(req.getEmail());
+        if (req.getEmail() != null) {
+            System.out.println("Email patch: old=" + c.getCustomerEmail() + " new=" + req.getEmail() + " userId=" + (c.getUser() != null ? c.getUser().getUserId() : "null"));
+            c.setCustomerEmail(req.getEmail());
+            if (c.getUser() != null) {
+                String oldEmail = c.getUser().getUserEmail();
+                int updated = userRepository.updateAccountIdentity(
+                        c.getUser().getUserId(),
+                        c.getUser().getUsername(),
+                        req.getEmail().trim()
+                );
+                if (updated == 1) {
+                    c.getUser().setUserEmail(req.getEmail().trim());
+                    if (oldEmail != null) userLookupCacheService.evictByIdentifier(oldEmail);
+                    userLookupCacheService.evictByIdentifier(req.getEmail().trim());
+                }
+            }
+        }
         if (req.getAddressId() != null) {
             c.setAddress(addressRepository.findById(req.getAddressId())
                     .orElseThrow(() -> new ResourceNotFoundException("Address not found")));
@@ -500,8 +532,8 @@ public class CustomerService {
             return;
         }
         String emailNorm = trimmed.toLowerCase();
-        if (userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.customer)
-                || userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.admin)) {
+        if (userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.customer.name())
+                || userRepository.existsByUserEmailIgnoreCaseAndUserRole(emailNorm, UserRole.admin.name())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "This email is already registered. Sign in to complete your order.");
         }

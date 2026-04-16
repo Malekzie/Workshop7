@@ -133,7 +133,9 @@ public class ProductService {
         p.setProductName(req.getName().trim());
         p.setProductDescription(req.getDescription());
         p.setProductBasePrice(req.getBasePrice());
-        p.setProductImageUrl(req.getImageUrl());
+        if(req.getImageUrl() != null) {
+            p.setProductImageUrl(req.getImageUrl());
+        }
     }
 
     private void syncTags(Integer productId, List<Integer> tagIds) {
