@@ -1,12 +1,16 @@
 <script>
 	import { onMount } from 'svelte';
-	import SpecialCard from '$lib/components/product/SpecialCard.svelte';
+	import { resolve } from '$app/paths';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { getTodaySpecial } from '$lib/services/product-specials';
 	import { getProductById } from '$lib/services/products';
+	import { formatPriceCad } from '$lib/utils/money';
+	import { cart } from '$lib/stores/cart';
+	import { ShoppingBag, Check } from '@lucide/svelte';
 
-	let specials = $state([]);
+	let special = $state(null);
 	let loading = $state(true);
+	let added = $state(false);
 
 	function localDateIso() {
 		const d = new Date();
@@ -21,58 +25,115 @@
 			const today = await getTodaySpecial(localDateIso());
 			const pid = today?.productId;
 			if (pid == null) {
-				specials = [];
+				special = null;
 				return;
 			}
 			const product = await getProductById(pid);
 			const pct = today.discountPercent != null ? Number(today.discountPercent) : null;
-			specials = [
-				{
-					productSpecialId: pid,
-					productId: product.id,
-					productName: product.name,
-					productDescription: product.description,
-					productBasePrice: product.basePrice,
-					discountPercent: pct,
-					productImageUrl: product.imageUrl
-				}
-			];
+			special = {
+				productId: product.id,
+				name: product.name,
+				description: product.description,
+				basePrice: product.basePrice,
+				discountPercent: pct,
+				imageUrl: product.imageUrl
+			};
 		} catch {
-			specials = [];
+			special = null;
 		} finally {
 			loading = false;
 		}
 	});
+
+	const finalPrice = $derived(
+		special
+			? special.discountPercent
+				? special.basePrice * (1 - special.discountPercent / 100)
+				: special.basePrice
+			: 0
+	);
+
+	function addToCart() {
+		if (!special) return;
+		cart.addItem({
+			productId: special.productId,
+			productName: special.name,
+			productImageUrl: special.imageUrl ?? null,
+			unitPrice: finalPrice,
+			quantity: 1
+		});
+		added = true;
+		setTimeout(() => (added = false), 1400);
+	}
 </script>
 
-<section class="bg-muted/40 px-6 py-16">
-	<div class="mx-auto max-w-7xl">
-		<p class="mb-1 text-[11px] font-semibold tracking-[0.2em] text-primary uppercase">
-			Out of the oven
-		</p>
-		<h2 class="mb-2 text-3xl font-black tracking-tight text-foreground">Today's special</h2>
-		<p class="mb-8 text-sm text-muted-foreground">Our featured product for today's date.</p>
+<section class="border-y border-border bg-muted/40 px-6 py-6">
+	<div class="mx-auto flex max-w-7xl flex-wrap items-center gap-6">
+		<div class="flex items-center gap-3">
+			<span
+				class="rounded-full bg-primary px-3 py-1 text-[10px] font-bold tracking-widest text-primary-foreground uppercase"
+			>
+				Today's special
+			</span>
+			<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+				Out of the oven
+			</p>
+		</div>
 
 		{#if loading}
-			<div class="mx-auto max-w-lg">
-				<Skeleton class="h-64 w-full rounded-2xl" />
-			</div>
-		{:else if specials.length > 0}
-			<div class="mx-auto grid max-w-lg grid-cols-1 gap-4">
-				{#each specials as special (special.productSpecialId)}
-					<SpecialCard
-						name={special.productName}
-						description={special.productDescription}
-						price={special.productBasePrice}
-						discountPercent={special.discountPercent}
-						imageUrl={special.productImageUrl}
-						productId={special.productId}
+			<Skeleton class="h-16 flex-1 rounded-xl" />
+		{:else if special}
+			<div class="flex flex-1 flex-wrap items-center gap-4">
+				{#if special.imageUrl}
+					<img
+						src={special.imageUrl}
+						alt={special.name}
+						class="h-16 w-16 rounded-xl object-cover"
 					/>
-				{/each}
+				{/if}
+				<div class="min-w-0 flex-1">
+					<h3 class="truncate font-bold text-foreground">{special.name}</h3>
+					<div class="flex items-baseline gap-2">
+						<span class="text-lg font-bold text-primary">{formatPriceCad(finalPrice)}</span>
+						{#if special.discountPercent}
+							<span class="text-xs text-muted-foreground line-through">
+								{formatPriceCad(special.basePrice)}
+							</span>
+							<span
+								class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary"
+							>
+								{special.discountPercent}% off
+							</span>
+						{/if}
+					</div>
+				</div>
+				<div class="flex items-center gap-2">
+					<button
+						onclick={addToCart}
+						class="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-bold tracking-wide text-primary-foreground transition
+							{added ? 'bg-emerald-600' : 'hover:opacity-90'}"
+					>
+						{#if added}
+							<Check class="h-3.5 w-3.5" />
+							Added
+						{:else}
+							<ShoppingBag class="h-3.5 w-3.5" />
+							Add to cart
+						{/if}
+					</button>
+					<a
+						href={resolve('/menu')}
+						class="rounded-full border border-border px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-background"
+					>
+						See menu
+					</a>
+				</div>
 			</div>
 		{:else}
-			<p class="max-w-lg text-sm leading-relaxed text-muted-foreground">
-				No special is available today. Check back another day!
+			<p class="flex-1 text-sm text-muted-foreground">
+				No special today — <a href={resolve('/menu')} class="text-primary hover:underline"
+					>browse the full menu</a
+				>.
 			</p>
 		{/if}
 	</div>
