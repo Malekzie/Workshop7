@@ -44,34 +44,42 @@ public class StripeWebhookController {
         return ResponseEntity.ok(Map.of("publishableKey", publishableKey != null ? publishableKey : ""));
     }
 
+    /**
+     * Pairs the raw request body with the {@code Stripe-Signature} header so the parsing helpers
+     * take a single typed argument instead of two strings (also keeps the CodeScene "String Heavy
+     * Function Arguments" rule happy).
+     */
+    private record WebhookEnvelope(String payload, String signature) {}
+
     @PostMapping("/webhook")
     @Transactional
     public ResponseEntity<String> handleWebhook(
             @RequestBody byte[] payload,
             @RequestHeader(value = "Stripe-Signature", required = false) String sigHeader) {
 
-        final String payloadStr = new String(payload, java.nio.charset.StandardCharsets.UTF_8);
-        Event event = parseEvent(payloadStr, sigHeader);
+        WebhookEnvelope envelope = new WebhookEnvelope(
+                new String(payload, java.nio.charset.StandardCharsets.UTF_8), sigHeader);
+        Event event = parseEvent(envelope);
         if (event == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid webhook");
         }
 
         // Stripe retries on any non-2xx and may also re-deliver successfully-acked events.
         // Persisting the event id under a PK uniqueness constraint guarantees we only fulfill once.
-        if (!claimEvent(event.getId())) {
+        if (!claimEvent(event)) {
             log.info("Stripe webhook event {} already processed; returning 200", event.getId());
             return ResponseEntity.ok("duplicate");
         }
 
         if ("payment_intent.succeeded".equals(event.getType())) {
-            handlePaymentIntentSucceeded(event, payloadStr);
+            handlePaymentIntentSucceeded(event, envelope);
         }
 
         return ResponseEntity.ok("received");
     }
 
-    private void handlePaymentIntentSucceeded(Event event, String payloadStr) {
-        PaymentIntentSnapshot snapshot = extractPaymentIntent(payloadStr);
+    private void handlePaymentIntentSucceeded(Event event, WebhookEnvelope envelope) {
+        PaymentIntentSnapshot snapshot = extractPaymentIntent(envelope);
         if (snapshot == null) {
             log.warn("payment_intent.succeeded event {}: could not read PaymentIntent payload", event.getId());
             return;
@@ -84,11 +92,11 @@ public class StripeWebhookController {
      * are split into separate helpers so the entry-point method stays flat (CodeScene
      * "Bumpy Road").
      */
-    private Event parseEvent(String payloadStr, String sigHeader) {
+    private Event parseEvent(WebhookEnvelope envelope) {
         if (StringUtils.hasText(webhookSecret)) {
-            return parseSignedEvent(payloadStr, sigHeader);
+            return parseSignedEvent(envelope);
         }
-        return parseUnsignedEvent(payloadStr);
+        return parseUnsignedEvent(envelope);
     }
 
     /**
@@ -96,13 +104,13 @@ public class StripeWebhookController {
      * when the header is missing, the signature doesn't verify, or the body fails to parse — any
      * such case lets the controller reply 400 without distinguishing them to the caller.
      */
-    private Event parseSignedEvent(String payloadStr, String sigHeader) {
-        if (!StringUtils.hasText(sigHeader)) {
+    private Event parseSignedEvent(WebhookEnvelope envelope) {
+        if (!StringUtils.hasText(envelope.signature())) {
             log.warn("Stripe webhook rejected: signature header missing");
             return null;
         }
         try {
-            return Webhook.constructEvent(payloadStr, sigHeader, webhookSecret);
+            return Webhook.constructEvent(envelope.payload(), envelope.signature(), webhookSecret);
         } catch (SignatureVerificationException e) {
             log.error("Stripe webhook signature verification failed", e);
             return null;
@@ -116,10 +124,10 @@ public class StripeWebhookController {
      * Dev-only path: STRIPE_WEBHOOK_SECRET is required in prod by EnvValidator, so reaching this
      * branch means we're on a local profile without {@code stripe listen}.
      */
-    private static Event parseUnsignedEvent(String payloadStr) {
+    private static Event parseUnsignedEvent(WebhookEnvelope envelope) {
         log.warn("Stripe webhook signature not verified (STRIPE_WEBHOOK_SECRET not set)");
         try {
-            return Event.GSON.fromJson(payloadStr, Event.class);
+            return Event.GSON.fromJson(envelope.payload(), Event.class);
         } catch (Exception e) {
             log.error("Failed to parse Stripe webhook event", e);
             return null;
@@ -129,7 +137,8 @@ public class StripeWebhookController {
     /**
      * Insert event id; return false if it was already there. Caller must be inside a @Transactional.
      */
-    private boolean claimEvent(String eventId) {
+    private boolean claimEvent(Event event) {
+        String eventId = event.getId();
         if (stripeProcessedEventRepository.existsById(eventId)) {
             return false;
         }
@@ -150,9 +159,9 @@ public class StripeWebhookController {
      * {@code Event.getDataObjectDeserializer().getObject()} empty; parse {@code data.object} fields
      * directly from the raw payload so we get id + amount + currency in one pass.
      */
-    private static PaymentIntentSnapshot extractPaymentIntent(String payloadStr) {
+    private static PaymentIntentSnapshot extractPaymentIntent(WebhookEnvelope envelope) {
         try {
-            JsonObject root = JsonParser.parseString(payloadStr).getAsJsonObject();
+            JsonObject root = JsonParser.parseString(envelope.payload()).getAsJsonObject();
             JsonObject data = root.getAsJsonObject("data");
             if (data == null) return null;
             JsonObject obj = data.getAsJsonObject("object");
