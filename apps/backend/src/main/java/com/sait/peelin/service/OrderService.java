@@ -145,8 +145,8 @@ public class OrderService {
 
         BigDecimal listSubtotal = computeListSubtotal(req);
 
-        DiscountBreakdown breakdown = computeDiscounts(
-                req, listSubtotal, customer, guestCheckout, staffCaller, pricingDate);
+        DiscountBreakdown breakdown = computeDiscounts(new DiscountInput(
+                req, listSubtotal, customer, guestCheckout, staffCaller, pricingDate));
         BigDecimal specialDiscount = breakdown.specialDiscount();
         BigDecimal tierDiscount = breakdown.tierDiscount();
         BigDecimal employeeDiscount = breakdown.employeeDiscount();
@@ -432,6 +432,14 @@ public class OrderService {
 
     private record CheckoutCaller(Customer customer, boolean guestCheckout, boolean staffCaller) {}
 
+    private record DiscountInput(
+            CheckoutRequest req,
+            BigDecimal listSubtotal,
+            Customer customer,
+            boolean guestCheckout,
+            boolean staffCaller,
+            LocalDate pricingDate) {}
+
     private record DiscountBreakdown(
             BigDecimal specialDiscount,
             BigDecimal tierDiscount,
@@ -521,27 +529,20 @@ public class OrderService {
         return listSubtotal;
     }
 
-    private DiscountBreakdown computeDiscounts(
-            CheckoutRequest req,
-            BigDecimal listSubtotal,
-            Customer customer,
-            boolean guestCheckout,
-            boolean staffCaller,
-            LocalDate pricingDate) {
+    private DiscountBreakdown computeDiscounts(DiscountInput in) {
         // manualDiscount is a staff-only override; silently ignore it for customer/guest callers
         // so a malicious client cannot zero out their grandTotal by posting a huge discount.
-        BigDecimal effectiveManualDiscount = staffCaller ? req.getManualDiscount() : null;
+        BigDecimal effectiveManualDiscount = in.staffCaller() ? in.req().getManualDiscount() : null;
         if (effectiveManualDiscount != null) {
-            BigDecimal manual = effectiveManualDiscount.max(BigDecimal.ZERO).min(listSubtotal);
-            BigDecimal total = listSubtotal.subtract(manual).max(BigDecimal.ZERO);
+            BigDecimal manual = effectiveManualDiscount.max(BigDecimal.ZERO).min(in.listSubtotal());
+            BigDecimal total = in.listSubtotal().subtract(manual).max(BigDecimal.ZERO);
             return new DiscountBreakdown(BigDecimal.ZERO, manual, BigDecimal.ZERO, total);
         }
-        return computeAutomaticDiscounts(req, customer, guestCheckout, pricingDate);
+        return computeAutomaticDiscounts(in);
     }
 
-    private DiscountBreakdown computeAutomaticDiscounts(
-            CheckoutRequest req, Customer customer, boolean guestCheckout, LocalDate pricingDate) {
-        var todaySpecial = productSpecialService.findFirstForDate(pricingDate);
+    private DiscountBreakdown computeAutomaticDiscounts(DiscountInput in) {
+        var todaySpecial = productSpecialService.findFirstForDate(in.pricingDate());
         Integer specialPid = todaySpecial != null ? todaySpecial.productId() : null;
         BigDecimal specialPct = (todaySpecial != null && todaySpecial.discountPercent() != null)
                 ? todaySpecial.discountPercent()
@@ -549,7 +550,7 @@ public class OrderService {
 
         BigDecimal afterSpecial = BigDecimal.ZERO;
         BigDecimal specialDiscount = BigDecimal.ZERO;
-        for (CheckoutRequest.CheckoutLineRequest line : req.getItems()) {
+        for (CheckoutRequest.CheckoutLineRequest line : in.req().getItems()) {
             Product p = productRepository.findById(line.getProductId()).orElseThrow();
             BigDecimal lineList = p.getProductBasePrice().multiply(BigDecimal.valueOf(line.getQuantity()));
             BigDecimal lineAfter = applyLineSpecial(lineList, p, specialPid, specialPct);
@@ -557,9 +558,9 @@ public class OrderService {
             afterSpecial = afterSpecial.add(lineAfter);
         }
 
-        BigDecimal tierDiscount = computeTierDiscount(customer, guestCheckout, afterSpecial);
+        BigDecimal tierDiscount = computeTierDiscount(in.customer(), in.guestCheckout(), afterSpecial);
         BigDecimal afterTier = afterSpecial.subtract(tierDiscount).max(BigDecimal.ZERO);
-        BigDecimal employeeDiscount = computeEmployeeDiscount(customer, guestCheckout, afterTier);
+        BigDecimal employeeDiscount = computeEmployeeDiscount(in.customer(), in.guestCheckout(), afterTier);
         BigDecimal total = afterTier.subtract(employeeDiscount).max(BigDecimal.ZERO);
         return new DiscountBreakdown(specialDiscount, tierDiscount, employeeDiscount, total);
     }
