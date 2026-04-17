@@ -1,170 +1,210 @@
 alerts:
-  - rule: DEPLOYMENT_FAILED
-  - rule: DOMAIN_FAILED
-  - rule: DEPLOYMENT_LIVE
+- rule: DEPLOYMENT_FAILED
+- rule: DOMAIN_FAILED
+- rule: DEPLOYMENT_LIVE
 databases:
-  - cluster_name: app-b7493311-40ec-49aa-ae94-19730fc9fceb
-    db_name: dev-database
-    engine: PG
-    name: dev-database
-    production: true
-    version: "17"
+- cluster_name: app-b7493311-40ec-49aa-ae94-19730fc9fceb
+  db_name: dev-database
+  engine: PG
+  name: dev-database
+  production: true
+  version: "17"
 features:
-  - buildpack-stack=ubuntu-22
+- buildpack-stack=ubuntu-22
 ingress:
   rules:
-    - component:
-        name: workshop7-apps-backend
-      match:
-        authority:
-          exact: ""
-        path:
-          prefix: /api
-    - component:
-        name: workshop7-apps-backend
-      match:
-        authority:
-          exact: ""
-        path:
-          prefix: /ws
-    - component:
-        name: workshop7-apps-backend
-      match:
-        authority:
-          exact: ""
-        path:
-          prefix: /oauth2
-    - component:
-        name: workshop7-apps-backend
-      match:
-        authority:
-          exact: ""
-        path:
-          prefix: /login/oauth2
-    - component:
-        name: workshop7-apps-backend
-      match:
-        authority:
-          exact: ""
-        path:
-          prefix: /actuator
-    - component:
-        name: workshop7-apps-frontend
-      match:
-        authority:
-          exact: ""
-        path:
-          prefix: /
+  - component:
+      name: workshop7-apps-backend
+    match:
+      authority:
+        exact: ""
+      path:
+        prefix: /api
+  - component:
+      name: workshop7-apps-backend
+    match:
+      authority:
+        exact: ""
+      path:
+        prefix: /ws
+  - component:
+      name: workshop7-apps-backend
+    match:
+      authority:
+        exact: ""
+      path:
+        prefix: /oauth2
+  - component:
+      name: workshop7-apps-backend
+    match:
+      authority:
+        exact: ""
+      path:
+        prefix: /login/oauth2
+  - component:
+      name: workshop7-apps-backend
+    match:
+      authority:
+        exact: ""
+      path:
+        prefix: /actuator
+  - component:
+      name: workshop7-apps-frontend
+    match:
+      authority:
+        exact: ""
+      path:
+        prefix: /
 name: peelin-good
 region: tor
 services:
-  - dockerfile_path: apps/frontend/Dockerfile
-    envs:
-      - key: DATABASE_URL
-        scope: RUN_TIME
-        value: ${dev-db-430284.DATABASE_URL}
-    github:
-      branch: main
-      deploy_on_push: false
-      repo: Malekzie/Workshop7
-    http_port: 3000
-    instance_count: 1
-    instance_size_slug: apps-s-1vcpu-1gb
-    name: workshop7-apps-frontend
-    source_dir: apps/frontend
-  - dockerfile_path: apps/backend/Dockerfile
-    envs:
-      - key: SPRING_PROFILES_ACTIVE
-        scope: RUN_AND_BUILD_TIME
-        value: prod
-      - key: SPRING_DATASOURCE_URL
-        scope: RUN_AND_BUILD_TIME
-        type: SECRET
-        value: EV[1:DPPiYRSlAFAgjhZ52jRMGlQX7s95iSlz:/OiWzsPbTPB6WjOMVzlRra8scKm0seFe9D8nDaWv51pW+lLGvv6VdeIbpXzZq67YDDVyGvm8Jt83JiGI5A88BQe3jg8PYRz8qY3gnZRDcvRhXn/Io3DwcI3VS+TYS4dr0oNI1HzvYpd1UCC4H24UraD7MVRjqqZvXLECenphtNqigSMnqKBBuMjZVlYVzZU/OzHwGKb0KTo=]
-      - key: SPRING_DATASOURCE_USERNAME
-        scope: RUN_AND_BUILD_TIME
-        type: SECRET
-        value: EV[1:2j6uUetfzM/kgqQMYTYNteNUfNmzWHGf:VZbemMURXNFB8W1r4sMCIDmjfS4eT90=]
-      - key: SPRING_DATASOURCE_PASSWORD
-        scope: RUN_AND_BUILD_TIME
-        type: SECRET
-        value: EV[1:ytVSNRAfdoVy1ADG/09dpvfDwRlSyxly:vvU1d5E1zP6a8tTlaY6dKfa7fvi1tpcbYD92p0lJOwghGFVsBM/dMQ==]
-      - key: DO_SPACES_ENDPOINT
-        scope: RUN_AND_BUILD_TIME
-        type: SECRET
-        value: EV[1:/KV9971uIWowYvNn9xM6mWDHH3S3gVhR:p66xfDz9zegDo85dhjJKhVfJdHKnAdoxQlKfzUK6AVznb8l6acNWL19mW7+taqVLeLl2+beTWVJCssgx1pTX2BldbcLwOcc=]
-      - key: DO_SPACES_BUCKET
-        scope: RUN_AND_BUILD_TIME
-        value: peelin-good-storage
-      - key: DO_SPACES_KEY
-        scope: RUN_AND_BUILD_TIME
-        type: SECRET
-        value: EV[1:mxuZ1jKtFUkpJA91WRbPIDz5w20jRkZh:nds4K+R8NMO90CSzGjJReoCe7hB5clUv8nDI+EgI9X94L1oc]
-      - key: DO_SPACES_SECRET
-        scope: RUN_AND_BUILD_TIME
-        type: SECRET
-        value: EV[1:pgZThbtTgxEmPV012Xe7Xie897o1mO3h:lY8BF7emU16WnuNeQUaxsTEqA/bnzG1gVgWtunBce5BpCiqGyKPfLJFMfowLglNWZzhuHNhfTcn9yGE=]
-      - key: DO_SPACES_BASE_URL
-        scope: RUN_AND_BUILD_TIME
-        type: SECRET
-        value: EV[1:RjkTXpeJjYsM+G54BNPgBh6OdeqxnmRy:8DQTmCTjBNtEPi/sQcFnkh6lGgk8ztzMQlxMrYkLSWhh1lfVwg4w1Q==]
-      # TODO: After commit, set these in DO console → Settings → App-Level Env Vars (mark as Encrypted).
-      # The backend has no stripe: section in application-prod.yaml, so without these three vars
-      # StripeService.isConfigured() returns false and checkout emits "dev_pi_*" placeholder secrets.
-      - key: STRIPE_SECRET_KEY
-        scope: RUN_AND_BUILD_TIME
-        value: ""
-      - key: STRIPE_WEBHOOK_SECRET
-        scope: RUN_AND_BUILD_TIME
-        value: ""
-      - key: STRIPE_PUBLISHABLE_KEY
-        scope: RUN_AND_BUILD_TIME
-        value: ""
-      # CORS: comma-separated prod frontend origins. Must include protocol + host (no trailing slash).
-      - key: APP_CORS_ORIGINS
-        scope: RUN_AND_BUILD_TIME
-        value: ""
-      # Frontend URL used in emails, OAuth redirects. Set to the public site URL.
-      - key: FRONTEND_URL
-        scope: RUN_AND_BUILD_TIME
-        value: ""
-      # DO Managed Valkey (same cluster as the DB). SSL required — VALKEY_SSL is the only switch
-      # application.yaml reads for TLS. Fill host/port/username/password from DO console → Connection Details.
-      - key: VALKEY_HOST
-        scope: RUN_AND_BUILD_TIME
-        value: ""
-      - key: VALKEY_PORT
-        scope: RUN_AND_BUILD_TIME
-        value: ""
-      - key: VALKEY_USERNAME
-        scope: RUN_AND_BUILD_TIME
-        value: "default"
-      - key: VALKEY_PASSWORD
-        scope: RUN_AND_BUILD_TIME
-        value: ""
-      - key: VALKEY_SSL
-        scope: RUN_AND_BUILD_TIME
-        value: "true"
-    github:
-      branch: main
-      deploy_on_push: false
-      repo: Malekzie/Workshop7
-    health_check:
-      failure_threshold: 24
-      http_path: /actuator/health/liveness
-      initial_delay_seconds: 120
-      period_seconds: 10
-      success_threshold: 1
-      timeout_seconds: 5
-    http_port: 8080
-    instance_count: 1
-    instance_size_slug: apps-s-1vcpu-1gb
-    liveness_health_check:
-      failure_threshold: 24
-      http_path: /actuator/health/liveness
-      initial_delay_seconds: 120
-      period_seconds: 10
-      success_threshold: 1
-      timeout_seconds: 5
-    name: workshop7-apps-backend
-    source_dir: apps/backend
+- dockerfile_path: apps/frontend/Dockerfile
+  envs:
+  - key: DATABASE_URL
+    scope: RUN_TIME
+    value: ${dev-db-430284.DATABASE_URL}
+  github:
+    branch: main
+    repo: Malekzie/Workshop7
+  http_port: 3000
+  instance_count: 1
+  instance_size_slug: apps-s-1vcpu-1gb
+  name: workshop7-apps-frontend
+  source_dir: apps/frontend
+- dockerfile_path: apps/backend/Dockerfile
+  envs:
+  - key: SPRING_PROFILES_ACTIVE
+    scope: RUN_AND_BUILD_TIME
+    value: prod
+  - key: SPRING_DATASOURCE_URL
+    scope: RUN_AND_BUILD_TIME
+    type: SECRET
+    value: EV[1:DPPiYRSlAFAgjhZ52jRMGlQX7s95iSlz:/OiWzsPbTPB6WjOMVzlRra8scKm0seFe9D8nDaWv51pW+lLGvv6VdeIbpXzZq67YDDVyGvm8Jt83JiGI5A88BQe3jg8PYRz8qY3gnZRDcvRhXn/Io3DwcI3VS+TYS4dr0oNI1HzvYpd1UCC4H24UraD7MVRjqqZvXLECenphtNqigSMnqKBBuMjZVlYVzZU/OzHwGKb0KTo=]
+  - key: SPRING_DATASOURCE_USERNAME
+    scope: RUN_AND_BUILD_TIME
+    type: SECRET
+    value: EV[1:2j6uUetfzM/kgqQMYTYNteNUfNmzWHGf:VZbemMURXNFB8W1r4sMCIDmjfS4eT90=]
+  - key: SPRING_DATASOURCE_PASSWORD
+    scope: RUN_AND_BUILD_TIME
+    type: SECRET
+    value: EV[1:ytVSNRAfdoVy1ADG/09dpvfDwRlSyxly:vvU1d5E1zP6a8tTlaY6dKfa7fvi1tpcbYD92p0lJOwghGFVsBM/dMQ==]
+  - key: DO_SPACES_ENDPOINT
+    scope: RUN_AND_BUILD_TIME
+    type: SECRET
+    value: EV[1:/KV9971uIWowYvNn9xM6mWDHH3S3gVhR:p66xfDz9zegDo85dhjJKhVfJdHKnAdoxQlKfzUK6AVznb8l6acNWL19mW7+taqVLeLl2+beTWVJCssgx1pTX2BldbcLwOcc=]
+  - key: DO_SPACES_BUCKET
+    scope: RUN_AND_BUILD_TIME
+    value: peelin-good-storage
+  - key: DO_SPACES_KEY
+    scope: RUN_AND_BUILD_TIME
+    type: SECRET
+    value: EV[1:mxuZ1jKtFUkpJA91WRbPIDz5w20jRkZh:nds4K+R8NMO90CSzGjJReoCe7hB5clUv8nDI+EgI9X94L1oc]
+  - key: DO_SPACES_SECRET
+    scope: RUN_AND_BUILD_TIME
+    type: SECRET
+    value: EV[1:pgZThbtTgxEmPV012Xe7Xie897o1mO3h:lY8BF7emU16WnuNeQUaxsTEqA/bnzG1gVgWtunBce5BpCiqGyKPfLJFMfowLglNWZzhuHNhfTcn9yGE=]
+  - key: DO_SPACES_BASE_URL
+    scope: RUN_AND_BUILD_TIME
+    type: SECRET
+    value: EV[1:RjkTXpeJjYsM+G54BNPgBh6OdeqxnmRy:8DQTmCTjBNtEPi/sQcFnkh6lGgk8ztzMQlxMrYkLSWhh1lfVwg4w1Q==]
+  - key: STRIPE_SECRET_KEY
+    scope: RUN_AND_BUILD_TIME
+    type: SECRET
+    value: EV[1:jbnh3h7RCx+F/Kl3uzd6YluJjGkglKor:zYZxYTcEGKIk+Bdk9zJLDCovfaixjTLfjFMmKw2PRLwsSseuHMjq3yfZMnLA+bgjS7yMCd+YlLEJ5MWdp47XH7dPFuGttWIeRyHdD3bjm22oUNPCozHzJakNIWQg2bTQajvvfR6lkqLcMK4y3WaN6RQr2xCeOk1TV1HT]
+  - key: STRIPE_WEBHOOK_SECRET
+    scope: RUN_AND_BUILD_TIME
+    type: SECRET
+    value: EV[1:RKhfxd2bQMO/HJwWZa6AO4/B//nwHFoy:B7Gab7aXuj6jkugo0equsWXoNmoBtU9UfjGxMDq+ydbBu8jPWBMLEVKRYm8S4eS5ZaOFZ3pY]
+  - key: STRIPE_PUBLISHABLE_KEY
+    scope: RUN_AND_BUILD_TIME
+    value: pk_test_51TH7knIYLyM3vBcTLNFSh57XxoqZKcFBa16Ond9JpHrOTKTmX7kQaDipKHYWH63ourcgZhv2LD2fxQv2flvKxsoR00XHp6ayLK
+  - key: JWT_SECRET
+    scope: RUN_AND_BUILD_TIME
+    type: SECRET
+    value: EV[1:V6FUOsWK9EZRXMomrqkFk2GvbXjpwKYp:hKBnmFeU4A5sX6UcVmxVd9/QGz4T/oN4/y53H4bB1QwDrY5VhlcCUF1AbDcuxymnAfqJ6Se2qyb9PyI=]
+  - key: JWT_EXPIRATION
+    scope: RUN_AND_BUILD_TIME
+    value: "864000000"
+  - key: JWT_ISSUER
+    scope: RUN_AND_BUILD_TIME
+    value: peelin-good
+  - key: APP_CORS_ORIGINS
+    scope: RUN_AND_BUILD_TIME
+    value: https://peelin-good-kdeft.ondigitalocean.app
+  - key: FRONTEND_URL
+    scope: RUN_AND_BUILD_TIME
+    value: https://peelin-good-kdeft.ondigitalocean.app
+  - key: VALKEY_HOST
+    scope: RUN_AND_BUILD_TIME
+    value: peelin-valkey-do-user-33094458-0.j.db.ondigitalocean.com
+  - key: VALKEY_PORT
+    scope: RUN_AND_BUILD_TIME
+    value: "25061"
+  - key: VALKEY_USERNAME
+    scope: RUN_AND_BUILD_TIME
+    value: default
+  - key: VALKEY_PASSWORD
+    scope: RUN_AND_BUILD_TIME
+    type: SECRET
+    value: EV[1:5AGc1rXWq4PMncxt5/yOC7BPHE/OKshq:4BkXzpZiefZDf47C9BrvXPrlGzFVl1K4yJ6G7+q2tQou6JZlJj78OQ==]
+  - key: VALKEY_SSL
+    scope: RUN_AND_BUILD_TIME
+    value: "true"
+  - key: MAIL_HOST
+    scope: RUN_AND_BUILD_TIME
+    value: smtp.gmail.com
+  - key: MAIL_PORT
+    scope: RUN_AND_BUILD_TIME
+    value: "587"
+  - key: MAIL_USERNAME
+    scope: RUN_AND_BUILD_TIME
+    value: peelingoodbakery@gmail.com
+  - key: MAIL_PASSWORD
+    scope: RUN_AND_BUILD_TIME
+    type: SECRET
+    value: EV[1:ojYygyrohKwK3ov/GlEO0DpquKJ1L5gA:a5Puj9Mg5kfAsmQB5GOpHxjbr8CdkOix+3o14quByk4=]
+  - key: MAIL_FROM
+    scope: RUN_AND_BUILD_TIME
+    value: peelingoodbakery@gmail.com
+  - key: GOOGLE_CLIENT_ID
+    scope: RUN_AND_BUILD_TIME
+    type: SECRET
+    value: EV[1:33jCrDpqlSV+PVszM+pLV8BYKXoergLO:1zB1+tKttE5thFkTrcmomtbcUYXbAiXJOGEIYpx3aRRSe5F5t7dnQcdOPLDrR8t8IbmBFrKZFeh4cpEguUki4jYVzMIDpFbS3cGSTy22kGcOqcMmT8PoIA==]
+  - key: GOOGLE_CLIENT_SECRET
+    scope: RUN_AND_BUILD_TIME
+    type: SECRET
+    value: EV[1:XNguTLbKmUnSeJvXKzWl6gJD29DzWKAJ:oqQUw21PvMY3YkCu/54vJ7qlQX3ymvoiMPcRtD12e0B2Srl/Drdimdjv9C7LoBucuUNL]
+  - key: MICROSOFT_CLIENT_ID
+    scope: RUN_AND_BUILD_TIME
+    type: SECRET
+    value: EV[1:6jVGUlN0W5FOKrozYFZXuQmIiKXOF0sd:M1gGt/qfdjrp8PWc+heoa7i9iNqouiw2LljWAjtgOnLqLQTHCzU77EB9fu0Se5oi6mJQXA==]
+  - key: MICROSOFT_CLIENT_SECRET
+    scope: RUN_AND_BUILD_TIME
+    type: SECRET
+    value: EV[1:2CraPMOQZz2KGy76p7gJKVKxtIYTJDzW:HkSEeh0Qt/MbRRVrovRugz/op+KImy3NiXOR3GNfQZWuiuibFJz5jMajTCPUX9ldTK6LV2HXikw=]
+  - key: OPENROUTER_API_KEY
+    scope: RUN_AND_BUILD_TIME
+    type: SECRET
+    value: EV[1:QNJIbJLiFLTco6Emt0M/XpEKl7a2FRJr:xOhQbuIhip+zf+0iW3J7LpGpcxXBApKfEvLJFSTKeZnu3w9i3LYtOSDxIYAXsgtS1oM6rof8igKKg2n+pi5rRoGRjB0kiDB9zMvtgidG/NwqQ/oakAoqk/8=]
+  github:
+    branch: main
+    repo: Malekzie/Workshop7
+  health_check:
+    failure_threshold: 24
+    http_path: /actuator/health/liveness
+    initial_delay_seconds: 120
+    period_seconds: 10
+    success_threshold: 1
+    timeout_seconds: 5
+  http_port: 8080
+  instance_count: 1
+  instance_size_slug: apps-s-1vcpu-1gb
+  liveness_health_check:
+    failure_threshold: 24
+    http_path: /actuator/health/liveness
+    initial_delay_seconds: 120
+    period_seconds: 10
+    success_threshold: 1
+    timeout_seconds: 5
+  name: workshop7-apps-backend
+  source_dir: apps/backend
