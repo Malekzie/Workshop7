@@ -185,7 +185,11 @@ public class OrderService {
             address = customer.getAddress();
         }
 
-        LocalDate pricingDate = req.getPricingLocalDate() != null
+        // pricingLocalDate is only honored for admin/employee callers — otherwise a customer could
+        // pick a past date when their cart's products had a larger product-special discount.
+        boolean staffCaller = user != null
+                && (user.getUserRole() == UserRole.admin || user.getUserRole() == UserRole.employee);
+        LocalDate pricingDate = (staffCaller && req.getPricingLocalDate() != null)
                 ? req.getPricingLocalDate()
                 : LocalDate.now(DEFAULT_PRICING_ZONE);
 
@@ -202,8 +206,11 @@ public class OrderService {
         BigDecimal employeeDiscount = BigDecimal.ZERO;
         BigDecimal total;
 
-        if (req.getManualDiscount() != null) {
-            BigDecimal manual = req.getManualDiscount().max(BigDecimal.ZERO).min(listSubtotal);
+        // manualDiscount is a staff-only override; silently ignore it for customer/guest callers
+        // so a malicious client cannot zero out their grandTotal by posting a huge discount.
+        BigDecimal effectiveManualDiscount = staffCaller ? req.getManualDiscount() : null;
+        if (effectiveManualDiscount != null) {
+            BigDecimal manual = effectiveManualDiscount.max(BigDecimal.ZERO).min(listSubtotal);
             total = listSubtotal.subtract(manual).max(BigDecimal.ZERO);
             tierDiscount = manual;
         } else {
