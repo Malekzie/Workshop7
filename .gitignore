@@ -62,5 +62,9 @@ vite.config.ts.timestamp-*
 CLAUDE.md
 AGENTS.md
 
+# Vendor binaries — download from upstream, never commit
+scripts/*.exe
+scripts/stripe
+scripts/stripe.exe
 # Playwright
 .playwright-mcp

@@ -1,6 +1,7 @@
 package com.sait.peelin.config;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import org.slf4j.Logger;
@@ -31,16 +32,22 @@ public class CacheConfig implements CachingConfigurer {
 
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        // Polymorphic typing is restricted to first-party domain + common JDK value types only.
+        // `DefaultTyping.EVERYTHING` + `allowIfBaseType(Object.class)` was disabled because it
+        // re-enables the Jackson gadget-chain RCE surface (CVE-2017-7525 & successors).
+        BasicPolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
+                .allowIfSubType("com.sait.peelin.")
+                .allowIfSubType("java.util.")
+                .allowIfSubType("java.time.")
+                .allowIfSubType("java.math.")
+                .allowIfSubType("java.lang.")
+                .build();
+
         ObjectMapper mapper = new ObjectMapper();
         mapper.findAndRegisterModules();
-        // PROPERTY (@class inside JSON objects) matches legacy Redis entries; WRAPPER_ARRAY breaks old keys.
-        mapper.activateDefaultTyping(
-                BasicPolymorphicTypeValidator.builder()
-                        .allowIfBaseType(Object.class)
-                        .build(),
-                ObjectMapper.DefaultTyping.EVERYTHING,
-                JsonTypeInfo.As.WRAPPER_ARRAY
-        );
+        mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE);
+        mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+        mapper.activateDefaultTyping(ptv, ObjectMapper.DefaultTyping.NON_FINAL);
 
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofHours(1))

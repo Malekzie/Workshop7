@@ -24,10 +24,10 @@ jobs:
         working-directory: apps/frontend
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
           cache: "npm"
@@ -54,10 +54,10 @@ jobs:
         working-directory: apps/frontend
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
           cache: "npm"
@@ -67,6 +67,15 @@ jobs:
         run: npm ci
 
       - name: Build
+        # SENTRY_AUTH_TOKEN lets sentryVitePlugin upload sourcemaps; SENTRY_RELEASE keys the
+        # upload to the commit SHA so frames resolve at runtime. PUBLIC_SENTRY_RELEASE /
+        # PUBLIC_SENTRY_ENVIRONMENT are baked into the client bundle by Vite so the browser
+        # SDK reports the same release the upload was tagged under.
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_RELEASE: ${{ github.sha }}
+          PUBLIC_SENTRY_RELEASE: ${{ github.sha }}
+          PUBLIC_SENTRY_ENVIRONMENT: ${{ github.event_name == 'pull_request' && 'preview' || 'production' }}
         run: npm run build
 
   docker:
@@ -78,10 +87,10 @@ jobs:
       digest: ${{ steps.push.outputs.digest }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Log in to the Container registry
-        uses: docker/login-action@v3.3.0
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -93,7 +102,7 @@ jobs:
 
       - name: Build and push Docker image
         id: push
-        uses: docker/build-push-action@v6.5.0
+        uses: docker/build-push-action@5176d81f87c23d6fc96624dfdbcd9f3830bbe445 # v6.5.0
         with:
           context: ./apps/frontend
           push: true
@@ -106,10 +115,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Deploy the app
-        uses: digitalocean/app_action/deploy@v2
+        uses: digitalocean/app_action/deploy@0b2a11724d565a7206d1e8aaddcd769cac04c8ec # v2
         env:
           SAMPLE_DIGEST: ${{ needs.docker.outputs.digest }}
         with:
@@ -118,11 +127,15 @@ jobs:
   pr-preview:
     name: PR Preview
     needs: build
-    if: github.event_name == 'pull_request'
+    # B5: skip preview build/deploy for fork PRs so DIGITALOCEAN_ACCESS_TOKEN
+    # can never be reached from a fork-controlled workflow run.
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Build Docker image
         working-directory: apps/frontend
@@ -130,14 +143,14 @@ jobs:
 
       - name: Deploy PR preview
         id: deploy
-        uses: digitalocean/app_action/deploy@v2
+        uses: digitalocean/app_action/deploy@0b2a11724d565a7206d1e8aaddcd769cac04c8ec # v2
         with:
           deploy_pr_preview: "true"
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
       - name: Comment preview URL on PR
         if: success()
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             github.rest.issues.createComment({
@@ -149,7 +162,7 @@ jobs:
 
       - name: Comment failure on PR
         if: failure()
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             github.rest.issues.createComment({
