@@ -209,7 +209,7 @@ public class EmailService {
             .append("</table>");
 
         // Tracking button
-        String trackingUrl = frontendUrl + "/orders/" + esc(order.getOrderNumber());
+        String trackingUrl = frontendUrl + "/profile/orders/" + esc(order.getOrderNumber());
         html.append("<div style='text-align:center;margin-bottom:32px;'>")
             .append("<a href='").append(trackingUrl).append("' ")
             .append("style='display:inline-block;background:#5c3d2e;color:#fff;text-decoration:none;")
