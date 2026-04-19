@@ -5,8 +5,10 @@ services:
         POSTGRES_DB: peelin
         POSTGRES_USER: baker
         POSTGRES_PASSWORD: Password1
+      # Host 5432 is often taken by a local Windows PostgreSQL install; map a distinct
+      # host port so JDBC/psql from Windows reliably reach this container (avoids 28P01).
       ports:
-        - "5432:5432"
+        - "5433:5432"
       volumes:
         - postgres_data:/var/lib/postgresql/data
 

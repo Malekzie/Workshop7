@@ -1,0 +1,27 @@
+IntelliJ data source (local Docker Postgres from this repo)
+===========================================================
+
+Use this JDBC URL (matches Spring dev defaults in application-dev.yaml):
+
+  jdbc:postgresql://localhost:5433/peelin
+
+Optional for local Docker (no TLS on the container): add in URL or Advanced:
+
+  ?sslmode=disable
+
+User: baker
+Password: Password1
+
+If you still see 28P01:
+- Data source -> Options (or driver properties) -> clear saved password; use "Change Credentials", re-enter Password1, Test Connection.
+- Remove duplicate/old data sources that still point at localhost:5432.
+- On Windows, port 5432 is often a separate PostgreSQL install; this project maps Docker to host port 5433 so JDBC hits the container, not the local service.
+
+Proof outside IntelliJ (same path as JDBC):
+
+  set PGPASSWORD=Password1
+  psql -h localhost -p 5433 -U baker -d peelin -c "select current_user;"
+
+Inside-container TCP check (optional):
+
+  docker exec -e PGPASSWORD=Password1 workshop7-postgres-1 psql -h 127.0.0.1 -U baker -d peelin -c "select current_user;"

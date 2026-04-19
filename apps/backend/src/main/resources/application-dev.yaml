@@ -29,7 +29,7 @@ management:
       enabled: false
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/peelin}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/peelin}
     username: ${SPRING_DATASOURCE_USERNAME:baker}
     password: ${SPRING_DATASOURCE_PASSWORD:Password1}
     # Small DO tiers have very few connections for non-superuser roles; keep pool tiny so Flyway + JPA can start.
@@ -48,7 +48,8 @@ spring:
     show-sql: true
   flyway:
     enabled: true
-    locations: classpath:db/migration/core,classpath:db/migration/seed
+    # Same flat layout as prod (see db/migration/*.sql).
+    locations: classpath:db/migration
     validate-on-migrate: false
     repair-on-migrate: true
     connect-retries: 20
