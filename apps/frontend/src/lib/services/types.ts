@@ -32,6 +32,8 @@ export interface ReviewRecord extends ApiRecord {
 	comment?: string | null;
 	status?: string;
 	moderationMessage?: string | null;
+	submittedAt?: string | null;
+	reviewerPhotoUrl?: string | null;
 }
 
 export interface OrderItemRecord extends ApiRecord {

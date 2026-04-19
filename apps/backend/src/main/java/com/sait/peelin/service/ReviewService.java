@@ -300,6 +300,10 @@ public class ReviewService {
             moderationMessage = shortenForClientMessage(r.getModerationRejectionReason().trim());
         }
 
+        String reviewerPhotoUrl = (r.getCustomer() != null && r.getCustomer().getUser() != null)
+                ? r.getCustomer().getUser().getProfilePhotoPath()
+                : null;
+
         boolean verifiedAccount = r.getCustomer() != null && r.getCustomer().getUser() != null;
         boolean verifiedPurchase = verifiedAccount
                 && r.getProduct() != null
@@ -321,7 +325,8 @@ public class ReviewService {
                 reviewerDisplayName(r.getCustomer()),
                 moderationMessage,
                 verifiedPurchase,
-                verifiedAccount
+                verifiedAccount,
+                reviewerPhotoUrl
         );
     }
 

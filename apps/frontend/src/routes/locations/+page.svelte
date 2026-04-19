@@ -121,6 +121,40 @@
 	function stars(rating) {
 		return '★'.repeat(rating) + '☆'.repeat(5 - rating);
 	}
+
+	const avatarColours = [
+		{ bg: '#EEEDFE', text: '#3C3489' },
+		{ bg: '#E1F5EE', text: '#0F6E56' },
+		{ bg: '#E6F1FB', text: '#185FA5' },
+		{ bg: '#FAEEDA', text: '#854F0B' },
+		{ bg: '#FBEAF0', text: '#993556' },
+		{ bg: '#FAECE7', text: '#993C1D' }
+	];
+
+	function getAvatarColours(name) {
+		let hash = 0;
+		for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+		return avatarColours[Math.abs(hash) % avatarColours.length];
+	}
+
+	function getInitials(name) {
+		if (!name) return '';
+		const parts = name.trim().split(/\s+/);
+		return parts.length >= 2
+			? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+			: name.slice(0, 2).toUpperCase();
+	}
+
+	function formatReviewDate(dateStr) {
+		if (!dateStr) return '';
+		const date = new Date(dateStr);
+		const diffDays = Math.floor((Date.now() - date.getTime()) / 86400000);
+		if (diffDays === 0) return 'Today';
+		if (diffDays === 1) return 'Yesterday';
+		if (diffDays < 7) return `${diffDays} days ago`;
+		if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+		return date.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
+	}
 </script>
 
 <!-- Hero -->
@@ -253,23 +287,70 @@
 							<div class="space-y-4">
 								{#each expandedBakeries.has(bakery.id) ? getFilteredReviews(bakery) : getFilteredReviews(bakery).slice(0, 4) as review (review.id)}
 									<div class="rounded-xl border border-border bg-background p-4">
-										<div class="mb-1 flex items-center justify-between">
-											<div class="flex items-center gap-2">
-												<p class="text-sm font-semibold text-foreground">
-													{review.reviewerDisplayName}
-												</p>
-												{#if review.verifiedAccount}
-													<span
-														class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800"
-														>✓ Verified</span
+										<div class="flex items-start gap-3">
+											<!-- Avatar -->
+											{#if review.reviewerPhotoUrl}
+												<img
+													src={review.reviewerPhotoUrl}
+													alt={review.reviewerDisplayName}
+													class="h-9 w-9 shrink-0 rounded-full object-cover"
+												/>
+											{:else if review.verifiedAccount && review.reviewerDisplayName}
+												{@const color = getAvatarColours(review.reviewerDisplayName)}
+												<div
+													class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-medium"
+													style="background-color: {color.bg}; color: {color.text};"
+												>
+													{getInitials(review.reviewerDisplayName)}
+												</div>
+											{:else}
+												<div
+													class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted"
+												>
+													<svg
+														width="16"
+														height="16"
+														viewBox="0 0 24 24"
+														fill="none"
+														stroke="currentColor"
+														stroke-width="2"
+														stroke-linecap="round"
+														stroke-linejoin="round"
+														class="text-muted-foreground"
 													>
+														<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+														<circle cx="12" cy="7" r="4" />
+													</svg>
+												</div>
+											{/if}
+
+											<!-- Content -->
+											<div class="min-w-0 flex-1">
+												<div class="flex flex-wrap items-center gap-1.5">
+													<p class="text-sm font-semibold text-foreground">
+														{review.reviewerDisplayName}
+													</p>
+													{#if review.verifiedAccount}
+														<span
+															class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800"
+														>
+															✓ Verified
+														</span>
+													{/if}
+													{#if review.submittedAt}
+														<span class="ml-auto text-xs text-muted-foreground"
+															>{formatReviewDate(review.submittedAt)}</span
+														>
+													{/if}
+												</div>
+												<p class="text-sm text-yellow-500">{stars(review.rating)}</p>
+												{#if review.comment}
+													<p class="mt-1 text-sm leading-relaxed text-muted-foreground">
+														{review.comment}
+													</p>
 												{/if}
 											</div>
-											<p class="text-sm text-yellow-500">{stars(review.rating)}</p>
 										</div>
-										{#if review.comment}
-											<p class="text-sm leading-relaxed text-muted-foreground">{review.comment}</p>
-										{/if}
 									</div>
 								{/each}
 								{#if getFilteredReviews(bakery).length > 4}
