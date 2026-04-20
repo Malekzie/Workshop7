@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { scaleBand } from 'd3-scale';
+	import { curveLinearClosed } from 'd3-shape';
 	import { onMount } from 'svelte';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import * as Chart from '$lib/components/ui/chart/index.js';
-	import { BarChart, LineChart } from 'layerchart';
+	import { BarChart, LineChart, PieChart, Text } from 'layerchart';
 	import KpiCard from '$lib/components/staff/KpiCard.svelte';
 	import {
 		getBakeryNames,
@@ -17,6 +19,7 @@
 	import { formatPriceCad } from '$lib/utils/money';
 
 	type AnalyticsPoint = { label: string; value: number };
+	type EmployeeSalesPoint = { employee: string; sales: number };
 
 	interface Props {
 		data: { startDate: string; endDate: string };
@@ -44,8 +47,40 @@
 	let salesByEmployeePromise = $state<Promise<AnalyticsPoint[]>>(pending());
 
 	const chartConfig = {
-		value: { label: 'Value', color: '#C25F1A' }
+		employee: { label: 'Employee' },
+		sales: { label: 'Sales', color: '#2C1A0E' },
+		value: { label: 'Revenue', color: '#C25F1A' },
+		units: { label: 'Units Sold', color: '#8A9E7F' }
 	} satisfies Chart.ChartConfig;
+
+	const paletteVars = [
+		'var(--chart-1)',
+		'var(--chart-2)',
+		'var(--chart-3)',
+		'var(--chart-4)',
+		'var(--chart-5)'
+	];
+
+	function withPalette(points: AnalyticsPoint[]) {
+		return points.map((p, i) => ({
+			label: p.label,
+			value: p.value,
+			color: paletteVars[i % paletteVars.length]
+		}));
+	}
+
+	function formatDateLabel(raw: string): string {
+		const date = new Date(raw);
+		if (Number.isNaN(date.getTime())) return raw;
+		return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+	}
+
+	function toEmployeeSalesSeries(points: AnalyticsPoint[]): EmployeeSalesPoint[] {
+		return points.map((point) => ({
+			employee: point.label,
+			sales: point.value
+		}));
+	}
 
 	function loadData() {
 		const bakery = selectedBakery || undefined;
@@ -167,14 +202,36 @@
 					{#if revenueOverTime.length === 0}
 						<p class="py-8 text-center text-xs text-muted-foreground">No data</p>
 					{:else}
-						<Chart.Container config={chartConfig} class="h-48 w-full">
+						<Chart.Container config={chartConfig} class="h-56 w-full">
 							<LineChart
 								data={revenueOverTime}
 								x="label"
 								y="value"
 								axis="x"
 								series={[{ key: 'value', label: 'Revenue', color: '#C25F1A' }]}
-							/>
+								points={{ r: 3, fill: '#C25F1A' }}
+								padding={{ bottom: 24, left: 8, right: 8 }}
+								props={{
+									xAxis: {
+										format: formatDateLabel,
+										tickLength: 4,
+										ticks: (scale: { domain: () => unknown[] }) => {
+											const domain = scale.domain();
+											const max = 8;
+											if (domain.length <= max) return domain;
+											const stride = Math.ceil(domain.length / max);
+											return domain.filter((_, i) => i % stride === 0);
+										}
+									},
+									yAxis: {
+										format: (v: number) => formatPriceCad(v)
+									}
+								}}
+							>
+								{#snippet tooltip()}
+									<Chart.Tooltip labelFormatter={(d: unknown) => formatDateLabel(String(d))} />
+								{/snippet}
+							</LineChart>
 						</Chart.Container>
 					{/if}
 				{:catch}
@@ -187,20 +244,56 @@
 				{#await revenueByBakeryPromise}
 					<Skeleton class="h-48 rounded-xl" />
 				{:then revenueByBakery}
+					{@const revenueByBakeryChart = withPalette(revenueByBakery)}
+					{@const totalBakeryRevenue = revenueByBakery.reduce((sum, p) => sum + p.value, 0)}
 					{#if revenueByBakery.length === 0}
 						<p class="py-8 text-center text-xs text-muted-foreground">No data</p>
 					{:else}
-						<Chart.Container config={chartConfig} class="h-64 w-full">
-							<BarChart
-								data={revenueByBakery}
-								orientation="horizontal"
-								y="label"
-								x="value"
-								bandPadding={0.3}
-								axis="y"
-								padding={{ left: 120 }}
-								series={[{ key: 'value', label: 'Revenue', color: '#C25F1A' }]}
-							/>
+						<Chart.Container config={chartConfig} class="mx-auto aspect-square max-h-65">
+							<PieChart
+								data={revenueByBakeryChart}
+								key="label"
+								value="value"
+								c="color"
+								innerRadius={70}
+								padding={24}
+								props={{ pie: { motion: 'tween', cornerRadius: 4, padAngle: 0.01 } }}
+							>
+								{#snippet aboveMarks()}
+									<Text
+										value={formatPriceCad(totalBakeryRevenue)}
+										textAnchor="middle"
+										verticalAnchor="middle"
+										class="fill-foreground text-xl! font-bold"
+										dy={-2}
+									/>
+									<Text
+										value="Total"
+										textAnchor="middle"
+										verticalAnchor="middle"
+										class="fill-muted-foreground! text-xs"
+										dy={18}
+									/>
+								{/snippet}
+								{#snippet tooltip()}
+									<Chart.Tooltip hideLabel hideIndicator class="min-w-48!">
+										{#snippet formatter({ value, item })}
+											<div class="flex w-full items-center justify-between gap-6 py-0.5">
+												<div class="flex items-center gap-2">
+													<span
+														class="size-2.5 shrink-0 rounded-[2px]"
+														style="background-color: {item.color}"
+													></span>
+													<span class="text-muted-foreground">{item.key}</span>
+												</div>
+												<span class="font-mono font-medium text-foreground tabular-nums">
+													{formatPriceCad(Number(value))}
+												</span>
+											</div>
+										{/snippet}
+									</Chart.Tooltip>
+								{/snippet}
+							</PieChart>
 						</Chart.Container>
 					{/if}
 				{:catch}
@@ -222,11 +315,27 @@
 								orientation="horizontal"
 								y="label"
 								x="value"
-								bandPadding={0.3}
+								yScale={scaleBand().padding(0.25)}
 								axis="y"
-								padding={{ left: 140 }}
-								series={[{ key: 'value', label: 'Units Sold', color: '#8A9E7F' }]}
-							/>
+								padding={{ left: 140, right: 32 }}
+								series={[{ key: 'value', label: 'Units Sold', color: 'var(--color-units)' }]}
+								labels={{
+									offset: 8,
+									class: 'fill-foreground text-xs font-medium tabular-nums'
+								}}
+								props={{
+									bars: { stroke: 'none', rounded: 'all', radius: 6, fillOpacity: 0.9 },
+									yAxis: {
+										tickLength: 0,
+										format: (d: string) => (d.length > 18 ? `${d.slice(0, 18)}…` : d),
+										tickLabelProps: { class: 'fill-muted-foreground text-[11px]' }
+									}
+								}}
+							>
+								{#snippet tooltip()}
+									<Chart.Tooltip indicator="line" />
+								{/snippet}
+							</BarChart>
 						</Chart.Container>
 					{/if}
 				{:catch}
@@ -239,10 +348,56 @@
 				{#await salesByEmployeePromise}
 					<Skeleton class="h-48 rounded-xl" />
 				{:then salesByEmployee}
+					{@const salesByEmployeeChart = toEmployeeSalesSeries(salesByEmployee)}
 					{#if salesByEmployee.length === 0}
 						<p class="py-8 text-center text-xs text-muted-foreground">No data</p>
 					{:else}
-						<Chart.Container config={chartConfig} class="h-64 w-full">
+						<Chart.Container config={chartConfig} class="mx-auto aspect-square max-h-[260px]">
+							<LineChart
+								data={salesByEmployeeChart}
+								series={[{ key: 'sales', label: 'Sales', color: '#2C1A0E' }]}
+								radial
+								x="employee"
+								y="sales"
+								xScale={scaleBand()}
+								points={{ r: 4, fill: '#2C1A0E' }}
+								padding={12}
+								props={{
+									spline: {
+										curve: curveLinearClosed,
+										fill: 'var(--color-sales)',
+										fillOpacity: 0.25,
+										stroke: 'var(--color-sales)',
+										strokeWidth: 2,
+										motion: 'tween'
+									},
+									xAxis: {
+										tickLength: 0
+									},
+									yAxis: {
+										format: () => ''
+									},
+									grid: {
+										radialY: 'linear'
+									},
+									tooltip: {
+										context: {
+											mode: 'voronoi'
+										}
+									},
+									highlight: {
+										lines: true,
+										points: true
+									}
+								}}
+							>
+								{#snippet tooltip()}
+									<Chart.Tooltip label="employee" />
+								{/snippet}
+							</LineChart>
+						</Chart.Container>
+
+						<!-- <Chart.Container config={chartConfig} class="h-64 w-full">
 							<BarChart
 								data={salesByEmployee}
 								orientation="horizontal"
@@ -253,7 +408,7 @@
 								padding={{ left: 120 }}
 								series={[{ key: 'value', label: 'Sales ($)', color: '#2C1A0E' }]}
 							/>
-						</Chart.Container>
+						</Chart.Container> -->
 					{/if}
 				{:catch}
 					<p class="py-4 text-center text-xs text-destructive">Failed to load chart</p>
