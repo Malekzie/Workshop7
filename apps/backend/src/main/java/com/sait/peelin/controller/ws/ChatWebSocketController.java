@@ -2,6 +2,7 @@ package com.sait.peelin.controller.ws;
 
 import com.sait.peelin.dto.v1.TypingPayload;
 import com.sait.peelin.service.ChatService;
+import com.sait.peelin.service.ChatTopics;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -17,8 +18,7 @@ public class ChatWebSocketController {
 
     @MessageMapping("/chat/thread/{threadId}/typing")
     public void typing(@DestinationVariable Integer threadId, TypingPayload payload) {
-        messagingTemplate.convertAndSend(
-                "/topic/chat/thread/" + threadId + "/typing", payload);
+        messagingTemplate.convertAndSend(ChatTopics.typing(threadId), payload);
     }
 
     @MessageMapping("/chat/thread/{threadId}/read")

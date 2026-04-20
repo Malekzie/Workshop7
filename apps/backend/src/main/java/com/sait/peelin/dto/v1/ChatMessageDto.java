@@ -10,5 +10,6 @@ public record ChatMessageDto(
         String text,
         OffsetDateTime sentAt,
         boolean read,
-        boolean isSystem
+        boolean isSystem,
+        boolean staffOnly
 ) {}

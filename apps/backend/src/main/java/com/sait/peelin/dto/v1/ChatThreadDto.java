@@ -9,6 +9,7 @@ public record ChatThreadDto(
         String customerDisplayName,
         String customerUsername,
         String customerEmail,
+        String customerProfilePhotoPath,
         UUID employeeUserId,
         String status,
         String category,

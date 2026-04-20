@@ -48,7 +48,7 @@ class StaffMessageControllerTest {
     UUID otherUser = UUID.randomUUID();
 
     StaffConversationDto sampleConvo() {
-        return new StaffConversationDto(1, otherUser, "bob", OffsetDateTime.now(), 0);
+        return new StaffConversationDto(1, otherUser, "bob", null, "employee", OffsetDateTime.now(), 0);
     }
 
     StaffMessageDto sampleMsg() {

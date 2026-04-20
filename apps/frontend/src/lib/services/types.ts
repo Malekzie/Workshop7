@@ -137,6 +137,7 @@ export interface ChatThread {
 	customerDisplayName: string | null;
 	customerUsername: string;
 	customerEmail: string | null;
+	customerProfilePhotoPath: string | null;
 	employeeUserId: string | null;
 	status: string;
 	category: string;
@@ -152,12 +153,16 @@ export interface ChatMessage {
 	text: string;
 	sentAt: string;
 	read: boolean;
+	isSystem?: boolean;
+	staffOnly?: boolean;
 }
 
 export interface StaffConversation {
 	id: number;
 	otherUserId: string;
 	otherUsername: string;
+	otherProfilePhotoPath: string | null;
+	otherRole: string | null;
 	updatedAt: string;
 	unreadCount: number;
 }

@@ -10,6 +10,7 @@
 		closeThread
 	} from '$lib/services/chat';
 	import { subscribeWs, publishWs } from '$lib/services/ws';
+	import { ChatTopics } from '$lib/services/chatTopics';
 	import ChatCategoryPicker from './ChatCategoryPicker.svelte';
 	import ChatMessageList from './ChatMessageList.svelte';
 	import ChatComposer from './ChatComposer.svelte';
@@ -60,7 +61,7 @@
 		unsubTyping?.();
 		unsubStatus?.();
 
-		unsubMessages = subscribeWs(`/topic/chat/thread/${t.id}/messages`, (data) => {
+		unsubMessages = subscribeWs(ChatTopics.messages(t.id), (data) => {
 			const msg = data as ChatMessage;
 			// Deduplicate by id in case REST response and WS push overlap
 			if (!messages.find((m) => m.id === msg.id)) {
@@ -68,7 +69,7 @@
 			}
 		});
 
-		unsubTyping = subscribeWs(`/topic/chat/thread/${t.id}/typing`, (data) => {
+		unsubTyping = subscribeWs(ChatTopics.typing(t.id), (data) => {
 			const payload = data as TypingPayload;
 			if (payload.userId === $user?.userId) return;
 			typingLabel = 'Agent';
@@ -78,7 +79,7 @@
 			}, 3000);
 		});
 
-		unsubStatus = subscribeWs(`/topic/chat/thread/${t.id}/status`, (data) => {
+		unsubStatus = subscribeWs(ChatTopics.status(t.id), (data) => {
 			const updated = data as ChatThread;
 			if (updated.status === 'closed' && thread?.id === updated.id) {
 				thread = updated;
@@ -165,7 +166,7 @@
 
 	function handleTyping() {
 		if (!thread || !$user) return;
-		publishWs(`/app/chat/thread/${thread.id}/typing`, {
+		publishWs(ChatTopics.typingPublish(thread.id), {
 			userId: $user.userId,
 			typing: true
 		});
@@ -186,13 +187,32 @@
 				class="flex h-[480px] w-80 flex-col overflow-hidden rounded-2xl border border-[#2C1A0E]/10 bg-[#FAF7F2] shadow-2xl dark:border-[#FAF7F2]/10 dark:bg-[#2C1A0E]"
 			>
 				<!-- Header -->
-				<div class="flex shrink-0 items-center justify-between bg-[#2C1A0E] px-4 py-3">
-					<p class="text-sm font-semibold text-[#FAF7F2]">Support Chat</p>
+				<div class="flex shrink-0 items-start justify-between gap-3 bg-[#2C1A0E] px-4 py-3">
+					<div class="min-w-0 flex-1">
+						<div class="flex items-center gap-2">
+							<span class="relative flex h-2 w-2">
+								<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#8A9E7F] opacity-75"></span>
+								<span class="relative inline-flex h-2 w-2 rounded-full bg-[#8A9E7F]"></span>
+							</span>
+							<p class="text-sm font-semibold text-[#FAF7F2]">Peelin' Good Support</p>
+						</div>
+						<p class="mt-0.5 text-[11px] text-[#FAF7F2]/60">
+							{#if thread?.status === 'closed'}
+								Conversation ended
+							{:else if thread?.employeeUserId}
+								Agent connected · replies in minutes
+							{:else if thread}
+								Waiting for an agent · typically under 5 min
+							{:else}
+								We typically reply in a few minutes
+							{/if}
+						</p>
+					</div>
 					<button
 						onclick={() => {
 							open = false;
 						}}
-						class="rounded p-0.5 text-[#FAF7F2]/70 hover:text-[#FAF7F2]"
+						class="shrink-0 rounded p-0.5 text-[#FAF7F2]/70 hover:text-[#FAF7F2]"
 						aria-label="Close chat"
 					>
 						<X class="h-4 w-4" />

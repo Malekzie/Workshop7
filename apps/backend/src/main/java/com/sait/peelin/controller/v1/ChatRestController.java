@@ -81,6 +81,25 @@ public class ChatRestController {
         return chatService.closeThread(threadId);
     }
 
+    record TransferRequest(java.util.UUID employeeUserId) {}
+
+    @PostMapping("/threads/{threadId}/transfer")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
+    public ChatThreadDto transfer(@PathVariable Integer threadId,
+                                  @RequestBody TransferRequest req) {
+        if (req == null || req.employeeUserId() == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "employeeUserId required");
+        }
+        return chatService.transferThread(threadId, req.employeeUserId());
+    }
+
+    @PostMapping("/threads/{threadId}/reopen")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ChatThreadDto reopen(@PathVariable Integer threadId) {
+        return chatService.reopenThread(threadId);
+    }
+
     @GetMapping("/staff/me/specialties")
     @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
     public List<String> mySpecialties() {

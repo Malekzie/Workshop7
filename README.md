@@ -303,7 +303,7 @@ Common Spring Boot environment variables:
 
 | Variable | Description |
 | --- | --- |
-| `SPRING_DATASOURCE_URL` | JDBC connection string (e.g., `jdbc:postgresql://localhost:5432/peelin`) |
+| `SPRING_DATASOURCE_URL` | JDBC connection string (e.g., `jdbc:postgresql://localhost:5433/peelin`; see `intellij-local-postgres.txt`) |
 | `SPRING_DATASOURCE_USERNAME` | Database username |
 | `SPRING_DATASOURCE_PASSWORD` | Database password |
 

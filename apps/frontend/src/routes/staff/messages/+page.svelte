@@ -14,7 +14,21 @@
     import ChatMessageList from '$lib/components/chat/ChatMessageList.svelte';
     import ChatComposer from '$lib/components/chat/ChatComposer.svelte';
     import type { StaffConversation, StaffMessage, TypingPayload } from '$lib/services/types';
+    import { Avatar, AvatarImage, AvatarFallback } from '$lib/components/ui/avatar';
     import { UserPlus } from '@lucide/svelte';
+
+    function initialsOf(name: string | null | undefined, fallback = '?'): string {
+        const source = (name ?? '').trim();
+        if (!source) return fallback;
+        const parts = source.split(/\s+/).filter(Boolean);
+        if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+
+    function prettyRole(role: string | null | undefined): string {
+        if (!role) return '';
+        return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+    }
 
     let conversations = $state<StaffConversation[]>([]);
     let selectedConvo = $state<StaffConversation | null>(null);
@@ -245,19 +259,32 @@
                 {#each conversations as c (c.id)}
                     <button
                         onclick={() => selectConvo(c)}
-                        class="w-full border-b border-border px-4 py-3 text-left transition-colors hover:bg-muted {selectedConvo?.id === c.id
+                        class="flex w-full items-center gap-3 border-b border-border px-4 py-3 text-left transition-colors hover:bg-muted {selectedConvo?.id === c.id
                             ? 'bg-muted'
                             : ''}"
                     >
-                        <div class="flex items-center justify-between">
-                            <p class="text-sm font-medium text-foreground">{c.otherUsername}</p>
-                            {#if c.unreadCount > 0}
-                                <span class="rounded-full bg-[#C4714A] px-1.5 py-0.5 text-[10px] font-bold text-white">
-                                    {c.unreadCount}
-                                </span>
-                            {/if}
+                        <Avatar class="h-9 w-9 shrink-0">
+                            <AvatarImage
+                                src={c.otherProfilePhotoPath ?? undefined}
+                                alt={c.otherUsername}
+                            />
+                            <AvatarFallback class="bg-[#8A9E7F] text-xs font-semibold text-white">
+                                {initialsOf(c.otherUsername)}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center justify-between gap-2">
+                                <p class="truncate text-sm font-medium text-foreground">{c.otherUsername}</p>
+                                {#if c.unreadCount > 0}
+                                    <span class="rounded-full bg-[#C4714A] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                                        {c.unreadCount}
+                                    </span>
+                                {/if}
+                            </div>
+                            <p class="mt-0.5 truncate text-xs text-muted-foreground">
+                                {#if c.otherRole}{prettyRole(c.otherRole)} · {/if}{formatUpdated(c.updatedAt)}
+                            </p>
                         </div>
-                        <p class="mt-0.5 text-xs text-muted-foreground">{formatUpdated(c.updatedAt)}</p>
                     </button>
                 {/each}
             {/if}
@@ -273,8 +300,23 @@
         {:else}
             <!-- DM header -->
             <div class="flex shrink-0 items-center border-b border-border bg-card px-6 py-3">
-                <div>
-                    <p class="text-sm font-semibold text-foreground">{selectedConvo.otherUsername}</p>
+                <div class="flex items-center gap-3">
+                    <Avatar class="h-11 w-11">
+                        <AvatarImage
+                            src={selectedConvo.otherProfilePhotoPath ?? undefined}
+                            alt={selectedConvo.otherUsername}
+                        />
+                        <AvatarFallback class="bg-[#8A9E7F] text-sm font-semibold text-white">
+                            {initialsOf(selectedConvo.otherUsername)}
+                        </AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <p class="text-sm font-semibold text-foreground">{selectedConvo.otherUsername}</p>
+                        <p class="text-xs text-muted-foreground">
+                            {#if selectedConvo.otherRole}{prettyRole(selectedConvo.otherRole)}{:else}Staff{/if}
+                            · Direct message
+                        </p>
+                    </div>
                 </div>
                 {#if sendError}
                     <p class="ml-4 text-xs text-destructive">{sendError}</p>

@@ -18,6 +18,12 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Intege
     @EntityGraph(attributePaths = {"sender"})
     List<ChatMessage> findByThread_IdAndThread_CustomerUser_UserIdOrderBySentAtAsc(Integer threadId, UUID customerUserId);
 
+    @EntityGraph(attributePaths = {"sender"})
+    List<ChatMessage> findByThread_IdAndIsStaffOnlyFalseOrderBySentAtAsc(Integer threadId);
+
+    @EntityGraph(attributePaths = {"sender"})
+    List<ChatMessage> findByThread_IdAndThread_CustomerUser_UserIdAndIsStaffOnlyFalseOrderBySentAtAsc(Integer threadId, UUID customerUserId);
+
     @Modifying
     @Query("UPDATE ChatMessage m SET m.isRead = true WHERE m.thread.id = :threadId AND m.sender.userId <> :senderId AND m.isRead = false")
     int markAllReadForThread(@Param("threadId") Integer threadId, @Param("senderId") UUID senderId);

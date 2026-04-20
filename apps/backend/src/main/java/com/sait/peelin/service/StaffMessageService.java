@@ -156,6 +156,8 @@ public class StaffMessageService {
                 conv.getId(), myUserId).size();
         return new StaffConversationDto(
                 conv.getId(), other.getUserId(), other.getUsername(),
+                other.getProfilePhotoPath(),
+                other.getUserRole() != null ? other.getUserRole().name() : null,
                 conv.getUpdatedAt(), unread);
     }
 
