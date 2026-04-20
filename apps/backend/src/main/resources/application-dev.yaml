@@ -29,7 +29,7 @@ management:
       enabled: false
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/peelin}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/peelin}
     username: ${SPRING_DATASOURCE_USERNAME:baker}
     password: ${SPRING_DATASOURCE_PASSWORD:Password1}
     # Small DO tiers have very few connections for non-superuser roles; keep pool tiny so Flyway + JPA can start.
