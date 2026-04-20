@@ -17,5 +17,6 @@ public record EmployeeDto(
         Integer addressId,
         AddressDto address,
         String profilePhotoPath,
-        boolean photoApprovalPending
+        boolean photoApprovalPending,
+        boolean customerLinkEligible
 ) {}

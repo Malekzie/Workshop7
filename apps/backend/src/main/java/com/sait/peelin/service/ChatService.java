@@ -87,7 +87,7 @@ public class ChatService {
     }
 
     @Transactional
-    public ChatThreadDto getOrCreateOpenThreadForCustomer() {
+    public ChatThreadDto getOpenThreadForCustomer() {
         User u = currentUserService.requireUser();
         if (u.getUserRole() != UserRole.customer) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
@@ -95,14 +95,7 @@ public class ChatService {
         return java.util.Optional.ofNullable(chatLookupCacheService.findOpenThreadIdForCustomer(u.getUserId()))
                 .flatMap(chatThreadRepository::findById)
                 .map(this::threadDto)
-                .orElseGet(() -> {
-                    ChatThread created = createThreadEntity(u, "general");
-                    created = applyAutoRouting(created);
-                    chatLookupCacheService.evictOpenThreadForCustomer(u.getUserId());
-                    ChatThreadDto dto = threadDto(created);
-                    messagingTemplate.convertAndSend(ChatTopics.NEW_THREADS, dto);
-                    return dto;
-                });
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
     @Transactional

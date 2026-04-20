@@ -49,7 +49,7 @@ public class ChatRestController {
 
     @GetMapping("/threads/me/open")
     public ChatThreadDto myOpenThread() {
-        return chatService.getOrCreateOpenThreadForCustomer();
+        return chatService.getOpenThreadForCustomer();
     }
 
     @GetMapping("/threads/{threadId}/messages")

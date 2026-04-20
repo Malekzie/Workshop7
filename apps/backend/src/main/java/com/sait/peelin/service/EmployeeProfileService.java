@@ -7,6 +7,7 @@ import com.sait.peelin.model.Address;
 import com.sait.peelin.model.Employee;
 import com.sait.peelin.model.User;
 import com.sait.peelin.repository.AddressRepository;
+import com.sait.peelin.repository.EmployeeCustomerLinkRepository;
 import com.sait.peelin.repository.EmployeeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -25,6 +26,7 @@ public class EmployeeProfileService {
 
     private final EmployeeRepository employeeRepository;
     private final AddressRepository addressRepository;
+    private final EmployeeCustomerLinkRepository employeeCustomerLinkRepository;
     private final CurrentUserService currentUserService;
     private final LinkedProfileSyncService linkedProfileSyncService;
 
@@ -104,7 +106,8 @@ public class EmployeeProfileService {
                 e.getAddress().getId(),
                 CatalogMapper.address(e.getAddress()),
                 e.getUser() != null ? e.getUser().getProfilePhotoPath() : null,
-                e.getUser() != null && Boolean.TRUE.equals(e.getUser().getPhotoApprovalPending())
+                e.getUser() != null && Boolean.TRUE.equals(e.getUser().getPhotoApprovalPending()),
+                !employeeCustomerLinkRepository.existsByEmployee_Id(e.getId())
         );
     }
 }
