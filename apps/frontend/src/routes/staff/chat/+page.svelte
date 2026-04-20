@@ -7,14 +7,25 @@
 		postMessage,
 		assignThread,
 		closeThread,
-		markThreadRead
+		markThreadRead,
+		transferThread
 	} from '$lib/services/chat';
+	import { listRecipients, type StaffRecipient } from '$lib/services/staff-messages';
 	import { subscribeWs, publishWs } from '$lib/services/ws';
 	import ChatMessageList from '$lib/components/chat/ChatMessageList.svelte';
 	import ChatComposer from '$lib/components/chat/ChatComposer.svelte';
 	import type { ChatThread, ChatMessage, TypingPayload } from '$lib/services/types';
 	import Button from '$lib/components/ui/button/button.svelte';
+	import { Avatar, AvatarImage, AvatarFallback } from '$lib/components/ui/avatar';
 	import { PanelLeftClose, PanelLeftOpen } from '@lucide/svelte';
+
+	function initialsOf(name: string | null | undefined, fallback = '?'): string {
+		const source = (name ?? '').trim();
+		if (!source) return fallback;
+		const parts = source.split(/\s+/).filter(Boolean);
+		if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+		return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+	}
 
 	const CATEGORIES = [
 		{ value: '', label: 'All' },
@@ -36,7 +47,28 @@
 	let confirmClose = $state(false);
 	let inboxOpen = $state(true);
 
+	let showTransfer = $state(false);
+	let transferStaff = $state<StaffRecipient[]>([]);
+	let transferFilter = $state('');
+	let transferLoading = $state(false);
+	let transferSubmitting = $state(false);
+
+	const filteredTransferStaff = $derived(
+		transferStaff.filter((s) =>
+			s.username.toLowerCase().includes(transferFilter.toLowerCase())
+		)
+	);
+
+	const isAssignedToMe = $derived(
+		!!selectedThread &&
+			!!$user &&
+			selectedThread.employeeUserId != null &&
+			String(selectedThread.employeeUserId).toLowerCase() ===
+				String($user.userId).toLowerCase()
+	);
+
 	let unsubMessages: (() => void) | null = null;
+	let unsubStaffMessages: (() => void) | null = null;
 	let unsubTyping: (() => void) | null = null;
 	let unsubStatus: (() => void) | null = null;
 	let unsubNewThreads: (() => void) | null = null;
@@ -70,6 +102,7 @@
 		loadingMessages = true;
 
 		unsubMessages?.();
+		unsubStaffMessages?.();
 		unsubTyping?.();
 		unsubStatus?.();
 
@@ -83,6 +116,13 @@
 		}
 
 		unsubMessages = subscribeWs(`/topic/chat/thread/${t.id}/messages`, (data) => {
+			const msg = data as ChatMessage;
+			if (!messages.find((m) => m.id === msg.id)) {
+				messages = [...messages, msg];
+			}
+		});
+
+		unsubStaffMessages = subscribeWs(`/topic/chat/thread/${t.id}/staff-messages`, (data) => {
 			const msg = data as ChatMessage;
 			if (!messages.find((m) => m.id === msg.id)) {
 				messages = [...messages, msg];
@@ -144,6 +184,44 @@
 		}
 	}
 
+	async function openTransferPicker() {
+		showTransfer = true;
+		transferFilter = '';
+		actionError = '';
+		if (transferStaff.length > 0) return;
+		transferLoading = true;
+		try {
+			transferStaff = await listRecipients();
+		} catch {
+			transferStaff = [];
+			actionError = 'Could not load staff list.';
+		} finally {
+			transferLoading = false;
+		}
+	}
+
+	async function handleTransfer(target: StaffRecipient) {
+		if (!selectedThread || transferSubmitting) return;
+		transferSubmitting = true;
+		actionError = '';
+		try {
+			const updated = await transferThread(selectedThread.id, target.userId);
+			// After transfer, the thread leaves my inbox.
+			threads = threads.filter((t) => t.id !== updated.id);
+			selectedThread = null;
+			messages = [];
+			showTransfer = false;
+			unsubMessages?.();
+			unsubStaffMessages?.();
+			unsubTyping?.();
+			unsubStatus?.();
+		} catch {
+			actionError = 'Failed to transfer.';
+		} finally {
+			transferSubmitting = false;
+		}
+	}
+
 	async function handleClose() {
 		if (!selectedThread) return;
 		confirmClose = false;
@@ -174,6 +252,7 @@
 
 	onDestroy(() => {
 		unsubMessages?.();
+		unsubStaffMessages?.();
 		unsubTyping?.();
 		unsubStatus?.();
 		unsubNewThreads?.();
@@ -236,16 +315,29 @@
 					{#each threads as t (t.id)}
 						<button
 							onclick={() => selectThread(t)}
-							class="w-full border-b border-border p-4 text-left transition-colors hover:bg-muted {selectedThread?.id ===
+							class="flex w-full items-center gap-3 border-b border-border p-4 text-left transition-colors hover:bg-muted {selectedThread?.id ===
 							t.id
 								? 'bg-muted'
 								: ''}"
 						>
-							<p class="truncate text-sm font-medium text-foreground">
-								{t.customerDisplayName ?? t.customerUsername}
-							</p>
-							<p class="mt-0.5 text-xs text-muted-foreground">{categoryLabel(t.category)}</p>
-							<p class="mt-0.5 text-[10px] text-muted-foreground">{formatUpdated(t.updatedAt)}</p>
+							<Avatar class="h-9 w-9 shrink-0">
+								<AvatarImage
+									src={t.customerProfilePhotoPath ?? undefined}
+									alt={t.customerDisplayName ?? t.customerUsername}
+								/>
+								<AvatarFallback class="bg-[#8A9E7F] text-xs font-semibold text-white">
+									{initialsOf(t.customerDisplayName ?? t.customerUsername)}
+								</AvatarFallback>
+							</Avatar>
+							<div class="min-w-0 flex-1">
+								<p class="truncate text-sm font-medium text-foreground">
+									{t.customerDisplayName ?? t.customerUsername}
+								</p>
+								<p class="truncate text-xs text-muted-foreground">@{t.customerUsername}</p>
+								<p class="mt-0.5 text-[10px] text-muted-foreground">
+									{categoryLabel(t.category)} · {formatUpdated(t.updatedAt)}
+								</p>
+							</div>
 						</button>
 					{/each}
 				{/if}
@@ -275,11 +367,34 @@
 			<div
 				class="flex shrink-0 items-center justify-between border-b border-border bg-card px-6 py-3"
 			>
-				<div>
-					<p class="text-sm font-semibold text-foreground">
-						{selectedThread.customerDisplayName ?? selectedThread.customerUsername}
-					</p>
-					<p class="text-xs text-muted-foreground">{categoryLabel(selectedThread.category)}</p>
+				<div class="flex items-center gap-3">
+					<Avatar class="h-11 w-11">
+						<AvatarImage
+							src={selectedThread.customerProfilePhotoPath ?? undefined}
+							alt={selectedThread.customerDisplayName ?? selectedThread.customerUsername}
+						/>
+						<AvatarFallback class="bg-[#8A9E7F] text-sm font-semibold text-white">
+							{initialsOf(
+								selectedThread.customerDisplayName ?? selectedThread.customerUsername
+							)}
+						</AvatarFallback>
+					</Avatar>
+					<div>
+						<p class="text-sm font-semibold text-foreground">
+							{selectedThread.customerDisplayName ?? selectedThread.customerUsername}
+						</p>
+						<p class="text-xs text-muted-foreground">
+							@{selectedThread.customerUsername} ·
+							{categoryLabel(selectedThread.category)}
+							{#if selectedThread.status === 'closed'}
+								· <span class="text-[#C4714A]">closed</span>
+							{:else if selectedThread.employeeUserId}
+								· <span class="text-[#8A9E7F]">assigned</span>
+							{:else}
+								· <span class="text-[#C4714A]">unassigned</span>
+							{/if}
+						</p>
+					</div>
 				</div>
 				<div class="flex items-center gap-2">
 					{#if actionError}
@@ -292,6 +407,14 @@
 								class="rounded-lg bg-[#8A9E7F] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#7a8e6f]"
 							>
 								Assign to me
+							</button>
+						{/if}
+						{#if isAssignedToMe}
+							<button
+								onclick={openTransferPicker}
+								class="rounded-lg border border-[#8A9E7F] px-3 py-1.5 text-xs font-medium text-[#8A9E7F] transition-colors hover:bg-[#8A9E7F]/10"
+							>
+								Transfer
 							</button>
 						{/if}
 						{#if confirmClose}
@@ -323,6 +446,48 @@
 					{/if}
 				</div>
 			</div>
+
+			{#if showTransfer}
+				<div class="border-b border-border bg-muted/30 p-3">
+					<div class="mb-2 flex items-center justify-between">
+						<p class="text-xs font-medium text-foreground">Transfer this conversation to:</p>
+						<button
+							onclick={() => {
+								showTransfer = false;
+							}}
+							class="text-xs text-muted-foreground hover:text-foreground"
+						>
+							Cancel
+						</button>
+					</div>
+					<input
+						type="text"
+						bind:value={transferFilter}
+						placeholder="Search staff..."
+						class="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground outline-none focus:border-[#C4714A]"
+					/>
+					<div class="mt-2 max-h-48 overflow-y-auto">
+						{#if transferLoading}
+							<p class="py-2 text-center text-xs text-muted-foreground">Loading...</p>
+						{:else if filteredTransferStaff.length === 0}
+							<p class="py-2 text-center text-xs text-muted-foreground">No staff found</p>
+						{:else}
+							{#each filteredTransferStaff as su (su.userId)}
+								<button
+									onclick={() => handleTransfer(su)}
+									disabled={transferSubmitting}
+									class="w-full rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted disabled:opacity-50"
+								>
+									{su.username}
+									{#if su.role}<span class="ml-1 text-xs text-muted-foreground capitalize"
+											>({su.role.toLowerCase()})</span
+										>{/if}
+								</button>
+							{/each}
+						{/if}
+					</div>
+				</div>
+			{/if}
 
 			<!-- Messages -->
 			{#if loadingMessages}

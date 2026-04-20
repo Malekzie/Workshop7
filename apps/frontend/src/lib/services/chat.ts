@@ -71,3 +71,23 @@ export async function markThreadRead(threadId: number): Promise<void> {
         credentials: 'include'
     });
 }
+
+export async function transferThread(threadId: number, employeeUserId: string): Promise<ChatThread> {
+    const res = await fetch(`${CHAT_API}/threads/${threadId}/transfer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ employeeUserId })
+    });
+    if (!res.ok) throw new Error('Failed to transfer thread');
+    return res.json();
+}
+
+export async function reopenThread(threadId: number): Promise<ChatThread> {
+    const res = await fetch(`${CHAT_API}/threads/${threadId}/reopen`, {
+        method: 'POST',
+        credentials: 'include'
+    });
+    if (!res.ok) throw new Error('Failed to reopen thread');
+    return res.json();
+}

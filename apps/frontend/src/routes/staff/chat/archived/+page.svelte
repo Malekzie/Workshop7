@@ -1,7 +1,8 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { user } from '$lib/stores/authStore';
-    import { getArchivedThreads, getMessages } from '$lib/services/chat';
+    import { goto } from '$app/navigation';
+    import { getArchivedThreads, getMessages, reopenThread } from '$lib/services/chat';
     import ChatMessageList from '$lib/components/chat/ChatMessageList.svelte';
     import type { ChatThread, ChatMessage } from '$lib/services/types';
 
@@ -19,6 +20,22 @@
     let activeCategory = $state('');
     let loadingThreads = $state(true);
     let loadingMessages = $state(false);
+    let reopening = $state(false);
+    let reopenError = $state('');
+
+    async function handleReopen() {
+        if (!selectedThread || reopening) return;
+        reopening = true;
+        reopenError = '';
+        try {
+            await reopenThread(selectedThread.id);
+            goto('/staff/chat');
+        } catch {
+            reopenError = 'Failed to reopen. Please try again.';
+        } finally {
+            reopening = false;
+        }
+    }
 
     async function loadThreads() {
         loadingThreads = true;
@@ -144,10 +161,24 @@
                         </p>
                         <p class="text-xs text-muted-foreground">{selectedThread.customerUsername}</p>
                     </div>
-                    <span class="rounded-full bg-[#C4714A]/10 px-2.5 py-1 text-xs font-medium text-[#C4714A]">
-                        {categoryLabel(selectedThread.category)}
-                    </span>
+                    <div class="flex items-center gap-2">
+                        <span class="rounded-full bg-[#C4714A]/10 px-2.5 py-1 text-xs font-medium text-[#C4714A]">
+                            {categoryLabel(selectedThread.category)}
+                        </span>
+                        {#if $user?.role === 'admin'}
+                            <button
+                                onclick={handleReopen}
+                                disabled={reopening}
+                                class="rounded-lg border border-[#8A9E7F] px-3 py-1.5 text-xs font-medium text-[#8A9E7F] transition-colors hover:bg-[#8A9E7F]/10 disabled:opacity-50"
+                            >
+                                {reopening ? 'Reopening...' : 'Reopen for audit'}
+                            </button>
+                        {/if}
+                    </div>
                 </div>
+                {#if reopenError}
+                    <p class="mt-2 text-xs text-destructive">{reopenError}</p>
+                {/if}
                 <!-- Receipt metadata -->
                 <div class="mt-3 grid grid-cols-3 gap-3 rounded-xl border border-border bg-muted/40 px-4 py-3">
                     <div>

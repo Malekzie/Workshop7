@@ -186,13 +186,32 @@
 				class="flex h-[480px] w-80 flex-col overflow-hidden rounded-2xl border border-[#2C1A0E]/10 bg-[#FAF7F2] shadow-2xl dark:border-[#FAF7F2]/10 dark:bg-[#2C1A0E]"
 			>
 				<!-- Header -->
-				<div class="flex shrink-0 items-center justify-between bg-[#2C1A0E] px-4 py-3">
-					<p class="text-sm font-semibold text-[#FAF7F2]">Support Chat</p>
+				<div class="flex shrink-0 items-start justify-between gap-3 bg-[#2C1A0E] px-4 py-3">
+					<div class="min-w-0 flex-1">
+						<div class="flex items-center gap-2">
+							<span class="relative flex h-2 w-2">
+								<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#8A9E7F] opacity-75"></span>
+								<span class="relative inline-flex h-2 w-2 rounded-full bg-[#8A9E7F]"></span>
+							</span>
+							<p class="text-sm font-semibold text-[#FAF7F2]">Peelin' Good Support</p>
+						</div>
+						<p class="mt-0.5 text-[11px] text-[#FAF7F2]/60">
+							{#if thread?.status === 'closed'}
+								Conversation ended
+							{:else if thread?.employeeUserId}
+								Agent connected · replies in minutes
+							{:else if thread}
+								Waiting for an agent · typically under 5 min
+							{:else}
+								We typically reply in a few minutes
+							{/if}
+						</p>
+					</div>
 					<button
 						onclick={() => {
 							open = false;
 						}}
-						class="rounded p-0.5 text-[#FAF7F2]/70 hover:text-[#FAF7F2]"
+						class="shrink-0 rounded p-0.5 text-[#FAF7F2]/70 hover:text-[#FAF7F2]"
 						aria-label="Close chat"
 					>
 						<X class="h-4 w-4" />

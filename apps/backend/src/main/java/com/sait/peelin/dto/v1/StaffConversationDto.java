@@ -7,6 +7,8 @@ public record StaffConversationDto(
         Integer id,
         UUID otherUserId,
         String otherUsername,
+        String otherProfilePhotoPath,
+        String otherRole,
         OffsetDateTime updatedAt,
         int unreadCount
 ) {}

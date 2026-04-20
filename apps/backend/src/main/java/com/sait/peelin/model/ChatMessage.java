@@ -37,6 +37,11 @@ public class ChatMessage {
     @Column(name = "is_read", nullable = false)
     private Boolean isRead;
 
+    @NotNull
+    @ColumnDefault("false")
+    @Column(name = "is_staff_only", nullable = false)
+    private Boolean isStaffOnly = false;
+
     public Integer getId() {
         return id;
     }
@@ -83,5 +88,13 @@ public class ChatMessage {
 
     public void setIsRead(Boolean read) {
         isRead = read;
+    }
+
+    public Boolean getIsStaffOnly() {
+        return isStaffOnly;
+    }
+
+    public void setIsStaffOnly(Boolean isStaffOnly) {
+        this.isStaffOnly = isStaffOnly;
     }
 }
