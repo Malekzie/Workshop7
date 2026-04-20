@@ -12,6 +12,7 @@
 	} from '$lib/services/chat';
 	import { listRecipients, type StaffRecipient } from '$lib/services/staff-messages';
 	import { subscribeWs, publishWs } from '$lib/services/ws';
+	import { ChatTopics } from '$lib/services/chatTopics';
 	import ChatMessageList from '$lib/components/chat/ChatMessageList.svelte';
 	import ChatComposer from '$lib/components/chat/ChatComposer.svelte';
 	import type { ChatThread, ChatMessage, TypingPayload } from '$lib/services/types';
@@ -86,7 +87,7 @@
 
 	function subscribeNewThreads() {
 		unsubNewThreads?.();
-		unsubNewThreads = subscribeWs('/topic/chat/threads', (data) => {
+		unsubNewThreads = subscribeWs(ChatTopics.newThreads(), (data) => {
 			const incoming = data as ChatThread;
 			if (incoming.status !== 'open') return;
 			if (activeCategory && incoming.category !== activeCategory) return;
@@ -115,21 +116,21 @@
 			loadingMessages = false;
 		}
 
-		unsubMessages = subscribeWs(`/topic/chat/thread/${t.id}/messages`, (data) => {
+		unsubMessages = subscribeWs(ChatTopics.messages(t.id), (data) => {
 			const msg = data as ChatMessage;
 			if (!messages.find((m) => m.id === msg.id)) {
 				messages = [...messages, msg];
 			}
 		});
 
-		unsubStaffMessages = subscribeWs(`/topic/chat/thread/${t.id}/staff-messages`, (data) => {
+		unsubStaffMessages = subscribeWs(ChatTopics.staffMessages(t.id), (data) => {
 			const msg = data as ChatMessage;
 			if (!messages.find((m) => m.id === msg.id)) {
 				messages = [...messages, msg];
 			}
 		});
 
-		unsubTyping = subscribeWs(`/topic/chat/thread/${t.id}/typing`, (data) => {
+		unsubTyping = subscribeWs(ChatTopics.typing(t.id), (data) => {
 			const p = data as TypingPayload;
 			if (p.userId === $user?.userId) return;
 			typingLabel = 'Customer';
@@ -139,7 +140,7 @@
 			}, 3000);
 		});
 
-		unsubStatus = subscribeWs(`/topic/chat/thread/${t.id}/status`, (data) => {
+		unsubStatus = subscribeWs(ChatTopics.status(t.id), (data) => {
 			const updated = data as ChatThread;
 			if (updated.status === 'closed' && selectedThread?.id === updated.id) {
 				selectedThread = updated;
@@ -166,7 +167,7 @@
 
 	function handleTyping() {
 		if (!selectedThread || !$user) return;
-		publishWs(`/app/chat/thread/${selectedThread.id}/typing`, {
+		publishWs(ChatTopics.typingPublish(selectedThread.id), {
 			userId: $user.userId,
 			typing: true
 		});

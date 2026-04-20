@@ -10,6 +10,7 @@
 		closeThread
 	} from '$lib/services/chat';
 	import { subscribeWs, publishWs } from '$lib/services/ws';
+	import { ChatTopics } from '$lib/services/chatTopics';
 	import ChatCategoryPicker from './ChatCategoryPicker.svelte';
 	import ChatMessageList from './ChatMessageList.svelte';
 	import ChatComposer from './ChatComposer.svelte';
@@ -60,7 +61,7 @@
 		unsubTyping?.();
 		unsubStatus?.();
 
-		unsubMessages = subscribeWs(`/topic/chat/thread/${t.id}/messages`, (data) => {
+		unsubMessages = subscribeWs(ChatTopics.messages(t.id), (data) => {
 			const msg = data as ChatMessage;
 			// Deduplicate by id in case REST response and WS push overlap
 			if (!messages.find((m) => m.id === msg.id)) {
@@ -68,7 +69,7 @@
 			}
 		});
 
-		unsubTyping = subscribeWs(`/topic/chat/thread/${t.id}/typing`, (data) => {
+		unsubTyping = subscribeWs(ChatTopics.typing(t.id), (data) => {
 			const payload = data as TypingPayload;
 			if (payload.userId === $user?.userId) return;
 			typingLabel = 'Agent';
@@ -78,7 +79,7 @@
 			}, 3000);
 		});
 
-		unsubStatus = subscribeWs(`/topic/chat/thread/${t.id}/status`, (data) => {
+		unsubStatus = subscribeWs(ChatTopics.status(t.id), (data) => {
 			const updated = data as ChatThread;
 			if (updated.status === 'closed' && thread?.id === updated.id) {
 				thread = updated;
@@ -165,7 +166,7 @@
 
 	function handleTyping() {
 		if (!thread || !$user) return;
-		publishWs(`/app/chat/thread/${thread.id}/typing`, {
+		publishWs(ChatTopics.typingPublish(thread.id), {
 			userId: $user.userId,
 			typing: true
 		});

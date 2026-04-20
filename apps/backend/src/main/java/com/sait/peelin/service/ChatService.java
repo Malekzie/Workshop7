@@ -100,7 +100,7 @@ public class ChatService {
                     created = applyAutoRouting(created);
                     chatLookupCacheService.evictOpenThreadForCustomer(u.getUserId());
                     ChatThreadDto dto = threadDto(created);
-                    messagingTemplate.convertAndSend("/topic/chat/threads", dto);
+                    messagingTemplate.convertAndSend(ChatTopics.NEW_THREADS, dto);
                     return dto;
                 });
     }
@@ -123,7 +123,7 @@ public class ChatService {
 
         chatLookupCacheService.evictOpenThreadForCustomer(u.getUserId());
         ChatThreadDto dto = threadDto(created);
-        messagingTemplate.convertAndSend("/topic/chat/threads", dto);
+        messagingTemplate.convertAndSend(ChatTopics.NEW_THREADS, dto);
         return dto;
     }
 
@@ -133,9 +133,9 @@ public class ChatService {
             thread.setEmployeeUser(picked.get());
             thread.setUpdatedAt(OffsetDateTime.now());
             thread = chatThreadRepository.save(thread);
-            postSystemMessage(thread, "Assigned to " + displayNameFor(picked.get()));
+            postSystemMessage(thread, ChatSystemMessages.assignedTo(displayNameFor(picked.get())));
         } else {
-            postSystemMessage(thread, "No staff online right now, we'll respond as soon as possible.");
+            postSystemMessage(thread, ChatSystemMessages.NO_STAFF_ONLINE);
         }
         return thread;
     }
@@ -195,7 +195,7 @@ public class ChatService {
             chatLookupCacheService.evictOpenThreadForCustomer(t.getCustomerUser().getUserId());
         }
         ChatMessageDto dto = msgDto(chatMessageRepository.save(m));
-        messagingTemplate.convertAndSend("/topic/chat/thread/" + threadId + "/messages", dto);
+        messagingTemplate.convertAndSend(ChatTopics.messages(threadId), dto);
         return dto;
     }
 
@@ -246,7 +246,7 @@ public class ChatService {
                 t.getCustomerUser().getUserId().toString(),
                 "/queue/chat/notifications",
                 dto);
-        messagingTemplate.convertAndSend("/topic/chat/thread/" + threadId + "/status", dto);
+        messagingTemplate.convertAndSend(ChatTopics.status(threadId), dto);
         return dto;
     }
 
@@ -258,7 +258,7 @@ public class ChatService {
         User viewer = currentUserService.requireUser();
         chatMessageRepository.markAllReadForThread(threadId, viewer.getUserId());
         messagingTemplate.convertAndSend(
-                "/topic/chat/thread/" + threadId + "/read",
+                ChatTopics.read(threadId),
                 new ReadReceiptPayload(viewer.getUserId(), OffsetDateTime.now()));
     }
 
@@ -329,19 +329,17 @@ public class ChatService {
         t.setUpdatedAt(OffsetDateTime.now());
         ChatThread saved = chatThreadRepository.save(t);
         // Customer sees a friendly, identity-free notice.
-        postSystemMessage(saved,
-                "You're being connected with another team member. They'll be right with you.",
-                false);
+        postSystemMessage(saved, ChatSystemMessages.CUSTOMER_TRANSFER_NOTICE, false);
         // Staff audit trail preserves names + actor for archived-view timeline.
         postSystemMessage(saved,
-                "Transferred from " + displayNameFor(from) + " to " + displayNameFor(target),
+                ChatSystemMessages.transferredBetween(displayNameFor(from), displayNameFor(target)),
                 true);
         if (saved.getCustomerUser() != null) {
             chatLookupCacheService.evictOpenThreadForCustomer(saved.getCustomerUser().getUserId());
         }
         ChatThreadDto dto = threadDto(saved);
-        messagingTemplate.convertAndSend("/topic/chat/thread/" + threadId + "/status", dto);
-        messagingTemplate.convertAndSend("/topic/chat/threads", dto);
+        messagingTemplate.convertAndSend(ChatTopics.status(threadId), dto);
+        messagingTemplate.convertAndSend(ChatTopics.NEW_THREADS, dto);
         return dto;
     }
 
@@ -367,17 +365,16 @@ public class ChatService {
         t.setUpdatedAt(OffsetDateTime.now());
         ChatThread saved = chatThreadRepository.save(t);
         postSystemMessage(saved,
-                "Reopened for audit by " + displayNameFor(actor)
-                        + (previousAssignee != null
-                                ? " (previously handled by " + displayNameFor(previousAssignee) + ")"
-                                : ""),
+                ChatSystemMessages.reopenedForAudit(
+                        displayNameFor(actor),
+                        previousAssignee != null ? displayNameFor(previousAssignee) : null),
                 true);
         if (saved.getCustomerUser() != null) {
             chatLookupCacheService.evictOpenThreadForCustomer(saved.getCustomerUser().getUserId());
         }
         ChatThreadDto dto = threadDto(saved);
-        messagingTemplate.convertAndSend("/topic/chat/thread/" + threadId + "/status", dto);
-        messagingTemplate.convertAndSend("/topic/chat/threads", dto);
+        messagingTemplate.convertAndSend(ChatTopics.status(threadId), dto);
+        messagingTemplate.convertAndSend(ChatTopics.NEW_THREADS, dto);
         return dto;
     }
 
@@ -457,8 +454,8 @@ public class ChatService {
         ChatMessageDto dto = msgDto(saved);
         // Staff-only goes to a dedicated topic that the customer client does not subscribe to.
         String topic = staffOnly
-                ? "/topic/chat/thread/" + thread.getId() + "/staff-messages"
-                : "/topic/chat/thread/" + thread.getId() + "/messages";
+                ? ChatTopics.staffMessages(thread.getId())
+                : ChatTopics.messages(thread.getId());
         messagingTemplate.convertAndSend(topic, dto);
     }
 
