@@ -8,7 +8,7 @@
 	import { formatCanadianPostalInput } from '$lib/utils/canadianPostalCode';
 	import { FormValidationUtil } from '$lib/utils/formValidation';
 
-	let fields = {
+	let fields = $state({
 		firstName: '',
 		middleInitial: '',
 		lastName: '',
@@ -25,9 +25,9 @@
 		city: '',
 		province: 'AB',
 		postalCode: ''
-	};
+	});
 
-	let errors = {
+	let errors = $state({
 		firstName: '',
 		lastName: '',
 		email: '',
@@ -41,9 +41,9 @@
 		city: '',
 		province: '',
 		postalCode: ''
-	};
+	});
 
-	let touched = {
+	let touched = $state({
 		firstName: false,
 		lastName: false,
 		email: false,
@@ -57,23 +57,28 @@
 		city: false,
 		province: false,
 		postalCode: false
-	};
+	});
 
-	let step = 1;
-	let showPassword = false;
-	let showPasswordConfirm = false;
-	let showEmployeeLinkPassword = false;
-	let showEmployeeLinkPasswordConfirm = false;
-	/** True while calling register/availability before advancing to step 2 */
-	let step1Checking = false;
-	/** From availability API: email matches one unlinked employee work email */
-	let employeeLinkOffered = false;
+	let step = $state(1);
+	let showPassword = $state(false);
+	let showPasswordConfirm = $state(false);
+	let showEmployeeLinkPassword = $state(false);
+	let showEmployeeLinkPasswordConfirm = $state(false);
+	let step1Checking = $state(false);
+	let employeeLinkOffered = $state(false);
 
-	const stepOneFields = ['firstName', 'lastName', 'email', 'username', 'password', 'passwordConfirm'];
+	const stepOneFields = [
+		'firstName',
+		'lastName',
+		'email',
+		'username',
+		'password',
+		'passwordConfirm'
+	];
 	const stepTwoProfileFields = ['phone', 'addressLine1', 'city', 'province', 'postalCode'];
 	const employeeLinkStepFields = ['employeeLinkPassword', 'employeeLinkPasswordConfirm'];
-	let submitError = '';
-	let registrationSuccess = false;
+	let submitError = $state('');
+	let registrationSuccess = $state(false);
 
 	function validateField(name, value) {
 		switch (name) {
