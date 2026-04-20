@@ -125,9 +125,9 @@ public class AuthService {
             return "Account";
         }
         return switch (role) {
-            case customer -> "Customer account";
-            case employee -> "Employee account";
-            case admin -> "Admin account";
+            case customer -> "Customer";
+            case employee -> "Employee";
+            case admin -> "Admin";
         };
     }
 
@@ -146,12 +146,15 @@ public class AuthService {
      * so a new customer can register with that email for employee–customer linking.
      */
     @Transactional(readOnly = true)
-    public RegisterAvailabilityResponse getRegisterAvailability(String username, String email) {
+    public RegisterAvailabilityResponse getRegisterAvailability(String username, String email, String phone) {
         String u = username != null ? username.trim() : "";
         String e = email != null ? email.trim().toLowerCase() : "";
+        String p = phone != null ? phone.trim() : "";
         boolean usernameAvailable = u.isEmpty() || !userRepository.existsByUsernameIgnoreCase(u);
         boolean emailAvailable = e.isEmpty() || !isCustomerOrAdminSignInEmailTaken(e);
         boolean employeeLinkOffered = false;
+        boolean guestEmailLinkOffered = false;
+        boolean guestPhoneLinkOffered = false;
         if (!e.isEmpty() && emailAvailable) {
             Optional<Employee> match = employeeCustomerLinkService.findSingleUnlinkedEmployeeByWorkEmail(e);
             if (match.isPresent()) {
@@ -161,8 +164,21 @@ public class AuthService {
                 // Employee exists but is already linked — block registration with this email
                 emailAvailable = false;
             }
+            guestEmailLinkOffered = !customerRepository.findGuestCustomersByEmailNormalized(e).isEmpty();
         }
-        return new RegisterAvailabilityResponse(usernameAvailable, emailAvailable, employeeLinkOffered);
+        if (StringUtils.hasText(p)) {
+            String digits = GuestContactFiller.normalizeDigits(p);
+            if (digits.length() >= 10) {
+                guestPhoneLinkOffered = !customerRepository.findGuestCustomerIdsByPhoneDigits(digits).isEmpty();
+            }
+        }
+        return new RegisterAvailabilityResponse(
+                usernameAvailable,
+                emailAvailable,
+                employeeLinkOffered,
+                guestEmailLinkOffered,
+                guestPhoneLinkOffered
+        );
     }
 
     private boolean isCustomerOrAdminSignInEmailTaken(String emailNorm) {

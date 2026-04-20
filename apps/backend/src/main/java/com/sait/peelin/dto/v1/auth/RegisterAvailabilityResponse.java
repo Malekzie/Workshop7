@@ -22,4 +22,8 @@ public class RegisterAvailabilityResponse {
      * so the client should collect the employee account password before calling {@code register}.
      */
     private boolean employeeLinkOffered;
+    /** True when this sign-in email matches guest checkout rows that can be linked after registration. */
+    private boolean guestEmailLinkOffered;
+    /** True when this phone matches guest checkout rows that can be linked after registration. */
+    private boolean guestPhoneLinkOffered;
 }

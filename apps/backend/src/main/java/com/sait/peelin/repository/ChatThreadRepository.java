@@ -19,6 +19,13 @@ public interface ChatThreadRepository extends JpaRepository<ChatThread, Integer>
     List<ChatThread> findByStatusAndCategoryOrderByUpdatedAtDesc(String status, String category);
 
     @EntityGraph(attributePaths = {"customerUser", "employeeUser"})
+    List<ChatThread> findByCustomerUser_UserIdAndStatusOrderByUpdatedAtDesc(UUID customerUserId, String status);
+
+    @EntityGraph(attributePaths = {"customerUser", "employeeUser"})
+    List<ChatThread> findByCustomerUser_UserIdAndStatusAndCategoryOrderByUpdatedAtDesc(
+            UUID customerUserId, String status, String category);
+
+    @EntityGraph(attributePaths = {"customerUser", "employeeUser"})
     Optional<ChatThread> findById(Integer id);
 
     @EntityGraph(attributePaths = {"customerUser", "employeeUser"})

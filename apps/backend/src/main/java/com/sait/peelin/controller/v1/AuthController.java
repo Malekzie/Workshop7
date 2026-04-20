@@ -100,8 +100,9 @@ public class AuthController {
     @GetMapping("/register/availability")
     public ResponseEntity<RegisterAvailabilityResponse> registerAvailability(
             @RequestParam(required = false) String username,
-            @RequestParam(required = false) String email) {
-        return ResponseEntity.ok(authService.getRegisterAvailability(username, email));
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String phone) {
+        return ResponseEntity.ok(authService.getRegisterAvailability(username, email, phone));
     }
 
     @Operation(summary = "Register", description = "Create a new customer account. Returns a JWT token immediately upon success.")
