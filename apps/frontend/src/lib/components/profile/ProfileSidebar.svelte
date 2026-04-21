@@ -1,4 +1,8 @@
 <script>
+// Contributor(s): Mason, Owen
+// Main: Mason - Profile sidebar navigation and account context actions.
+// Assistance: Owen - Loyalty points and tier related affordances shown in profile navigation.
+
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';

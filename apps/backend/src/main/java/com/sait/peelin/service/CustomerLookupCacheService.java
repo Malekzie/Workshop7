@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Cached customer rows keyed by user for chat and discount checks.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.model.Customer;

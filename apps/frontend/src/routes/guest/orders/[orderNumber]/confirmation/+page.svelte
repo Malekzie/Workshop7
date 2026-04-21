@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Post-checkout confirmation: loads order by number for display and stores guest email for tracking links.
+
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { api } from '$lib/utils/apiClient';
@@ -49,7 +52,7 @@
 	const paymentIntentId = page.url.searchParams.get('payment_intent');
 
 	async function fetchOrder() {
-		// Stripe redirected back with a non-success status — payment was declined or cancelled.
+		// Stripe redirected back with a non-success status  -  payment was declined or cancelled.
 		if (redirectStatus && redirectStatus !== 'succeeded') {
 			error = 'Your payment was declined or cancelled. Please return to checkout and try again.';
 			loading = false;
@@ -64,7 +67,7 @@
 			order = orderData;
 
 			// Redirect-based payments (e.g. Klarna) land here on success without going through
-			// CheckoutPayment's confirm call — fulfil the order now before showing confirmation.
+			// CheckoutPayment's confirm call  -  fulfil the order now before showing confirmation.
 			if (redirectStatus === 'succeeded' && paymentIntentId && order.status === 'pending_payment') {
 				await api.post(`/orders/${order.id}/confirm-stripe-payment`, { paymentIntentId });
 				order = await api.get<Order>(path);

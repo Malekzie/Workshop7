@@ -1,4 +1,9 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Mason - Overflow counter when more avatars exist than fit in the group stack.
+// Assistance: Robbie - Chat summaries where extra participants collapse into a number.
+
+
 	import type { HTMLAttributes } from 'svelte/elements';
 	import { cn, type WithElementRef } from '$lib/utils.js';
 

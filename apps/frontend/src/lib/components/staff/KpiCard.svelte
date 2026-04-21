@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Small metric card used on staff dashboard and analytics for label value and optional subtext.
+
 	let { label, value, subtext = null } = $props();
 </script>
 

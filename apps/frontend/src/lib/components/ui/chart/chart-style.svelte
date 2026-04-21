@@ -1,4 +1,9 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Mason - Injects chart CSS variables for light and dark palettes on dashboard cards.
+// Assistance: Robbie - Staff analytics pages that must track light and dark shell toggles.
+
+
 	import { THEMES, type ChartConfig } from "./chart-utils.js";
 
 	let { id, config }: { id: string; config: ChartConfig } = $props();

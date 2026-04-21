@@ -1,3 +1,8 @@
+// Contributor(s): Robbie, Mason, Owen
+// Main: Mason - Re-exports avatar pieces for profile review chat and staff directory rows.
+// Assistance: Robbie - Messaging screens that import avatar parts from this barrel.
+// Assistance: Owen - Linked-account views that reuse avatar exports for consistent headshots.
+
 import Root from './avatar.svelte';
 import Image from './avatar-image.svelte';
 import Fallback from './avatar-fallback.svelte';

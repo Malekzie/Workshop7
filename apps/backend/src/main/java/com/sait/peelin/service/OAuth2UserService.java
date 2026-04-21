@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - OAuth2 user name and role mapping for Google and Microsoft login.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.auth.AuthResponse;

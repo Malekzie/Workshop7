@@ -1,4 +1,10 @@
 <script lang="ts" module>
+// Contributor(s): Robbie, Mason, Samantha
+// Main: Mason - Groups adjacent buttons for segmented controls and split toolbars.
+// Assistance: Robbie - Staff split actions on inbox rows and dashboard filters.
+// Assistance: Samantha - Quantity toggles and step controls beside checkout lines.
+
+
 	import { tv, type VariantProps } from 'tailwind-variants';
 
 	export const buttonGroupVariants = tv({

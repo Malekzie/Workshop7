@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - OAuth return handler: reads token from hash or query, sets auth store, then navigates by role.
+
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';

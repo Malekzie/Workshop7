@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Expanded order row with line items tracking link resume payment and review entry points.
+
 	/**
 	 * Expanded accordion panel showing order details and items
 	 * Displays product list, tracking link, and action buttons

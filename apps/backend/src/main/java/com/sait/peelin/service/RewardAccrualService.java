@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - Points accrual and redemption tied to orders and tiers.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.model.Customer;

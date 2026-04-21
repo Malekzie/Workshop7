@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - New chat topic chooser before createThread or when resuming an existing open thread.
+
     import type { ChatThread } from '$lib/services/types';
 
     let {

@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Keeps employee and customer profiles aligned for linked-account discount rules.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.model.Customer;

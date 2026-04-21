@@ -1,3 +1,8 @@
+// Contributor(s): Robbie, Mason, Samantha
+// Main: Robbie - Client auth and session store plus Sentry user context.
+// Assistance: Mason - OAuth and login UI alignment with stored user fields.
+// Assistance: Samantha - Cart checkout and orders that read the user from this store.
+
 import { writable, derived } from 'svelte/store';
 import { browser } from '$app/environment';
 import * as Sentry from '@sentry/sveltekit';
@@ -34,7 +39,7 @@ if (browser) {
 			}
 		})
 		.catch(() => {
-			// Network error — leave stored state alone.
+			// Network error  -  leave stored state alone.
 		});
 }
 

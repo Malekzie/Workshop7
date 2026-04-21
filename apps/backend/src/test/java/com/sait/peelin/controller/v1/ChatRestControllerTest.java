@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - MVC test coverage for chat REST endpoints and auth behavior.
+
 package com.sait.peelin.controller.v1;
 
 import com.fasterxml.jackson.databind.ObjectMapper;

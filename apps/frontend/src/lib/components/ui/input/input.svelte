@@ -1,4 +1,10 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason, Samantha
+// Main: Mason - Text inputs for register profile address flows with autofill-friendly classes.
+// Assistance: Robbie - Login recovery and OAuth follow-up fields on the same surface.
+// Assistance: Samantha - Guest checkout contact delivery notes and payment-related text fields.
+
+
 	import type { HTMLInputAttributes, HTMLInputTypeAttribute } from 'svelte/elements';
 	import { cn, type WithElementRef } from '$lib/utils.js';
 

@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Synthetic guest email and phone placeholders for checkout when one field is missing.
+
 package com.sait.peelin.support;
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -29,7 +32,7 @@ public final class GuestContactFiller {
     }
 
     /**
-     * 12-digit synthetic mobile-style number in a high range; unique index uses digits only.
+     * 12-digit synthetic mobile-style number in a high range. The unique index uses digits only.
      */
     public static String allocateSyntheticPhoneDigits() {
         long n = ThreadLocalRandom.current().nextLong(900_000_000_000L, 9_999_999_999_999L);

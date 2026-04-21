@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - Product reviews averages and moderation-facing read paths.
+
 package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.dto.v1.ReviewCreateRequest;
@@ -19,10 +22,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Product and bakery reviews moderation and averages on paths under {@code /api/v1}.
+ */
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
-@Tag(name = "Reviews", description = "Customer reviews for products and bakery locations. New reviews are moderated by AI; manual status changes are admin-only.")
+@Tag(name = "Reviews", description = "Customer reviews for products and bakery locations. New reviews pass through AI moderation and manual status changes stay admin-only.")
 public class ProductReviewController {
 
     private final ReviewService reviewService;
@@ -56,27 +62,33 @@ public class ProductReviewController {
         return reviewService.forBakery(bakeryId);
     }
 
+    @Operation(summary = "Average bakery rating", description = "Mean star rating across approved reviews for the bakery or null when no reviews exist.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Average rating returned"),
+            @ApiResponse(responseCode = "404", description = "Bakery not found", content = @Content)
+    })
     @GetMapping("/bakeries/{bakeryId}/reviews/average")
     public Double averageForBakery(@PathVariable Integer bakeryId) {
         return reviewService.averageForBakery(bakeryId);
     }
 
-    @Operation(summary = "Submit a product review", description = "Submit a review for a product. Signed-in customers use their profile; guests may send optional guestName in the body.")
+    @Operation(summary = "Submit a product review", description = "Submit a review for a product. Signed-in customers use their profile. Guests may send optional guestName in the body.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Review submitted"),
             @ApiResponse(responseCode = "400", description = "Validation error", content = @Content),
-            @ApiResponse(responseCode = "409", description = "Conflict (e.g. rare DB constraint)", content = @Content)
+            @ApiResponse(responseCode = "409", description = "Conflict when a uniqueness rule blocks the insert", content = @Content)
     })
     @PostMapping("/products/{productId}/reviews")
     public ReviewDto create(@PathVariable Integer productId, @Valid @RequestBody ReviewCreateRequest req) {
         return reviewService.create(productId, req);
     }
 
-    @Operation(summary = "Update review status", description = "Approve or reject a review (override). Requires ADMIN role.")
+    @Operation(summary = "Submit order-linked review", description = "Creates a product review tied to a delivered order using the order id from the path.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Review status updated"),
+            @ApiResponse(responseCode = "200", description = "Review submitted"),
+            @ApiResponse(responseCode = "400", description = "Validation error", content = @Content),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Review not found", content = @Content)
+            @ApiResponse(responseCode = "404", description = "Order not found", content = @Content)
     })
     @SecurityRequirement(name = "bearer-jwt")
     @PostMapping("/orders/{orderId}/reviews")
@@ -86,6 +98,14 @@ public class ProductReviewController {
         return reviewService.createForOrder(req);
     }
 
+    @Operation(summary = "Update review status", description = "Approve or reject a review as an admin override.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Review status updated"),
+            @ApiResponse(responseCode = "204", description = "No content when the review is not pending"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Review not found", content = @Content)
+    })
+    @SecurityRequirement(name = "bearer-jwt")
     @PatchMapping("/reviews/{reviewId}/status")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ReviewDto> patchStatus(@PathVariable UUID reviewId, @Valid @RequestBody ReviewStatusPatchRequest req) {
@@ -94,18 +114,23 @@ public class ProductReviewController {
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
+    @Operation(summary = "List pending reviews", description = "Moderation queue for reviews awaiting admin action. Requires ADMIN role.")
+    @ApiResponse(responseCode = "200", description = "Pending reviews returned")
+    @SecurityRequirement(name = "bearer-jwt")
     @GetMapping("/reviews/pending")
     @PreAuthorize("hasRole('ADMIN')")
     public List<ReviewDto> pending() {
         return reviewService.pending();
     }
 
+    @Operation(summary = "Top reviews", description = "Highly rated approved reviews capped by the limit query parameter.")
+    @ApiResponse(responseCode = "200", description = "Top reviews returned")
     @GetMapping("/reviews/top")
     public List<ReviewDto> top(@RequestParam(defaultValue = "3") int limit) {
         return reviewService.topReviews(limit);
     }
 
-    @Operation(summary = "Submit a bakery / location review", description = "Submit a review for a location. Optional guestName when not authenticated.")
+    @Operation(summary = "Submit a bakery or location review", description = "Submit a review for a location. Optional guestName when not authenticated.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Review submitted"),
             @ApiResponse(responseCode = "400", description = "Validation error", content = @Content)

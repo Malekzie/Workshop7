@@ -1,3 +1,8 @@
+// Contributor(s): Robbie, Mason, Samantha, Owen
+// Main: Robbie, Mason, Samantha - Shared service types and API record shapes.
+// Assistance: Owen - Reviewer photo URL and approval flags on ReviewRecord for web display rules.
+
+/** Loose JSON shapes from Spring REST responses. Field names match OpenAPI property names where possible. */
 export type ApiId = number | string;
 
 export interface ApiRecord {

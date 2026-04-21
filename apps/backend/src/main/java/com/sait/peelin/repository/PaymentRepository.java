@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Payment and Stripe intent linkage per order.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.Payment;

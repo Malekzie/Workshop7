@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Staff order queue: recent orders from admin dashboard summary plus PATCH order status updates.
+
 	import { onMount } from 'svelte';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { Badge } from '$lib/components/ui/badge';
@@ -30,7 +33,7 @@
 		preparing: 'ready'
 	};
 
-	/** After ready/scheduled, staff use Delivered (delivery) or Picked up (pickup)—not interchangeable. */
+	/** After ready or scheduled staff use Delivered for delivery or Picked up for pickup. Those actions are not interchangeable. */
 	function nextStatus(order) {
 		const current = order.status;
 		if (!current) return null;

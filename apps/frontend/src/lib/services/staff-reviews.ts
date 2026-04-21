@@ -1,5 +1,10 @@
+// Contributor(s): Robbie
+// Main: Robbie - SvelteKit fetch helpers for staff tools auth chat and shared API constants.
+
 import { REVIEWS_API } from '$lib/services/constants';
 import type { ApiId, ReviewRecord } from '$lib/services/types';
+
+/** Moderation queue and status PATCH for Reviews admin OpenAPI routes. */
 
 export async function getPendingReviews(): Promise<ReviewRecord[]> {
 	const res = await fetch(`${REVIEWS_API}/pending`, { credentials: 'include' });

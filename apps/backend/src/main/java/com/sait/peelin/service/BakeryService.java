@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Bakery locations hours and public catalog integration.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.BakeryDto;

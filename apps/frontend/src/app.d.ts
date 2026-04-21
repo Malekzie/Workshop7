@@ -1,5 +1,5 @@
-// See https://svelte.dev/docs/kit/types#app.d.ts
-// for information about these interfaces
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Ambient App Locals and PageData types per https://svelte.dev/docs/kit/types#app.d.ts
 declare global {
 	namespace App {
 		// interface Error {}

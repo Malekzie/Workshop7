@@ -1,4 +1,10 @@
 <script>
+// Contributor(s): Robbie, Mason, Owen
+// Main: Robbie - Blocking overlay while review submit and AI moderation finish.
+// Assistance: Mason - Review compose flows on menu and locations that surface this overlay.
+// Assistance: Owen - Moderation outcomes tied to whether reviewer photos may appear publicly.
+
+
 	/** Full-screen blocking UI while a review request (AI moderation) is in flight. */
 	let { visible = false } = $props();
 </script>

@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - OAuth2 login success handler that links users issues JWT and redirects SPA.
+
 package com.sait.peelin.security;
 
 import com.sait.peelin.model.*;
@@ -20,6 +23,9 @@ import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 
+/**
+ * After Google or Microsoft OAuth completes creates or updates app user then redirects with JWT cookie.
+ */
 @Component
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {

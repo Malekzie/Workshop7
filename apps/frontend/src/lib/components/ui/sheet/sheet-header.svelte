@@ -1,4 +1,8 @@
 <script lang="ts">
+// Contributor(s): Mason
+// Main: Mason - Groups title description and close controls at the top of a sheet.
+
+
 	import type { HTMLAttributes } from 'svelte/elements';
 	import { cn, type WithElementRef } from '$lib/utils.js';
 

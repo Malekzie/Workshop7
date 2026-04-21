@@ -1,4 +1,8 @@
 <script>
+// Contributor(s): Mason, Owen
+// Main: Mason - Product sheet with reviews add-to-cart and pricing for menu browse.
+// Assistance: Owen - Reviewer headshots and pending-photo fallbacks in the review list.
+
 	import { Sheet, SheetContent, SheetHeader, SheetTitle } from '$lib/components/ui/sheet';
 	import { Separator } from '$lib/components/ui/separator';
 	import { Button } from '$lib/components/ui/button';

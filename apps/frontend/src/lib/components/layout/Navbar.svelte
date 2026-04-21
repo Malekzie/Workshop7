@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Global top nav links cart badge auth menu theme toggle and staff entry when the session role allows.
+
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { ShoppingCart, User, Menu, X } from '@lucide/svelte';

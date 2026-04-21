@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - JWT create parse validate and role claims for stateless API auth.
+
 package com.sait.peelin.service;
 
 import com.nimbusds.jose.*;

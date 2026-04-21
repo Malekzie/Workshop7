@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Staff analytics charts: admin metrics client reads date-range query params and bakery filter.
+
 	import { scaleBand } from 'd3-scale';
 	import { curveLinearClosed } from 'd3-shape';
 	import { onMount } from 'svelte';
@@ -33,7 +36,7 @@
 	let endDate = $state(data.endDate);
 	let selectedBakery = $state('');
 
-	// A pending promise that never resolves — used as a placeholder during SSR
+	// A pending promise that never resolves  -  used as a placeholder during SSR
 	// and before the client-side fetches are kicked off in onMount. The {#await}
 	// blocks will render their skeletons while these are pending, so the page
 	// HTML ships immediately instead of waiting on backend queries.

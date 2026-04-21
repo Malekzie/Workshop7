@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Confirm pickup or delivery completion with optional jump into the review flow.
+
 	/**
 	 * Dialog for confirming delivery acceptance
 	 * Offers two paths: accept and review, or just accept

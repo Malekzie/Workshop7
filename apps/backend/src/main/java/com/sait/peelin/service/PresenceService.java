@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Typing and presence signals for chat and messaging UIs.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.model.User;
@@ -19,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Tracks which staff (employee/admin) users currently have a live WebSocket.
- * In-memory only; cleared on restart. That's acceptable — staff reconnect fast.
+ * In-memory only and cleared on restart. Staff reconnect quickly so that trade-off is acceptable.
  */
 @Service
 @RequiredArgsConstructor
@@ -39,7 +42,7 @@ public class PresenceService {
 
     @EventListener
     public void onConnect(SessionConnectedEvent event) {
-        // SessionConnectedEvent.getUser() can be null at STOMP CONNECTED time; wrap the raw
+        // SessionConnectedEvent.getUser() can be null at STOMP CONNECTED time so wrap the raw
         // message to pull the authenticated principal from the header accessor instead.
         resolveStaffUserId(StompHeaderAccessor.wrap(event.getMessage()).getUser())
                 .ifPresent(activeStaff::add);

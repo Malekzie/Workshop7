@@ -1,5 +1,10 @@
+// Contributor(s): Robbie
+// Main: Robbie - Shared fetch redirect and legacy API helpers with credentials.
+
+/** Browser helper for same-origin JSON calls to the v1 API base. Sends cookies and maps 401 to login. */
 const API_BASE = '/api/v1';
 
+/** Low level JSON round trip. Redirects on 401 and surfaces message from error JSON when present. */
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
 	const response = await fetch(`${API_BASE}${path}`, {
 		method,
@@ -32,7 +37,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 			const json = JSON.parse(text);
 			if (typeof json.message === 'string' && json.message.trim()) message = json.message;
 		} catch {
-			// non-JSON error body — keep the default message
+			// non-JSON error body  -  keep the default message
 		}
 		throw new Error(message);
 	}
@@ -41,6 +46,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 	return text ? (JSON.parse(text) as T) : (undefined as T);
 }
 
+/** Thin verbs for JSON CRUD against v1 paths that mirror OpenAPI controller routes. */
 export const api = {
 	get: <T>(path: string) => request<T>('GET', path),
 	post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),

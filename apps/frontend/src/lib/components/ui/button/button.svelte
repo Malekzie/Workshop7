@@ -1,4 +1,10 @@
 <script lang="ts" module>
+// Contributor(s): Robbie, Mason, Samantha
+// Main: Mason - Tailwind button variants for forms toolbars primary calls to action and icon buttons site-wide.
+// Assistance: Robbie - Staff sign-in staff tools and protected route entry points.
+// Assistance: Samantha - Add to cart pay submit and checkout step navigation.
+
+
 	import { cn, type WithElementRef } from '$lib/utils.js';
 	import type { HTMLAnchorAttributes, HTMLButtonAttributes } from 'svelte/elements';
 	import { type VariantProps, tv } from 'tailwind-variants';

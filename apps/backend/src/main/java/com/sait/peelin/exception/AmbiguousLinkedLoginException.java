@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Login matches two linked accounts until the client picks one.
+
 package com.sait.peelin.exception;
 
 import com.sait.peelin.dto.v1.auth.LoginAccountChoice;

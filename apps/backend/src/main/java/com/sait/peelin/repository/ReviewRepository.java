@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - Product and bakery review rows and moderation queries.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.Review;

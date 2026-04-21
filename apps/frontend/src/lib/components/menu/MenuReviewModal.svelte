@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Mason, Owen
+// Main: Mason - Modal review composer with rating and comment validation states.
+// Assistance: Owen - Reviewer profile photo and fallback behavior alignment with web review rules.
 	let {
 		open = $bindable(false),
 		productName = '',

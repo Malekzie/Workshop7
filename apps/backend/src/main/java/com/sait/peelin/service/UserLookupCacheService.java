@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Cached user lookups for JWT filter and security hot paths.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.model.User;

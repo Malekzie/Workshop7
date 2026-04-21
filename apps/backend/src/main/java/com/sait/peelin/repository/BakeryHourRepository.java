@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Opening hours rows per bakery.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.BakeryHour;

@@ -1,3 +1,6 @@
+<!-- Contributor(s): Robbie, Mason -->
+<!-- Main: Robbie, Mason - Static three-column values grid for the about page. -->
+
 <section class="mx-auto grid max-w-5xl grid-cols-1 gap-8 px-6 py-10 md:grid-cols-3">
 	<div
 		class="soft-shadow flex flex-col items-center space-y-3 rounded-xl border p-6 text-center transition-shadow hover:shadow-lg"

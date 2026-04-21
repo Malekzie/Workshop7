@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Confirms paid orders from Stripe webhooks idempotently.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.model.Order;

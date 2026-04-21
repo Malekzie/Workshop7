@@ -1,3 +1,6 @@
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Staff user management routes are admin-only other roles redirect to the staff dashboard.
+
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 

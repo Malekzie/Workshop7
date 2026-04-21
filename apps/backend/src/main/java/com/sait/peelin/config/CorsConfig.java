@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - CORS allowlist for SPA Android emulator and local dev calling the API.
+
 package com.sait.peelin.config;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +14,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * {@link org.springframework.web.cors.CorsConfigurationSource} bean for {@code /api/**} paths.
+ */
 @Configuration
 public class CorsConfig {
 

@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Bean validation marker for guest checkout contact rules on DTOs.
+
 package com.sait.peelin.validation;
 
 import jakarta.validation.Constraint;

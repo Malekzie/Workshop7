@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Mason, Samantha
+// Main: Mason - Menu page search filters listing and product sheet entry points.
+// Assistance: Samantha - Add-to-cart and order-flow touchpoints from menu interactions.
 	import ProductCard from '$lib/components/product/ProductCard.svelte';
 	import MenuHeader from '$lib/components/menu/MenuHeader.svelte';
 	import MenuSidebarFilters from '$lib/components/menu/MenuSidebarFilters.svelte';

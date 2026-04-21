@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Posts CheckoutRequest to orders then drives Stripe resume when card tender is selected.
+
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { cart } from '$lib/stores/cart';
@@ -120,7 +123,7 @@
 		return !fields.some((f) => errors[f]);
 	}
 
-	// Loaded data (from server) — untrack signals intentional one-time snapshots
+	// Loaded data (from server)  -  untrack signals intentional one-time snapshots
 	let customer = $state<CustomerProfile | null>(untrack(() => data.customer));
 	let bakeries = $state<Bakery[]>(untrack(() => data.bakeries));
 	let selectedBakeryId = $state<number | null>(untrack(() => data.bakeries[0]?.id ?? null));
@@ -181,9 +184,9 @@
 		hasScheduledAt ? edmontonLocalToIso(scheduleDate, scheduleTime) : null
 	);
 
-	// Bakery hours are stored in America/Edmonton; the picker shows Edmonton wall-clock time.
-	// Naively appending "Z" sent user-entered times as UTC, so server TZ conversion misaligned
-	// and rejected in-hours picks as out-of-hours (e.g. 11:00 local → 05:00 MDT).
+	// Bakery hours are stored in America/Edmonton. The picker shows Edmonton wall-clock time.
+	// Naively appending Z sent user-entered times as UTC so server time zone conversion misaligned
+	// and treated valid local picks as out-of-hours rejections.
 	function edmontonLocalToIso(dateStr: string, timeStr: string): string {
 		const [y, mo, d] = dateStr.split('-').map(Number);
 		const [h, mi] = timeStr.split(':').map(Number);
@@ -227,7 +230,7 @@
 			return;
 		}
 
-		// Request geolocation — silently ignore if denied
+		// Request geolocation  -  silently ignore if denied
 		if (typeof navigator !== 'undefined' && navigator.geolocation) {
 			navigator.geolocation.getCurrentPosition(
 				(pos) => {

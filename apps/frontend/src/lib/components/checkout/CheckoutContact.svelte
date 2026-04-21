@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Signed-in checkout contact panel showing CustomerProfile from load data with profile edit link.
+
 	import { resolve } from '$app/paths';
 	import type { CustomerProfile } from '$lib/services/checkout';
 

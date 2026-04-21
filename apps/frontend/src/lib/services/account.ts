@@ -1,6 +1,10 @@
+// Contributor(s): Mason
+// Main: Mason - Client calls for menu products bakeries tags reviews profile and account.
+
 import { apiFetch } from '$lib/utils/api';
 import { ACCOUNT_API } from '$lib/services/constants';
 
+/** PUT account password. Body matches ChangePasswordRequest in OpenAPI. */
 export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
 	const res = await apiFetch(`${ACCOUNT_API}/password`, {
 		method: 'PUT',

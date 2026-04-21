@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Admin tools for validating and correcting customer address records.
+
 package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.dto.v1.AddressCreateRequest;
@@ -18,6 +21,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Postal address maintenance for bakeries at {@code /api/v1/admin/addresses}.
+ */
 @RestController
 @RequestMapping("/api/v1/admin/addresses")
 @RequiredArgsConstructor

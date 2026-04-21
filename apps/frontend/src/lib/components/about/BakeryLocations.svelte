@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - About page bakery cards from GET bakeries with skeleton loading and links into locations.
+
 	import { onMount } from 'svelte';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { getBakeries } from '$lib/services/bakeries';

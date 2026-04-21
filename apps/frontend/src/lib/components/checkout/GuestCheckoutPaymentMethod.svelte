@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Guest tender choice including cash versus card types that map to CheckoutRequest payment enums.
+
 	let {
 		paymentMethod = $bindable<'cash' | 'credit_card' | 'debit_card' | 'online'>('cash')
 	}: {

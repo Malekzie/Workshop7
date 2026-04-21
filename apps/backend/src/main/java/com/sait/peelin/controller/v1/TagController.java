@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Product tags for catalog filters and category-style browsing.
+
 package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.dto.v1.TagCreateRequest;
@@ -17,10 +20,13 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * CRUD and public listing for product tags under {@code /api/v1/tags}.
+ */
 @RestController
 @RequestMapping("/api/v1/tags")
 @RequiredArgsConstructor
-@Tag(name = "Tags", description = "Product categorisation tags (e.g. Gluten-Free, Vegan). Create/update/delete require ADMIN role.")
+@Tag(name = "Tags", description = "Product categorisation tags such as Gluten-Free or Vegan. Create update and delete require ADMIN role.")
 public class TagController {
 
     private final TagService tagService;

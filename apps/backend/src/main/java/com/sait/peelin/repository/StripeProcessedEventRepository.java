@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Idempotent Stripe webhook event ids.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.StripeProcessedEvent;

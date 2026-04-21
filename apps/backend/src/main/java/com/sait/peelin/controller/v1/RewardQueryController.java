@@ -1,8 +1,12 @@
+// Contributor(s): Owen
+// Main: Owen - Points balance and reward tier queries for loyalty pricing.
+
 package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.dto.v1.RewardDto;
 import com.sait.peelin.service.RewardQueryService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -15,6 +19,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Customer and admin reward ledger queries on paths under {@code /api/v1}.
+ */
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
@@ -32,7 +39,9 @@ public class RewardQueryController {
     })
     @GetMapping("/customers/{customerId}/rewards")
     @PreAuthorize("isAuthenticated()")
-    public List<RewardDto> forCustomer(@PathVariable UUID customerId) {
+    public List<RewardDto> forCustomer(
+            @Parameter(description = "Customer row UUID", example = "550e8400-e29b-41d4-a716-446655440000")
+            @PathVariable UUID customerId) {
         return rewardQueryService.listForCustomer(customerId);
     }
 

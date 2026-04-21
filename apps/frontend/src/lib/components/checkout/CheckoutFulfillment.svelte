@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Bakery picker pickup versus delivery and saved address selection for CheckoutRequest payloads.
+
 	import { formatBakeryOption, distanceLabel, type Bakery } from '$lib/services/checkout';
 	import type { SavedAddress, CustomerProfile } from '$lib/services/checkout';
 

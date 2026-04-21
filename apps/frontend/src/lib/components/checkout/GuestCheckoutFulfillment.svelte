@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Guest fulfillment method address and postal fields for delivery or pickup checkout paths.
+
 	import { formatCanadianPostalInput } from '$lib/utils/canadianPostalCode';
 
 	let {

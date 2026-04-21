@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Password reset with token from the URL calling validate and reset helpers on the password API.
+
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { Eye, EyeOff } from '@lucide/svelte';

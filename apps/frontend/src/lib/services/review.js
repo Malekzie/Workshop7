@@ -1,3 +1,7 @@
+// Contributor(s): Robbie, Mason, Samantha
+// Main: Mason - Top reviews and legacy review API helpers.
+// Assistance: Robbie - Staff admin views that reuse these review payloads.
+// Assistance: Samantha - Marketing and order pages that surface top reviews.
 import { apiFetch } from '$lib/utils/api';
 
 const API = '/api/v1';

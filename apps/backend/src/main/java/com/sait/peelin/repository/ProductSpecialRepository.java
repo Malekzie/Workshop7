@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Daily specials and promotional price windows.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.ProductSpecial;

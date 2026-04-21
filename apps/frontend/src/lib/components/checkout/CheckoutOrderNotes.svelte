@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Optional order notes textarea bound into CheckoutRequest customer notes fields.
+
 	let { value = $bindable('') }: { value?: string } = $props();
 </script>
 

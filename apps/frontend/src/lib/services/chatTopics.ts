@@ -1,6 +1,9 @@
+// Contributor(s): Robbie
+// Main: Robbie - SvelteKit fetch helpers for staff tools auth chat and shared API constants.
+
 /**
  * WebSocket topic paths for chat. Keep in sync with ChatTopics.java on Android
- * and the `/topic/chat/thread/...` strings used on the backend.
+ * and the topic chat thread strings configured on the Spring broker.
  */
 
 const base = (threadId: number | string) => `/topic/chat/thread/${threadId}`;

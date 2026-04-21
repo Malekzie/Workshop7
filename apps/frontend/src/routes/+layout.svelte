@@ -1,4 +1,9 @@
 <script lang="ts">
+// Contributor(s): Robbie, Samantha
+// Main: Robbie - Root layout auth gating websocket lifecycle and global shell behavior.
+// Assistance: Samantha - Cart state and checkout visibility hooks in the shared layout.
+// Opens the realtime socket when a user exists and rebinds cart storage when user id changes.
+
 	import './layout.css';
 	import { page } from '$app/state';
 	import { navigating } from '$app/state';

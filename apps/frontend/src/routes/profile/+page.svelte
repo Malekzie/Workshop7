@@ -1,4 +1,10 @@
 <script>
+// Contributor(s): Mason, Owen, Robbie
+// Main: Mason - Customer profile route with avatar tier badges and account actions.
+// Assistance: Owen - Reward points and tier chips in the profile header on the web.
+// Assistance: Robbie - OAuth completion prompts and protected session handling on this route.
+// Customer profile overview: details panel recommendations strip and tier or rewards header UI.
+
 	import ProfileDetails from '$lib/components/profile/ProfileDetails.svelte';
 	import ProfileRecomendations from '$lib/components/profile/ProfileRecomendations.svelte';
 	import { Avatar, AvatarImage, AvatarFallback } from '$lib/components/ui/avatar';

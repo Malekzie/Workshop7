@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Redis cache manager JSON serializers and safe Jackson polymorphic typing.
+
 package com.sait.peelin.config;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
@@ -24,6 +27,9 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Redis-backed {@link org.springframework.cache.CacheManager} with hardened Jackson JSON values.
+ */
 @Configuration
 @EnableCaching
 public class CacheConfig implements CachingConfigurer {
@@ -97,7 +103,7 @@ public class CacheConfig implements CachingConfigurer {
         return new SimpleCacheErrorHandler() {
             @Override
             public void handleCacheGetError(RuntimeException e, Cache cache, Object key) {
-                // Stale or cross-version Redis payloads may not deserialize; treat as miss (do not rethrow).
+                // Stale or cross-version Redis payloads may not deserialize so treat as miss (do not rethrow).
                 log.warn("Cache read failed for '{}::{}', loading from source: {}", cache.getName(), key, e.getMessage());
             }
 

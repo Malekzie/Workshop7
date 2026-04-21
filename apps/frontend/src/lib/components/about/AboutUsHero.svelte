@@ -1,3 +1,6 @@
+<!-- Contributor(s): Robbie, Mason -->
+<!-- Main: Robbie, Mason - Static about hero and story sections with no client script. -->
+
 <section class="space-y-6 text-center">
 	<h1 class="font-headline text-5xl font-black text-[#C25F1A]">About Our Bakery</h1>
 	<p class="text-on-surface-variant mx-auto max-w-2xl text-lg">

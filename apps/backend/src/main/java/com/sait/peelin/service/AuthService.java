@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Login registration password change account bootstrap and JWT responses.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.auth.AccountProfilePatchRequest;
@@ -36,6 +39,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
+/**
+ * Core authentication flows coordinating {@link JwtService} repositories and profile services.
+ */
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -141,9 +147,9 @@ public class AuthService {
     }
 
     /**
-     * Lightweight check for multi-step UIs: username must be free; sign-in email must not be taken by another
+     * Lightweight check for multi-step UIs where the username must be free and the sign-in email must not belong to another
      * <strong>customer</strong> or <strong>admin</strong> account. Employee sign-in rows may reuse the same address
-     * so a new customer can register with that email for employee–customer linking.
+     * so a new customer can register with that email for employee-customer linking.
      */
     @Transactional(readOnly = true)
     public RegisterAvailabilityResponse getRegisterAvailability(String username, String email, String phone) {
@@ -161,7 +167,7 @@ public class AuthService {
                 User empUser = match.get().getUser();
                 employeeLinkOffered = empUser != null && StringUtils.hasText(empUser.getUserPasswordHash());
             } else if (!employeeRepository.findByWorkEmailNormalized(e).isEmpty()) {
-                // Employee exists but is already linked — block registration with this email
+                // Employee exists but is already linked so block registration with this email
                 emailAvailable = false;
             }
             guestEmailLinkOffered = !customerRepository.findGuestCustomersByEmailNormalized(e).isEmpty();

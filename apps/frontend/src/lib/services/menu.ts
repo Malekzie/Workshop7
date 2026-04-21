@@ -1,13 +1,19 @@
+// Contributor(s): Robbie, Mason, Samantha
+// Main: Mason - Menu composition (products, tags, reviews wiring).
+// Assistance: Robbie - Tag and filter service calls that feed this module.
+// Assistance: Samantha - Cart actions that start from menu selections.
 import { getProducts } from '$lib/services/products';
 import { getTags } from '$lib/services/tags';
 import { createProductReview, getProductReviews } from '$lib/services/review';
 import { truncateModerationMessage } from '$lib/utils/reviewMessage';
 
+/** Tag row shape used by menu filters. Ids align with TagDto from the API. */
 export type MenuTag = {
 	id: number | string;
 	name: string;
 };
 
+/** Product card fields sourced from ProductDto JSON. */
 export type MenuProduct = {
 	id: number | string;
 	name: string;
@@ -22,14 +28,12 @@ type ReviewSubmissionResult = {
 	moderationMessage?: string | null;
 };
 
-/**
- * Loads products and tags concurrently.
- * Returns `[products, tags]`.
- */
+/** Loads products and tags in parallel for the menu route. */
 export async function loadMenuCatalog() {
 	return Promise.all([getProducts(), getTags()]);
 }
 
+/** Reads tag search and product query params from the menu URL. */
 export function resolveInitialMenuState(url: URL, tags: MenuTag[]) {
 	const tagParam = url.searchParams.get('tag');
 	let activeTagId = null;
@@ -47,6 +51,7 @@ export function resolveInitialMenuState(url: URL, tags: MenuTag[]) {
 	};
 }
 
+/** Client side filter by active tag id and name or description search text. */
 export function filterMenuProducts(
 	products: MenuProduct[],
 	activeTagId: number | string | null,
@@ -64,10 +69,12 @@ export function filterMenuProducts(
 	});
 }
 
+/** Fetches reviews for the modal using the public product reviews GET. */
 export async function loadMenuProductReviews(productId: number | string) {
 	return getProductReviews(productId);
 }
 
+/** Submits createProductReview then maps moderation status for UI without throwing. */
 export async function submitMenuProductReview(options: {
 	productId: number | string;
 	rating: number;

@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Stripe webhook signature verification and checkout payment fulfillment.
+
 package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.model.StripeProcessedEvent;
@@ -9,6 +12,11 @@ import com.google.gson.JsonParser;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.net.Webhook;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,9 +31,13 @@ import org.springframework.web.bind.annotation.*;
 import java.time.OffsetDateTime;
 import java.util.Map;
 
+/**
+ * Inbound Stripe events at {@code /api/v1/stripe} for idempotent order updates after payment.
+ */
 @RestController
 @RequestMapping("/api/v1/stripe")
 @RequiredArgsConstructor
+@Tag(name = "Stripe", description = "Publishable key for checkout clients and inbound webhook events for payment capture.")
 public class StripeWebhookController {
 
     private static final Logger log = LoggerFactory.getLogger(StripeWebhookController.class);
@@ -39,6 +51,10 @@ public class StripeWebhookController {
     private final StripePaymentFulfillmentService stripePaymentFulfillmentService;
     private final StripeProcessedEventRepository stripeProcessedEventRepository;
 
+    @Operation(summary = "Stripe client config", description = "Returns the publishable key used by Stripe.js on the storefront checkout flow.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Map with publishableKey entry returned")
+    })
     @GetMapping("/config")
     public ResponseEntity<Map<String, String>> config() {
         return ResponseEntity.ok(Map.of("publishableKey", publishableKey != null ? publishableKey : ""));
@@ -51,6 +67,11 @@ public class StripeWebhookController {
      */
     private record WebhookEnvelope(String payload, String signature) {}
 
+    @Operation(summary = "Stripe webhook", description = "Verifies Stripe-Signature when the webhook secret property is set. Fulfills payment_intent.succeeded at most once per Stripe event id.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Event accepted or duplicate delivery short-circuited"),
+            @ApiResponse(responseCode = "400", description = "Invalid payload or signature", content = @Content)
+    })
     @PostMapping("/webhook")
     @Transactional
     public ResponseEntity<String> handleWebhook(
@@ -101,8 +122,8 @@ public class StripeWebhookController {
 
     /**
      * Verifies the Stripe-Signature header against {@link #webhookSecret}. Returns {@code null}
-     * when the header is missing, the signature doesn't verify, or the body fails to parse — any
-     * such case lets the controller reply 400 without distinguishing them to the caller.
+     * when the header is missing or the signature does not verify or the body fails to parse.
+     * Any such case lets the controller reply 400 without distinguishing them to the caller.
      */
     private Event parseSignedEvent(WebhookEnvelope envelope) {
         if (!StringUtils.hasText(envelope.signature())) {
@@ -135,7 +156,7 @@ public class StripeWebhookController {
     }
 
     /**
-     * Insert event id; return false if it was already there. Caller must be inside a @Transactional.
+     * Inserts the Stripe event id and returns false if it was already there. Caller must be inside a @Transactional.
      */
     private boolean claimEvent(Event event) {
         String eventId = event.getId();
@@ -149,14 +170,14 @@ public class StripeWebhookController {
             stripeProcessedEventRepository.save(row);
             return true;
         } catch (DataIntegrityViolationException e) {
-            // Lost a race with a concurrent delivery — treat as already processed.
+            // Lost a race with a concurrent delivery so treat as already processed.
             return false;
         }
     }
 
     /**
      * Stripe API versions newer than the bundled stripe-java model often leave
-     * {@code Event.getDataObjectDeserializer().getObject()} empty; parse {@code data.object} fields
+     * {@code Event.getDataObjectDeserializer().getObject()} empty. Parse {@code data.object} fields
      * directly from the raw payload so we get id + amount + currency in one pass.
      */
     private static PaymentIntentSnapshot extractPaymentIntent(WebhookEnvelope envelope) {

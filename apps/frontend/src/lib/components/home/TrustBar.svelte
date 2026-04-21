@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Static trust highlights row for the home page with icon and label pairs only.
+
 	import { Wheat, Clock, MapPin, Star } from '@lucide/svelte';
 
 	const items = [

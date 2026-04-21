@@ -1,3 +1,7 @@
+// Contributor(s): Robbie
+// Main: Robbie - SvelteKit fetch helpers for staff tools auth chat and shared API constants.
+
+/** Path prefixes for Springdoc REST resources under the v1 API base. */
 export const API_V1 = '/api/v1' as const;
 
 export const AUTH_API = `${API_V1}/auth` as const;

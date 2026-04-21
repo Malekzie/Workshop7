@@ -1,19 +1,26 @@
+// Contributor(s): Robbie, Mason, Samantha
+// Main: Mason - Bakery listing and product helpers for the storefront.
+// Assistance: Robbie - Shared fetch patterns and error types for API calls.
+// Assistance: Samantha - Order flows that pick up or display bakery locations.
 import { apiFetch } from '$lib/utils/api';
 import { BAKERIES_API } from '$lib/services/constants';
 import type { ApiId, ProductRecord, ReviewRecord, ErrorWithStatus } from '$lib/services/types';
 
+/** GET bakeries public list without cookies. */
 export async function getBakeries(): Promise<unknown[]> {
 	const res = await fetch(BAKERIES_API);
 	if (!res.ok) throw new Error(`Failed to fetch bakeries: ${res.status}`);
 	return res.json();
 }
 
+/** GET approved reviews for one bakery id. */
 export async function getBakeryReviews(bakeryId: ApiId): Promise<ReviewRecord[]> {
 	const res = await fetch(`${BAKERIES_API}/${bakeryId}/reviews`);
 	if (!res.ok) throw new Error(`Failed to fetch bakery reviews: ${res.status}`);
 	return res.json();
 }
 
+/** GET average rating payload or null when the API signals no data. */
 export async function getBakeryAverage(bakeryId: ApiId): Promise<unknown | null> {
 	const res = await fetch(`${BAKERIES_API}/${bakeryId}/reviews/average`);
 	if (!res.ok) return null;
@@ -43,6 +50,7 @@ export async function createBakeryReview(
 	return res.json();
 }
 
+/** GET weekly hours rows for one bakery id. */
 export async function getBakeryHours(bakeryId: ApiId): Promise<unknown[]> {
 	const res = await fetch(`${BAKERIES_API}/${bakeryId}/hours`);
 	if (!res.ok) return [];

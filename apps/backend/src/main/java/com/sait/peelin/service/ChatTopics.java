@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - STOMP topic path helpers for chat typing and message fan-out.
+
 package com.sait.peelin.service;
 
 /**

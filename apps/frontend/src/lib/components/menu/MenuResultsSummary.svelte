@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Chip row showing active tag or search plus clear controls above the product grid.
+
 	import { X } from '@lucide/svelte';
 
 	let { resultCount = 0, activeTagName = null, searchQuery = '', onClear = () => {} } = $props();

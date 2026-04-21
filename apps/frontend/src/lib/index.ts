@@ -1,1 +1,2 @@
-// place files you want to import through the `$lib` alias in this folder.
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Default SvelteKit `$lib` root: add shared modules here so routes can import them with the alias.

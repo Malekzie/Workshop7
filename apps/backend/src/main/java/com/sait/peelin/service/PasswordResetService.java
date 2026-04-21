@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Forgot-password tokens email handoff and reset validation.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.model.PasswordResetToken;

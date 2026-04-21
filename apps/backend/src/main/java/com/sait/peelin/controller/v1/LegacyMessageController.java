@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Legacy user-to-user messaging kept for backward compatibility.
+
 package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.dto.v1.LegacyMessageDto;
@@ -17,10 +20,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Legacy direct messages under {@code /api/v1/messages} for accounts that predate chat threads.
+ */
 @RestController
 @RequestMapping("/api/v1/messages")
 @RequiredArgsConstructor
-@Tag(name = "Legacy messages", description = "Simple direct messaging between users (pre-chat system). Kept for backward compatibility.")
+@Tag(name = "Legacy messages", description = "Simple direct messaging between users before thread-based chat. Kept for backward compatibility.")
 @SecurityRequirement(name = "bearer-jwt")
 public class LegacyMessageController {
 

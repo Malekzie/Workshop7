@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - RestControllerAdvice maps exceptions to HTTP status and ApiError bodies.
+
 package com.sait.peelin.controller;
 
 import com.sait.peelin.dto.ApiError;
@@ -20,6 +23,9 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Maps domain and security exceptions to HTTP status codes and {@link com.sait.peelin.dto.ApiError} bodies for JSON clients.
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 

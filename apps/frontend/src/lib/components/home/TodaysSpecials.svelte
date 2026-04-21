@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Fetches today special plus linked product detail for the home specials grid and cart actions.
+
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { Skeleton } from '$lib/components/ui/skeleton';

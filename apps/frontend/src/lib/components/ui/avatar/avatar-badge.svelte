@@ -1,4 +1,9 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Mason - Small corner badge for online state unread dots or role markers on avatars.
+// Assistance: Robbie - Staff presence and escalation markers on messaging avatars.
+
+
 	import type { HTMLAttributes } from 'svelte/elements';
 	import { cn, type WithElementRef } from '$lib/utils.js';
 

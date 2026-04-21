@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Client calls for menu products bakeries tags reviews profile and account.
+
 import { get } from 'svelte/store';
 import { user } from '$lib/stores/authStore.js';
 import { apiFetch } from '$lib/utils/api';
@@ -6,6 +9,7 @@ import type { CustomerRecord, ErrorWithStatus, ProductRecord } from '$lib/servic
 
 type SessionUser = { role?: string } | null;
 
+/** GET profile. Uses employee me for staff roles and customers me for shoppers so JSON shape follows those OpenAPI resources. */
 export async function getProfile(): Promise<CustomerRecord | undefined> {
 	const currentUser = get(user) as SessionUser;
 	const role = (currentUser?.role ?? '').toLowerCase();
@@ -39,6 +43,7 @@ export async function getProfile(): Promise<CustomerRecord | undefined> {
 	};
 }
 
+/** DELETE customers me for full account removal when the API allows. */
 export async function deleteAccount(): Promise<void> {
 	const res = await apiFetch(PROFILE_API, {
 		method: 'DELETE'
@@ -48,6 +53,7 @@ export async function deleteAccount(): Promise<void> {
 	if (!res.ok) throw new Error(`Failed to delete account: ${res.status}`);
 }
 
+/** PATCH customers me with sparse fields matching CustomerPatchRequest in OpenAPI. */
 export async function updateProfile(
 	profileData: Record<string, unknown>
 ): Promise<CustomerRecord | undefined> {
@@ -62,6 +68,7 @@ export async function updateProfile(
 	return res.json();
 }
 
+/** POST customers me to create the row after registration. Body matches CustomerBootstrapRequest in OpenAPI. */
 export async function bootstrapCustomerProfile(
 	profileData: Record<string, unknown>
 ): Promise<CustomerRecord | undefined> {
@@ -82,6 +89,7 @@ export async function bootstrapCustomerProfile(
 	return res.json();
 }
 
+/** POST account profile-photo multipart field photo per Account OpenAPI. */
 export async function uploadProfilePhoto(file: File): Promise<CustomerRecord | undefined> {
 	const formData = new FormData();
 	formData.append('photo', file);
@@ -105,6 +113,7 @@ export async function deactivateAccount(currentPassword: string): Promise<void> 
 	if (!res.ok) throw new Error(`Failed to deactivate account: ${res.status}`);
 }
 
+/** GET recommendations for the signed-in customer. Returns empty when the API yields no rows. */
 export async function getRecommendations(): Promise<ProductRecord[]> {
 	const res = await apiFetch(`${API_V1}/recommendations`);
 

@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Chat routing joins between employees and product categories.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.EmployeeSpecialty;

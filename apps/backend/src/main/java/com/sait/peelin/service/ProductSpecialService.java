@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Daily specials scheduling and promotional pricing rules.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.ProductSpecialDto;

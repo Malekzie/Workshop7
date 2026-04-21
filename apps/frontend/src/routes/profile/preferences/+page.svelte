@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Tag preferences: GET tags and GET or PUT customer preference payload for recommendations.
+
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -31,7 +34,7 @@
 		{ value: 'dislike', label: '👎 Dislike', color: 'bg-red-100 text-red-700 border-red-300' }
 	];
 
-	// Driven by the dietary field from the API — no hardcoded IDs
+	// Driven by the dietary field from the API  -  no hardcoded IDs
 	const dietaryTags = $derived(tags.filter((t) => t.dietary));
 	const categoryTags = $derived(tags.filter((t) => !t.dietary));
 

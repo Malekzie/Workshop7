@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - JWT and session cookie parsing into Spring Security context per request.
+
 package com.sait.peelin.security;
 
 import com.sait.peelin.model.User;
@@ -18,6 +21,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * Once-per-request filter that sets authentication from {@code Authorization} Bearer token or cookies.
+ */
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {

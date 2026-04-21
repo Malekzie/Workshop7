@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Registration form: username availability, POST auth register, then customer profile bootstrap when required.
+
 	import { fetchRegisterAvailability, registerUser } from '$lib/services/auth';
 	import { updateProfile } from '$lib/services/profile';
 	import { resolve } from '$app/paths';

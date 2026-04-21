@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Customer rows profile fields and admin search queries.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.Customer;

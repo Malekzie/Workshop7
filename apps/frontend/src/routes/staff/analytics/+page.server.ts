@@ -1,3 +1,6 @@
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Seeds default analytics date range as roughly the past year through today for staff charts.
+
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {

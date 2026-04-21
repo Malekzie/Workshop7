@@ -1,5 +1,10 @@
+// Contributor(s): Robbie
+// Main: Robbie - SvelteKit fetch helpers for staff tools auth chat and shared API constants.
+
 import { ORDERS_API } from '$lib/services/constants';
 import type { ApiId, OrderRecord } from '$lib/services/types';
+
+/** Staff PATCH helpers on orders id status and delivered matching Orders OpenAPI. */
 
 export async function updateOrderStatus(orderId: ApiId, status: string): Promise<OrderRecord> {
 	const res = await fetch(`${ORDERS_API}/${orderId}/status`, {

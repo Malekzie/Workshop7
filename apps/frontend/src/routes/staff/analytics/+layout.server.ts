@@ -1,3 +1,6 @@
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Analytics dashboard is admin-only other roles redirect to the staff dashboard.
+
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 

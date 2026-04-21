@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Welcome email after successful self-service registration.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.model.User;

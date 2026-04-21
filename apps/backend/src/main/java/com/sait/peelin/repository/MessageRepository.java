@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Legacy user-to-user message persistence.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.Message;

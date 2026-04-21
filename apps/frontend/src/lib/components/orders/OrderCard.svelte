@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Collapsed order summary row with status badge from OrdersHelper and expand chevron.
+
 	/**
 	 * Individual order card in collapsed state
 	 * Shows order number, bakery, date, status badge, and total price

@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Desktop tag filter list bound to menu activeTagId and the loaded tag catalog.
+
 	let { activeTagId = $bindable(null), tags = [] } = $props();
 </script>
 

@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Password change profile photo and account lifecycle for any signed-in role.
+
 package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.dto.v1.auth.AccountProfilePatchRequest;
@@ -28,17 +31,20 @@ import org.springframework.web.multipart.MultipartFile;
 import com.sait.peelin.dto.v1.CustomerDto;
 import com.sait.peelin.dto.v1.ProfilePhotoResponse;
 
+/**
+ * Password profile photo and account settings for the signed-in user at {@code /api/v1/account}.
+ */
 @RestController
 @RequestMapping("/api/v1/account")
 @RequiredArgsConstructor
-@Tag(name = "Account", description = "Manage the currently authenticated user's account settings")
+@Tag(name = "Account", description = "Password profile photo and account fields for the signed-in user.")
 @SecurityRequirement(name = "bearer-jwt")
 public class AccountController {
 
     private final AuthService authService;
     private final CustomerService customerService;
 
-    @Operation(summary = "Change password", description = "Update the authenticated user's password. Requires current password for verification.")
+    @Operation(summary = "Change password", description = "Updates the signed-in user password after the current password checks out.")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Password changed successfully"),
             @ApiResponse(responseCode = "400", description = "Validation error or incorrect current password", content = @Content),
@@ -62,7 +68,7 @@ public class AccountController {
         authService.deactivateAccount(request);
     }
 
-    @Operation(summary = "Upload profile photo", description = "Upload a profile photo for the authenticated customer. The photo is stored and set to pending review before being publicly visible.")
+    @Operation(summary = "Upload profile photo", description = "Stores a new customer profile image and leaves it pending review before it appears on the storefront.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Photo uploaded, customer record returned with updated photo URL"),
             @ApiResponse(responseCode = "400", description = "Invalid file type or size", content = @Content),
@@ -73,6 +79,12 @@ public class AccountController {
         return customerService.uploadMyProfilePhoto(photo);
     }
 
+    @Operation(summary = "Patch my profile", description = "Updates editable account fields for the signed-in user and returns an updated auth snapshot.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Profile updated"),
+            @ApiResponse(responseCode = "400", description = "Validation error", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content)
+    })
     @PatchMapping("/profile")
     public AuthResponse patchProfile(@RequestBody AccountProfilePatchRequest request) {
         return authService.patchMyProfile(request);

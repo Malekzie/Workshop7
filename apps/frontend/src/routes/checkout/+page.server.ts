@@ -1,3 +1,6 @@
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Server load for checkout: bakeries list, Stripe publishable key, and customers me when the session is signed in.
+
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 

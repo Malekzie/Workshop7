@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Employee profiles directory lookups and specialty joins.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.Employee;

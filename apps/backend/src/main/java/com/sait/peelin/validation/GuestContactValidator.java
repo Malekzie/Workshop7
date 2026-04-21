@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Validates guest checkout requests require email or phone per business rules.
+
 package com.sait.peelin.validation;
 
 import com.sait.peelin.dto.v1.GuestCustomerRequest;

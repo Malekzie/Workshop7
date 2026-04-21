@@ -1,4 +1,11 @@
 <script lang="ts" module>
+// Contributor(s): Robbie, Mason, Owen, Samantha
+// Main: Mason - Compact chips for categories status flags and highlights on catalog and profile rows.
+// Assistance: Robbie - Role and moderation labels on staff and admin screens.
+// Assistance: Owen - Employee-customer discount and linkage cues next to prices where rules apply.
+// Assistance: Samantha - Fulfillment payment and order state chips on cart and tracking views.
+
+
 	import { type VariantProps, tv } from 'tailwind-variants';
 
 	export const badgeVariants = tv({

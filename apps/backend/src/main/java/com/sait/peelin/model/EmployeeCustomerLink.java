@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - JPA link row for employee-customer discount pairing.
+
 package com.sait.peelin.model;
 
 import jakarta.persistence.*;

@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Order line items and product snapshots.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.OrderItem;

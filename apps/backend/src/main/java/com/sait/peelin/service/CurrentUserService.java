@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Resolves authenticated User entity for the current HTTP request.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.model.User;

@@ -1,4 +1,10 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason, Samantha
+// Main: Mason - Footer strip for secondary actions and meta links under card bodies.
+// Assistance: Robbie - Staff footers with audit links on review and order cards.
+// Assistance: Samantha - Footers with pay links and policy hints on checkout cards.
+
+
 	import { cn, type WithElementRef } from '$lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
 

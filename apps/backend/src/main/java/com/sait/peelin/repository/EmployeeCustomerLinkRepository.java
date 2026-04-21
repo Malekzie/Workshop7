@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - One-to-one employee and customer pairs for staff discount rules.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.EmployeeCustomerLink;

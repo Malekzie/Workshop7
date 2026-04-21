@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Bakery locations and search helpers.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.Bakery;

@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Form and postal helpers for registration profile and addresses.
+
 /** Keep in sync with ReviewModerationService.MAX_REJECTION_REASON_CHARS (backend). */
 const DEFAULT_MAX = 80;
 

@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Archived chat threads: list closed threads, load messages, reopen via chat service helpers.
+
     import { onMount } from 'svelte';
     import { user } from '$lib/stores/authStore';
     import { goto } from '$app/navigation';

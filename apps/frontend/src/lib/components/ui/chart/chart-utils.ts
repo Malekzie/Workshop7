@@ -1,6 +1,11 @@
+// Contributor(s): Robbie, Mason
+// Main: Robbie - ChartConfig helpers and Svelte context for staff metric charts.
+// Assistance: Mason - Color keys and theme maps consumed by chart Svelte wrappers.
+
 import type { Tooltip } from "layerchart";
 import { getContext, setContext, type Component, type Snippet } from "svelte";
 
+/** CSS selector suffix keys used when chart colors differ in light versus dark mode. */
 export const THEMES = { light: "", dark: ".dark" } as const;
 
 export type ChartConfig = {
@@ -17,7 +22,7 @@ export type ExtractSnippetParams<T> = T extends Snippet<[infer P]> ? P : never;
 
 export type TooltipPayload = Tooltip.TooltipSeries;
 
-// Helper to extract item config from a payload.
+/** Resolves which ChartConfig entry applies to a layerchart tooltip payload for label and color lookups. */
 export function getPayloadConfigFromPayload(
 	config: ChartConfig,
 	payload: TooltipPayload,
@@ -59,10 +64,12 @@ type ChartContextValue = {
 
 const chartContextKey = Symbol("chart-context");
 
+/** Called by chart container to expose config to descendant snippets. */
 export function setChartContext(value: ChartContextValue) {
 	return setContext(chartContextKey, value);
 }
 
+/** Reads chart config from Svelte context inside chart subcomponents. */
 export function useChart() {
 	return getContext<ChartContextValue>(chartContextKey);
 }

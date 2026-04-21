@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Forgot password form: POST auth forgot flow to email a recovery link.
+
 	import { forgotPassword } from '$lib/services/auth';
 
 	let email = '';

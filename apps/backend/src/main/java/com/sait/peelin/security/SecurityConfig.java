@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Spring Security filter chain JWT OAuth2 CORS method security and rate limit hook.
+
 package com.sait.peelin.security;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,6 +23,9 @@ import org.springframework.web.cors.CorsConfigurationSource;
 
 import java.util.Optional;
 
+/**
+ * Central {@link org.springframework.security.web.SecurityFilterChain} plus password encoder beans.
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -52,7 +58,7 @@ public class SecurityConfig {
                         // API responses are JSON and never executed as HTML, so CSP here is only
                         // meaningful for the Swagger UI pages served same-origin. Springdoc's bundled
                         // HTML uses inline bootstrap scripts, so 'unsafe-inline' is required for
-                        // /swagger-ui/** to render; same rationale for style-src.
+                        // /swagger-ui/** to render. The same rationale applies to style-src.
                         .contentSecurityPolicy(csp -> csp.policyDirectives(
                                 "default-src 'none'; "
                                 + "frame-ancestors 'none'; "

@@ -1,4 +1,8 @@
 <script>
+// Contributor(s): Mason, Owen
+// Main: Mason - Bakery finder with list and map tabs plus per-location reviews.
+// Assistance: Owen - Map page polish and review rows with profile photos and approval fallbacks.
+
 	import { onMount } from 'svelte';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import {

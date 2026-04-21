@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Staff customer directory: search and list rows linking to per-customer detail routes.
+
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { Skeleton } from '$lib/components/ui/skeleton';

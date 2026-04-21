@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Product catalog CRUD search tags and image handling for storefront.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.ProductDto;

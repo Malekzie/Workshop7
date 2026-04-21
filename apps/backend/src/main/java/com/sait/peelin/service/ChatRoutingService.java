@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Routes new chat threads to staff based on availability and rules.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.model.EmployeeSpecialty;

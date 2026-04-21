@@ -1,3 +1,9 @@
+// Contributor(s): Robbie, Mason, Samantha
+// Main: Robbie - Server hooks for Sentry env validation and the request chain.
+// Assistance: Mason - Staff and public routes that pass through this handle chain.
+// Assistance: Samantha - Guest cart and checkout server layouts that use these hooks.
+// Chains env validation, Sentry request tracing, and JWT cookie parsing into event.locals.user for layouts.
+
 import { sequence } from '@sveltejs/kit/hooks';
 import * as Sentry from '@sentry/sveltekit';
 import type { Handle } from '@sveltejs/kit';

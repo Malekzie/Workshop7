@@ -1,3 +1,8 @@
+// Contributor(s): Robbie
+// Main: Robbie - SvelteKit fetch helpers for staff tools auth chat and shared API constants.
+
+/** STOMP client over same-origin ws for chat typing and read receipts. */
+
 import { Client, type StompSubscription } from '@stomp/stompjs';
 import { browser } from '$app/environment';
 
@@ -8,7 +13,7 @@ interface SubEntry {
     sub: StompSubscription | null;
 }
 
-// topic → subscription entry (persisted across reconnects)
+// Each topic string maps to one subscription entry that survives reconnects.
 const subscriptions = new Map<string, SubEntry>();
 
 function clearActiveSubs() {
@@ -42,8 +47,8 @@ function buildClient(): Client {
         }
     };
 
-    // Use onWebSocketClose instead of onDisconnect — onDisconnect only fires on graceful
-    // STOMP DISCONNECT receipt, which is not sent on network drops or heartbeat timeouts.
+    // Use onWebSocketClose instead of onDisconnect because onDisconnect only fires on graceful
+    // STOMP DISCONNECT receipt which is not sent on network drops or heartbeat timeouts.
     c.onWebSocketClose = () => {
         clearActiveSubs();
     };
@@ -67,8 +72,8 @@ export async function disconnectWs(): Promise<void> {
 }
 
 /**
- * Subscribe to a STOMP topic. Returns an unsubscribe function.
- * Safe to call before the client connects — subscription is replayed on connect.
+ * Subscribe to a STOMP topic and return an unsubscribe function.
+ * Safe to call before the client connects. The subscription is replayed on connect.
  * Calling with the same topic replaces the previous callback and unsubscribes the old one.
  */
 export function subscribeWs(topic: string, callback: (data: unknown) => void): () => void {

@@ -1,3 +1,6 @@
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - clsx and tailwind-merge cn helper plus shared shadcn-style utility types.
+
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 

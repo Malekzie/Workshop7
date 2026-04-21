@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - In-memory token denylist for tests and profiles without Redis.
+
 package com.sait.peelin.service;
 
 import lombok.RequiredArgsConstructor;

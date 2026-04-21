@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Scrollable message column for ChatMessage or StaffMessage rows with auto scroll on new items.
+
 	import { tick } from 'svelte';
 	import type { ChatMessage, StaffMessage } from '$lib/services/types';
 

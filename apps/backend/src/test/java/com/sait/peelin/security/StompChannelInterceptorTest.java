@@ -1,3 +1,6 @@
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Spring Boot API services and security.
+
 package com.sait.peelin.security;
 
 import com.sait.peelin.model.User;

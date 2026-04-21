@@ -3,7 +3,7 @@
     "_postman_id": "9f8f1e2a-74fd-4ddf-9ca1-2f8f7784b5be",
     "name": "Peelin' Good - Backend API v1",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Postman collection synced to implemented Workshop 7 backend endpoints."
+    "description": "Workshop 7 REST API (Spring Boot). Copy `apps/backend/.env.example` to `.env` / `.env.local` for local secrets. With the server running: Swagger UI at `/swagger-ui/index.html`, OpenAPI JSON at `/v3/api-docs`. Variables: `baseUrl` (default `http://localhost:8080`), `token` (set by Login requests), and path ids such as `productId`, `orderId`, `orderNumber`."
   },
   "auth": {
     "type": "bearer",
@@ -69,13 +69,111 @@
           }
         },
         {
-          "name": "OAuth2 Callback (Not Implemented)",
+          "name": "Whoami",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/whoami",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "whoami"]
+            }
+          }
+        },
+        {
+          "name": "Register Availability",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register/availability?username=&email=&phone=",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "register", "availability"],
+              "query": [
+                { "key": "username", "value": "" },
+                { "key": "email", "value": "" },
+                { "key": "phone", "value": "" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Logout",
           "request": {
             "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "logout"]
+            }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "forgot-password"]
+            }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"paste-token-from-email\",\n  \"newPassword\": \"NewCust123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "reset-password"]
+            }
+          }
+        },
+        {
+          "name": "Validate Reset Token",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/reset-password/validate?token=paste-token-from-email",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "reset-password", "validate"],
+              "query": [{ "key": "token", "value": "paste-token-from-email" }]
+            }
+          }
+        },
+        {
+          "name": "OAuth2 Callback (501 scaffold)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{}" },
+            "description": "Returns 501 until Google/Microsoft OAuth callback is implemented.",
             "url": {
               "raw": "{{baseUrl}}/api/v1/auth/oauth2/callback",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "auth", "oauth2", "callback"]
+            }
+          }
+        },
+        {
+          "name": "OAuth2 Success (browser redirect)",
+          "request": {
+            "method": "GET",
+            "description": "302 redirect to SPA after OAuth; normally used from a browser session, not Postman.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/oauth2/success",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "oauth2", "success"]
             }
           }
         }
@@ -97,6 +195,38 @@
               "raw": "{{baseUrl}}/api/v1/account/password",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "account", "password"]
+            }
+          }
+        },
+        {
+          "name": "Patch My Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": null,\n  \"email\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/account/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "account", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Deactivate Account",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Cust123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/account/deactivate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "account", "deactivate"]
             }
           }
         },
@@ -341,9 +471,13 @@
       "item": [
         { "name": "List Orders", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/orders", "host": ["{{baseUrl}}"], "path": ["api", "v1", "orders"] } } },
         { "name": "Get Order", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "orders", "{{orderId}}"] } } },
+        { "name": "Get Order By Number (guest + email query)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/orders/by-number/{{orderNumber}}?email=", "host": ["{{baseUrl}}"], "path": ["api", "v1", "orders", "by-number", "{{orderNumber}}"], "query": [{ "key": "email", "value": "", "description": "Required for guest lookup" }] } } },
         { "name": "Checkout", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"bakeryId\": 1,\n  \"orderMethod\": \"pickup\",\n  \"items\": [{ \"productId\": 1, \"quantity\": 1 }]\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/orders", "host": ["{{baseUrl}}"], "path": ["api", "v1", "orders"] } } },
+        { "name": "Confirm Stripe Payment", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"paymentIntentId\": \"pi_example_replace\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}/confirm-stripe-payment", "host": ["{{baseUrl}}"], "path": ["api", "v1", "orders", "{{orderId}}", "confirm-stripe-payment"] } } },
+        { "name": "Resume Stripe Payment", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}/resume-stripe-payment", "host": ["{{baseUrl}}"], "path": ["api", "v1", "orders", "{{orderId}}", "resume-stripe-payment"] } } },
         { "name": "Patch Order Status", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"status\": \"ready\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}/status", "host": ["{{baseUrl}}"], "path": ["api", "v1", "orders", "{{orderId}}", "status"] } } },
-        { "name": "Mark Delivered", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{}" }, "url": { "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}/delivered", "host": ["{{baseUrl}}"], "path": ["api", "v1", "orders", "{{orderId}}", "delivered"] } } }
+        { "name": "Mark Delivered", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{}" }, "url": { "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}/delivered", "host": ["{{baseUrl}}"], "path": ["api", "v1", "orders", "{{orderId}}", "delivered"] } } },
+        { "name": "Accept Delivery (customer)", "request": { "method": "PATCH", "url": { "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}/accept-delivery", "host": ["{{baseUrl}}"], "path": ["api", "v1", "orders", "{{orderId}}", "accept-delivery"] } } }
       ]
     },
     {
@@ -354,6 +488,41 @@
         { "name": "Create Tag", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Seasonal\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/tags", "host": ["{{baseUrl}}"], "path": ["api", "v1", "tags"] } } },
         { "name": "Update Tag", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Seasonal Updated\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/tags/{{tagId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "tags", "{{tagId}}"] } } },
         { "name": "Delete Tag", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/v1/tags/{{tagId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "tags", "{{tagId}}"] } } }
+      ]
+    },
+    {
+      "name": "Product specials",
+      "item": [
+        { "name": "Today Special (public)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/product-specials/today?date=", "host": ["{{baseUrl}}"], "path": ["api", "v1", "product-specials", "today"], "query": [{ "key": "date", "value": "", "description": "Optional yyyy-MM-dd" }] } } },
+        { "name": "All Specials (public)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/product-specials/all", "host": ["{{baseUrl}}"], "path": ["api", "v1", "product-specials", "all"] } } },
+        { "name": "Specials For Date (public)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/product-specials/for-date?date=", "host": ["{{baseUrl}}"], "path": ["api", "v1", "product-specials", "for-date"], "query": [{ "key": "date", "value": "" }] } } },
+        { "name": "Create Special (admin)", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"productId\": 1,\n  \"featuredOn\": \"2026-06-01\",\n  \"discountPercent\": 10\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/product-specials", "host": ["{{baseUrl}}"], "path": ["api", "v1", "product-specials"] } } },
+        { "name": "Update Special (admin)", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"productId\": 1,\n  \"featuredOn\": \"2026-06-01\",\n  \"discountPercent\": 12\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/product-specials/{{productSpecialId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "product-specials", "{{productSpecialId}}"] } } },
+        { "name": "Delete Special (admin)", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/v1/product-specials/{{productSpecialId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "product-specials", "{{productSpecialId}}"] } } }
+      ]
+    },
+    {
+      "name": "Recommendations",
+      "item": [
+        { "name": "My Recommendations (customer)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/recommendations", "host": ["{{baseUrl}}"], "path": ["api", "v1", "recommendations"] } } }
+      ]
+    },
+    {
+      "name": "Stripe",
+      "auth": { "type": "noauth" },
+      "item": [
+        { "name": "Publishable Config (public)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/stripe/config", "host": ["{{baseUrl}}"], "path": ["api", "v1", "stripe", "config"] } } }
+      ]
+    },
+    {
+      "name": "Staff messages",
+      "item": [
+        { "name": "List Conversations", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/messages/conversations", "host": ["{{baseUrl}}"], "path": ["api", "v1", "messages", "conversations"] } } },
+        { "name": "List Recipients", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/messages/recipients", "host": ["{{baseUrl}}"], "path": ["api", "v1", "messages", "recipients"] } } },
+        { "name": "Start Conversation", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"recipientId\": \"{{userId}}\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/messages/conversations", "host": ["{{baseUrl}}"], "path": ["api", "v1", "messages", "conversations"] } } },
+        { "name": "List Messages In Conversation", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/messages/conversations/{{staffConvoId}}/messages", "host": ["{{baseUrl}}"], "path": ["api", "v1", "messages", "conversations", "{{staffConvoId}}", "messages"] } } },
+        { "name": "Send Staff Message", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"text\": \"Hello from staff DM\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/messages/conversations/{{staffConvoId}}/messages", "host": ["{{baseUrl}}"], "path": ["api", "v1", "messages", "conversations", "{{staffConvoId}}", "messages"] } } },
+        { "name": "Mark Conversation Read", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/v1/messages/conversations/{{staffConvoId}}/read", "host": ["{{baseUrl}}"], "path": ["api", "v1", "messages", "conversations", "{{staffConvoId}}", "read"] } } }
       ]
     },
     {
@@ -372,6 +541,11 @@
         { "name": "List Product Reviews", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/products/{{productId}}/reviews", "host": ["{{baseUrl}}"], "path": ["api", "v1", "products", "{{productId}}", "reviews"] } } },
         { "name": "Product Review Average", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/products/{{productId}}/reviews/average", "host": ["{{baseUrl}}"], "path": ["api", "v1", "products", "{{productId}}", "reviews", "average"] } } },
         { "name": "Create Product Review", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Great product\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/products/{{productId}}/reviews", "host": ["{{baseUrl}}"], "path": ["api", "v1", "products", "{{productId}}", "reviews"] } } },
+        { "name": "List Bakery Reviews", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/bakeries/{{bakeryId}}/reviews", "host": ["{{baseUrl}}"], "path": ["api", "v1", "bakeries", "{{bakeryId}}", "reviews"] } } },
+        { "name": "Bakery Review Average", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/bakeries/{{bakeryId}}/reviews/average", "host": ["{{baseUrl}}"], "path": ["api", "v1", "bakeries", "{{bakeryId}}", "reviews", "average"] } } },
+        { "name": "Create Order Review", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Great order experience\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}/reviews", "host": ["{{baseUrl}}"], "path": ["api", "v1", "orders", "{{orderId}}", "reviews"] } } },
+        { "name": "Top Reviews (public)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/reviews/top?limit=5", "host": ["{{baseUrl}}"], "path": ["api", "v1", "reviews", "top"], "query": [{ "key": "limit", "value": "5" }] } } },
+        { "name": "Pending Reviews (staff)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/reviews/pending", "host": ["{{baseUrl}}"], "path": ["api", "v1", "reviews", "pending"] } } },
         { "name": "Patch Review Status", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"status\": \"approved\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/reviews/{{reviewId}}/status", "host": ["{{baseUrl}}"], "path": ["api", "v1", "reviews", "{{reviewId}}", "status"] } } }
       ]
     },
@@ -393,13 +567,18 @@
       "name": "Customer Self",
       "item": [
         { "name": "Get My Customer Profile", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/customers/me", "host": ["{{baseUrl}}"], "path": ["api", "v1", "customers", "me"] } } },
-        { "name": "Patch My Customer Profile", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Olivia\",\n  \"lastName\": \"Brown\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/customers/me", "host": ["{{baseUrl}}"], "path": ["api", "v1", "customers", "me"] } } }
+        { "name": "Bootstrap Customer Profile", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Sam\",\n  \"middleInitial\": \"\",\n  \"lastName\": \"Customer\",\n  \"phone\": \"4035550100\",\n  \"businessPhone\": \"\",\n  \"addressLine1\": \"100 Example St\",\n  \"addressLine2\": \"\",\n  \"city\": \"Calgary\",\n  \"province\": \"AB\",\n  \"postalCode\": \"T2P1A1\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/customers/me", "host": ["{{baseUrl}}"], "path": ["api", "v1", "customers", "me"] } } },
+        { "name": "Patch My Customer Profile", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Olivia\",\n  \"lastName\": \"Brown\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/customers/me", "host": ["{{baseUrl}}"], "path": ["api", "v1", "customers", "me"] } } },
+        { "name": "Get My Preferences", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/customers/me/preferences", "host": ["{{baseUrl}}"], "path": ["api", "v1", "customers", "me", "preferences"] } } },
+        { "name": "Put My Preferences", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"preferences\": [\n    { \"tagId\": 1, \"preferenceType\": \"like\" }\n  ]\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/customers/me/preferences", "host": ["{{baseUrl}}"], "path": ["api", "v1", "customers", "me", "preferences"] } } },
+        { "name": "Delete My Customer Profile", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/v1/customers/me", "host": ["{{baseUrl}}"], "path": ["api", "v1", "customers", "me"] } } }
       ]
     },
     {
       "name": "Employee",
       "item": [
         { "name": "Get Employee Me", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/employee/me", "host": ["{{baseUrl}}"], "path": ["api", "v1", "employee", "me"] } } },
+        { "name": "Patch Employee Me", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Updated\",\n  \"lastName\": \"Name\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/employee/me", "host": ["{{baseUrl}}"], "path": ["api", "v1", "employee", "me"] } } },
         { "name": "Get Employee My Bakeries", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/employee/me/bakeries", "host": ["{{baseUrl}}"], "path": ["api", "v1", "employee", "me", "bakeries"] } } },
         { "name": "List Staff (Admin)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/employee/staff", "host": ["{{baseUrl}}"], "path": ["api", "v1", "employee", "staff"] } } },
         { "name": "Get Staff By Id (Admin)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/employee/staff/{{employeeId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "employee", "staff", "{{employeeId}}"] } } }
@@ -414,7 +593,12 @@
         { "name": "Get Thread Messages", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/chat/threads/{{threadId}}/messages", "host": ["{{baseUrl}}"], "path": ["api", "v1", "chat", "threads", "{{threadId}}", "messages"] } } },
         { "name": "Post Thread Message", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"text\": \"Hello from Postman\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/chat/threads/{{threadId}}/messages", "host": ["{{baseUrl}}"], "path": ["api", "v1", "chat", "threads", "{{threadId}}", "messages"] } } },
         { "name": "Assign Thread (Staff)", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/v1/chat/threads/{{threadId}}/assign", "host": ["{{baseUrl}}"], "path": ["api", "v1", "chat", "threads", "{{threadId}}", "assign"] } } },
-        { "name": "Mark Thread Read", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/v1/chat/threads/{{threadId}}/read", "host": ["{{baseUrl}}"], "path": ["api", "v1", "chat", "threads", "{{threadId}}", "read"] } } }
+        { "name": "Mark Thread Read", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/v1/chat/threads/{{threadId}}/read", "host": ["{{baseUrl}}"], "path": ["api", "v1", "chat", "threads", "{{threadId}}", "read"] } } },
+        { "name": "Archived Threads (staff)", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/chat/threads/archived", "host": ["{{baseUrl}}"], "path": ["api", "v1", "chat", "threads", "archived"] } } },
+        { "name": "Close Thread", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/v1/chat/threads/{{threadId}}/close", "host": ["{{baseUrl}}"], "path": ["api", "v1", "chat", "threads", "{{threadId}}", "close"] } } },
+        { "name": "Reopen Thread", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/v1/chat/threads/{{threadId}}/reopen", "host": ["{{baseUrl}}"], "path": ["api", "v1", "chat", "threads", "{{threadId}}", "reopen"] } } },
+        { "name": "Transfer Thread", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"employeeUserId\": \"{{userId}}\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/chat/threads/{{threadId}}/transfer", "host": ["{{baseUrl}}"], "path": ["api", "v1", "chat", "threads", "{{threadId}}", "transfer"] } } },
+        { "name": "Staff Specialties", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/chat/staff/me/specialties", "host": ["{{baseUrl}}"], "path": ["api", "v1", "chat", "staff", "me", "specialties"] } } }
       ]
     },
     {
@@ -433,6 +617,9 @@
           "name": "Users",
           "item": [
             { "name": "List Users", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/admin/users", "host": ["{{baseUrl}}"], "path": ["api", "v1", "admin", "users"] } } },
+            { "name": "List Staff Users", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/admin/users/staff", "host": ["{{baseUrl}}"], "path": ["api", "v1", "admin", "users", "staff"] } } },
+            { "name": "Profile-Linked User Ids", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/admin/users/profile-linked-ids", "host": ["{{baseUrl}}"], "path": ["api", "v1", "admin", "users", "profile-linked-ids"] } } },
+            { "name": "Create User (admin)", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"username\": \"provisioned.user\",\n  \"email\": \"provisioned.user@example.com\",\n  \"password\": \"TempPass123!\",\n  \"role\": \"customer\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/admin/users", "host": ["{{baseUrl}}"], "path": ["api", "v1", "admin", "users"] } } },
             { "name": "Patch User Active", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"active\": true\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/admin/users/{{userId}}/active", "host": ["{{baseUrl}}"], "path": ["api", "v1", "admin", "users", "{{userId}}", "active"] } } }
           ]
         },
@@ -460,6 +647,12 @@
           "item": [
             { "name": "List Addresses", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/admin/addresses", "host": ["{{baseUrl}}"], "path": ["api", "v1", "admin", "addresses"] } } },
             { "name": "Create Address", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"line1\": \"123 Main St\",\n  \"line2\": \"\",\n  \"city\": \"Calgary\",\n  \"province\": \"AB\",\n  \"postalCode\": \"T2P 1A1\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/admin/addresses", "host": ["{{baseUrl}}"], "path": ["api", "v1", "admin", "addresses"] } } }
+          ]
+        },
+        {
+          "name": "Employee customer links",
+          "item": [
+            { "name": "Create Link (admin)", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"employeeId\": \"{{employeeProfileId}}\",\n  \"customerId\": \"{{customerProfileId}}\"\n}" }, "url": { "raw": "{{baseUrl}}/api/v1/admin/employee-customer-links", "host": ["{{baseUrl}}"], "path": ["api", "v1", "admin", "employee-customer-links"] } } }
           ]
         },
         {
@@ -506,6 +699,11 @@
     { "key": "photoApprovalPending", "value": "" },
     { "key": "customerUserId", "value": "" },
     { "key": "startDate", "value": "2025-01-01" },
-    { "key": "endDate", "value": "2025-12-31" }
+    { "key": "endDate", "value": "2025-12-31" },
+    { "key": "orderNumber", "value": "PG-000001" },
+    { "key": "productSpecialId", "value": "1" },
+    { "key": "staffConvoId", "value": "1" },
+    { "key": "employeeProfileId", "value": "20000000-0000-4000-8000-000000000001" },
+    { "key": "customerProfileId", "value": "10000000-0000-4000-8000-000000000011" }
   ]
 }

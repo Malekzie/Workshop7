@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Stripe PaymentIntent and client secret flow for checkout.
+
 package com.sait.peelin.service;
 
 import com.stripe.Stripe;

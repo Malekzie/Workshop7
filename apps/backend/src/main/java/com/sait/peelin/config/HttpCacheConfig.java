@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - HTTP Cache-Control policies for public catalog GET endpoints.
+
 package com.sait.peelin.config;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,8 +16,7 @@ import java.util.Map;
 
 /**
  * Adds HTTP Cache-Control headers to public read-only GET endpoints.
- * Any platform (web, Android, etc.) benefits from client-side caching
- * without code changes — standard HTTP semantics.
+ * Any platform web or Android benefits from client-side caching without code changes using standard HTTP semantics.
  */
 @Configuration
 public class HttpCacheConfig implements WebMvcConfigurer {

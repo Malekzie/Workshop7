@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Home hero split layout with primary calls to action into menu and locations.
+
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button/index';
 </script>

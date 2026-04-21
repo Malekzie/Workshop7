@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Checkout right column totals loyalty discount lines and pay button enablement from cart and profile props.
+
 	import { formatPriceCad } from '$lib/utils/money';
 	import type { CustomerProfile } from '$lib/services/checkout';
 

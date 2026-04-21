@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - JWT login registration OAuth2 callback and password reset for Spring Security.
+
 package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.dto.v1.auth.AuthResponse;
@@ -37,11 +40,13 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Optional;
 
-
+/**
+ * REST endpoints under {@code /api/v1/auth}. Cookie and JSON responses follow the contract used by the SPA and mobile apps.
+ */
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
-@Tag(name = "Auth", description = "Register, log in, and obtain JWT tokens for API access")
+@Tag(name = "Auth", description = "Register login and JWT issuance for SPA and mobile API access")
 public class AuthController {
 
     private final AuthService authService;
@@ -73,6 +78,8 @@ public class AuthController {
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
+    @Operation(summary = "Session snapshot", description = "Returns whether the caller is authenticated plus user id username and role when a token is present.")
+    @ApiResponse(responseCode = "200", description = "Snapshot returned")
     @GetMapping("/whoami")
     public ResponseEntity<java.util.Map<String, Object>> whoami() {
         User u = currentUserService.currentUserOrNull();
@@ -87,6 +94,11 @@ public class AuthController {
         ));
     }
 
+    @Operation(summary = "Log in", description = "Authenticates credentials and returns a JWT plus embedded user summary. Sets the HTTP-only session cookie when remember-me is enabled.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Login succeeded"),
+            @ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content)
+    })
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest, HttpServletResponse response) {
         AuthResponse authResponse = authService.login(loginRequest);
@@ -175,6 +187,11 @@ public class AuthController {
                 .body("OAuth2 login is scaffolded but not yet implemented");
     }
 
+    @Operation(summary = "Request password reset", description = "Queues a reset email when the address matches an account without leaking whether it exists.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Request accepted"),
+            @ApiResponse(responseCode = "400", description = "Validation error", content = @Content)
+    })
     @PostMapping("/forgot-password")
     public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         passwordResetService.requestPasswordReset(request.getEmail());
@@ -182,6 +199,11 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "Complete password reset", description = "Applies a new password when the emailed reset token is still valid.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Password updated"),
+            @ApiResponse(responseCode = "400", description = "Invalid or expired token", content = @Content)
+    })
     @PostMapping("/reset-password")
     public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         passwordResetService.resetPassword(request.getToken(), request.getNewPassword());
@@ -189,6 +211,11 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "OAuth2 success redirect", description = "Browser-only redirect that sets the auth cookie then sends the user to the SPA auth callback.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "302", description = "Redirect to frontend"),
+            @ApiResponse(responseCode = "401", description = "OAuth session missing token", content = @Content)
+    })
     @GetMapping("/oauth2/success")
     public void oauth2Success(
             HttpServletRequest request,
@@ -207,6 +234,11 @@ public class AuthController {
         response.sendRedirect(frontendUrl + "/auth/callback?" + q);
     }
 
+    @Operation(summary = "Validate reset token", description = "Returns 200 when the emailed token is still valid before showing the reset form.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Token valid"),
+            @ApiResponse(responseCode = "400", description = "Invalid or expired token", content = @Content)
+    })
     @GetMapping("/reset-password/validate")
     public ResponseEntity<Void> validateResetToken(@RequestParam String token) {
         passwordResetService.validateToken(token);

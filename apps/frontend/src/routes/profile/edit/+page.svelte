@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Profile editor: GET and PATCH customers me, photo upload, password change, deactivate and delete.
+
 	import {
 		Card,
 		CardContent,

@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Inline moderation or review feedback banner derived from message text heuristics.
+
 	let { message = null } = $props();
 
 	const isRejected = $derived(

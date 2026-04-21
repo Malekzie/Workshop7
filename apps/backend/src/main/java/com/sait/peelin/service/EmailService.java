@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Transactional order and notification email delivery.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.model.*;
@@ -32,7 +35,7 @@ public class EmailService {
             DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy 'at' h:mm a O", Locale.CANADA);
     private static final NumberFormat CURRENCY = NumberFormat.getCurrencyInstance(Locale.CANADA);
 
-    // Optional — null when MAIL_USERNAME is not set and Spring cannot create the bean.
+    // Optional  -  null when MAIL_USERNAME is not set and Spring cannot create the bean.
     @Autowired(required = false)
     private JavaMailSender mailSender;
 

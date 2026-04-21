@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Product listing search and detail for storefront APIs.
+
 package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.dto.v1.ProductDto;
@@ -19,15 +22,18 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+/**
+ * Storefront product search list and detail under {@code /api/v1/products}.
+ */
 @RestController
 @RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
-@Tag(name = "Products", description = "Browse bakery products. Create/update/delete require ADMIN role.")
+@Tag(name = "Products", description = "Browse bakery products. Create update and delete require ADMIN role.")
 public class ProductController {
 
     private final ProductService productService;
 
-    @Operation(summary = "List products", description = "Returns all products. Filter by name with `search` or by tag ID with `tagId`.")
+    @Operation(summary = "List products", description = "Returns all products with optional name search and optional tag filter.")
     @ApiResponse(responseCode = "200", description = "List of products returned")
     @GetMapping
     public List<ProductDto> list(
@@ -89,7 +95,13 @@ public class ProductController {
         productService.delete(id);
     }
 
-    /** Upload or replace the image for a product (stored in the {@code bakery/} folder). */
+    @Operation(summary = "Upload product image", description = "Uploads or replaces catalog art for a product under the bakery media prefix.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Product returned with updated image URL"),
+            @ApiResponse(responseCode = "400", description = "Invalid multipart payload", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Product not found", content = @Content)
+    })
     @PostMapping(value = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ProductDto uploadImage(@PathVariable Integer id,

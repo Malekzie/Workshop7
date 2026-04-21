@@ -1,4 +1,10 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason, Samantha
+// Main: Mason - Header row for card titles actions and metadata on catalog and account surfaces.
+// Assistance: Robbie - Staff card headings for orders reviews and admin tools.
+// Assistance: Samantha - Checkout card headings for totals schedules and delivery windows.
+
+
 	import { cn, type WithElementRef } from '$lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
 

@@ -1,4 +1,10 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason, Owen
+// Main: Mason - Circular avatar container for profile and review imagery with size presets.
+// Assistance: Robbie - Staff chat and inbox layouts that show customer and employee faces.
+// Assistance: Owen - Linked-account and photo-review flows that share the same avatar treatment.
+
+
 	import { Avatar as AvatarPrimitive } from 'bits-ui';
 	import { cn } from '$lib/utils.js';
 

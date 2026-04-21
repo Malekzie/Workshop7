@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Delivery address form with Canadian postal input helper and checkout validateField wiring.
+
 	import { formatCanadianPostalInput } from '$lib/utils/canadianPostalCode';
 	import { validateField, type ErrorKey } from '$lib/services/checkout';
 

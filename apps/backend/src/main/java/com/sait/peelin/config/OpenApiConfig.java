@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - springdoc OpenAPI bean JWT security scheme and API metadata for Swagger UI.
+
 package com.sait.peelin.config;
 
 import io.swagger.v3.oas.models.Components;
@@ -7,6 +10,9 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * {@link OpenAPI} bean for Swagger UI with bearer JWT security scheme and API metadata.
+ */
 @Configuration
 public class OpenApiConfig {
 
@@ -22,6 +28,6 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("Peelin' Good API")
                         .version("1.0")
-                        .description("REST API for bakery management – catalog, orders, rewards, and staff tools."));
+                        .description("REST API for bakery management catalog orders rewards and staff tools."));
     }
 }

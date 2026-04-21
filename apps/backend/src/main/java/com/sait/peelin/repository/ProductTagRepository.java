@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Product-to-tag association table access.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.ProductTag;

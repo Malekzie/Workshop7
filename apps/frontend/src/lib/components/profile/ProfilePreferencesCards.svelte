@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Preference toggles and notification switches driven by parent state from the preferences route.
+
 	export let preferences;
 	export let toggle;
 </script>

@@ -1,6 +1,9 @@
+// Contributor(s): Samantha
+// Main: Samantha - Client calls for cart checkout and order APIs.
+
 import { FormValidationUtil } from '$lib/utils/formValidation';
 
-// ── Types ────────────────────────────────────────────────────────────────
+/** Checkout and cart types aligned with CheckoutRequest and related OpenAPI schemas. */
 
 export interface BakeryAddress {
 	line1: string;
@@ -19,7 +22,7 @@ export interface Bakery {
 }
 
 export interface BakeryHour {
-	dayOfWeek: number; // 1=Mon … 7=Sun
+	dayOfWeek: number; // 1 is Monday through 7 is Sunday
 	openTime: string; // "HH:mm:ss"
 	closeTime: string;
 	closed: boolean;
@@ -57,7 +60,7 @@ export type ErrorKey =
 	| 'deliveryProvince'
 	| 'deliveryPostal';
 
-// ── Validation ────────────────────────────────────────────────────────────
+// Guest and delivery field checks used before POST orders.
 
 export function validateField(
 	name: ErrorKey,

@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Caches AI recommendation responses to limit upstream calls.
+
 package com.sait.peelin.service;
 
 import com.google.gson.JsonArray;
@@ -26,8 +29,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * AI product-name list only — cached in Redis as {@code List<String>} (same shape as pre-2026 refactors).
- * Name→id resolution stays uncached in {@link RecommendationService}.
+ * AI product-name list only, cached in Redis as {@code List<String>} with the same shape as pre-2026 refactors.
+ * Resolving names to ids stays uncached in {@link RecommendationService}.
  */
 @Service
 @RequiredArgsConstructor

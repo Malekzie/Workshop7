@@ -1,4 +1,10 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason, Samantha
+// Main: Mason - Main content region inside a card for body text lists and forms.
+// Assistance: Robbie - Staff card bodies for thread previews and order line tables.
+// Assistance: Samantha - Line items fees and address blocks inside checkout cards.
+
+
 	import type { HTMLAttributes } from 'svelte/elements';
 	import { cn, type WithElementRef } from '$lib/utils.js';
 

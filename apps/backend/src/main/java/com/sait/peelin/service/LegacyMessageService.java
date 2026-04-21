@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Legacy user messaging retained for older clients.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.LegacyMessageDto;

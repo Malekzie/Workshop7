@@ -1,4 +1,8 @@
 <script lang="ts">
+// Contributor(s): Mason
+// Main: Mason - Divider between segments inside a button group for visual grouping.
+
+
 	import { cn } from '$lib/utils.js';
 	import type { ComponentProps } from 'svelte';
 	import { Separator } from '$lib/components/ui/separator/index.js';

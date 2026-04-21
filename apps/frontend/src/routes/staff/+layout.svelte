@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Staff chrome: sidebar navigation plus main column for nested staff routes.
+
 	import StaffSidebar from '$lib/components/staff/StaffSidebar.svelte';
 
 	let { children } = $props();

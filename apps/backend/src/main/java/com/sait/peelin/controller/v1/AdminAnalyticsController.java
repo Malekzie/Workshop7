@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Admin analytics and reporting metrics for operations.
+
 package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.dto.v1.DataPointDto;
@@ -21,16 +24,19 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Time-series and KPI analytics under {@code /api/v1/admin/analytics}.
+ */
 @RestController
 @RequestMapping("/api/v1/admin/analytics")
 @RequiredArgsConstructor
-@Tag(name = "Admin analytics", description = "KPI metrics and time-series data for the management dashboard. Requires ADMIN or EMPLOYEE role.")
+@Tag(name = "Admin analytics", description = "KPI metrics and time-series data for the management dashboard. Needs ADMIN or EMPLOYEE role.")
 @SecurityRequirement(name = "bearer-jwt")
 public class AdminAnalyticsController {
 
     private final AnalyticsService analyticsService;
 
-    @Operation(summary = "Total revenue", description = "Returns total order revenue within the date range. Optionally scoped to a single bakery via `bakerySelection`.")
+    @Operation(summary = "Total revenue", description = "Returns total order revenue within the date range. Optional bakerySelection query narrows results to one bakery name.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Total revenue as a decimal"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
@@ -40,7 +46,7 @@ public class AdminAnalyticsController {
     public BigDecimal totalRevenue(
             @Parameter(description = "Start date (inclusive), ISO format", example = "2024-01-01") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @Parameter(description = "End date (inclusive), ISO format", example = "2024-12-31") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end,
-            @Parameter(description = "Bakery name to filter by; omit for all bakeries") @RequestParam(required = false) String bakerySelection
+            @Parameter(description = "Optional bakery name filter or omit to include every bakery") @RequestParam(required = false) String bakerySelection
     ) {
         return analyticsService.totalRevenue(start, end, bakerySelection);
     }
@@ -52,7 +58,7 @@ public class AdminAnalyticsController {
     public List<DataPointDto> revenueOverTime(
             @Parameter(description = "Start date (inclusive), ISO format", example = "2024-01-01") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @Parameter(description = "End date (inclusive), ISO format", example = "2024-12-31") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end,
-            @Parameter(description = "Bakery name to filter by; omit for all bakeries") @RequestParam(required = false) String bakerySelection
+            @Parameter(description = "Optional bakery name filter or omit to include every bakery") @RequestParam(required = false) String bakerySelection
     ) {
         return analyticsService.revenueOverTime(start, end, bakerySelection);
     }
@@ -75,7 +81,7 @@ public class AdminAnalyticsController {
     public BigDecimal averageOrderValue(
             @Parameter(description = "Start date (inclusive), ISO format", example = "2024-01-01") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @Parameter(description = "End date (inclusive), ISO format", example = "2024-12-31") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end,
-            @Parameter(description = "Bakery name to filter by; omit for all bakeries") @RequestParam(required = false) String bakerySelection
+            @Parameter(description = "Optional bakery name filter or omit to include every bakery") @RequestParam(required = false) String bakerySelection
     ) {
         return analyticsService.averageOrderValue(start, end, bakerySelection);
     }
@@ -87,19 +93,19 @@ public class AdminAnalyticsController {
     public List<DataPointDto> averageOrderValueOverTime(
             @Parameter(description = "Start date (inclusive), ISO format", example = "2024-01-01") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @Parameter(description = "End date (inclusive), ISO format", example = "2024-12-31") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end,
-            @Parameter(description = "Bakery name to filter by; omit for all bakeries") @RequestParam(required = false) String bakerySelection
+            @Parameter(description = "Optional bakery name filter or omit to include every bakery") @RequestParam(required = false) String bakerySelection
     ) {
         return analyticsService.averageOrderValueOverTime(start, end, bakerySelection);
     }
 
     @Operation(summary = "Order completion rate", description = "Returns the percentage of orders that reached COMPLETED status within the date range.")
-    @ApiResponse(responseCode = "200", description = "Completion rate as a decimal (e.g. 0.87 = 87%)")
+    @ApiResponse(responseCode = "200", description = "Completion rate as a decimal fraction between zero and one")
     @GetMapping("/metrics/completion-rate")
     @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
     public BigDecimal completionRate(
             @Parameter(description = "Start date (inclusive), ISO format", example = "2024-01-01") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @Parameter(description = "End date (inclusive), ISO format", example = "2024-12-31") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end,
-            @Parameter(description = "Bakery name to filter by; omit for all bakeries") @RequestParam(required = false) String bakerySelection
+            @Parameter(description = "Optional bakery name filter or omit to include every bakery") @RequestParam(required = false) String bakerySelection
     ) {
         return analyticsService.completionRate(start, end, bakerySelection);
     }
@@ -111,7 +117,7 @@ public class AdminAnalyticsController {
     public List<DataPointDto> completionRateOverTime(
             @Parameter(description = "Start date (inclusive), ISO format", example = "2024-01-01") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @Parameter(description = "End date (inclusive), ISO format", example = "2024-12-31") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end,
-            @Parameter(description = "Bakery name to filter by; omit for all bakeries") @RequestParam(required = false) String bakerySelection
+            @Parameter(description = "Optional bakery name filter or omit to include every bakery") @RequestParam(required = false) String bakerySelection
     ) {
         return analyticsService.completionRateOverTime(start, end, bakerySelection);
     }
@@ -123,7 +129,7 @@ public class AdminAnalyticsController {
     public List<DataPointDto> topProducts(
             @Parameter(description = "Start date (inclusive), ISO format", example = "2024-01-01") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @Parameter(description = "End date (inclusive), ISO format", example = "2024-12-31") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end,
-            @Parameter(description = "Bakery name to filter by; omit for all bakeries") @RequestParam(required = false) String bakerySelection
+            @Parameter(description = "Optional bakery name filter or omit to include every bakery") @RequestParam(required = false) String bakerySelection
     ) {
         return analyticsService.topProducts(start, end, bakerySelection);
     }
@@ -135,7 +141,7 @@ public class AdminAnalyticsController {
     public BigDecimal totalSalesByEmployee(
             @Parameter(description = "Start date (inclusive), ISO format", example = "2024-01-01") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @Parameter(description = "End date (inclusive), ISO format", example = "2024-12-31") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end,
-            @Parameter(description = "Bakery name to filter by; omit for all bakeries") @RequestParam(required = false) String bakerySelection
+            @Parameter(description = "Optional bakery name filter or omit to include every bakery") @RequestParam(required = false) String bakerySelection
     ) {
         return analyticsService.totalSalesByEmployee(start, end, bakerySelection);
     }
@@ -147,7 +153,7 @@ public class AdminAnalyticsController {
     public List<DataPointDto> salesByEmployee(
             @Parameter(description = "Start date (inclusive), ISO format", example = "2024-01-01") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @Parameter(description = "End date (inclusive), ISO format", example = "2024-12-31") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end,
-            @Parameter(description = "Bakery name to filter by; omit for all bakeries") @RequestParam(required = false) String bakerySelection
+            @Parameter(description = "Optional bakery name filter or omit to include every bakery") @RequestParam(required = false) String bakerySelection
     ) {
         return analyticsService.salesByEmployee(start, end, bakerySelection);
     }
@@ -167,7 +173,7 @@ public class AdminAnalyticsController {
     public List<LocalDate> orderDates(
             @Parameter(description = "Start date (inclusive), ISO format", example = "2024-01-01") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @Parameter(description = "End date (inclusive), ISO format", example = "2024-12-31") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end,
-            @Parameter(description = "Bakery name to filter by; omit for all bakeries") @RequestParam(required = false) String bakerySelection
+            @Parameter(description = "Optional bakery name filter or omit to include every bakery") @RequestParam(required = false) String bakerySelection
     ) {
         return analyticsService.orderDatesInRange(start, end, bakerySelection);
     }

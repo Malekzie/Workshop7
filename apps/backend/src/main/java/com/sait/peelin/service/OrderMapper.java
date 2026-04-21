@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Maps orders and line items to API DTOs for clients.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.OrderDto;

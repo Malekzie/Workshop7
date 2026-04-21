@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Guest tracking: OrderTracking with email from sessionStorage or query string for the same order number.
+
 	import { page } from '$app/state';
 	import OrderTracking from '$lib/components/orders/OrderTracking.svelte';
 

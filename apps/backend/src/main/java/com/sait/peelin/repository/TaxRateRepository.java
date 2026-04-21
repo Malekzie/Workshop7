@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Tax rate reference data for checkout totals.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.TaxRate;

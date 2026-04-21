@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - STOMP subscribe and send authorization using JWT and chat membership checks.
+
 package com.sait.peelin.security;
 
 import com.sait.peelin.model.User;
@@ -22,6 +25,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+/**
+ * {@link org.springframework.messaging.support.ChannelInterceptor} for STOMP token and destination checks.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -56,13 +62,13 @@ public class StompChannelInterceptor implements ChannelInterceptor {
                                 throw new MessageDeliveryException("Forbidden: cannot subscribe to this thread");
                             }
                         } catch (NumberFormatException ignored) {
-                            // malformed path — block it
+                            // malformed path  -  block it
                             throw new MessageDeliveryException("Forbidden");
                         }
                     }
                 }
             }
-            // Staff-only thread list feed — customers must not see other customers' threads.
+            // Staff-only thread list feed  -  customers must not see other customers' threads.
             if ("/topic/chat/threads".equals(destination)) {
                 Object principal = accessor.getUser();
                 if (principal instanceof UsernamePasswordAuthenticationToken authToken

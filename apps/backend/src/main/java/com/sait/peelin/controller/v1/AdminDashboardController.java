@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Staff dashboard KPI summary for authenticated admin and employee roles.
+
 package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.dto.v1.DashboardSummaryDto;
@@ -14,6 +17,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Aggregated KPI summary for staff at {@code /api/v1/admin/dashboard}.
+ */
 @RestController
 @RequestMapping("/api/v1/admin/dashboard")
 @RequiredArgsConstructor
@@ -23,7 +29,7 @@ public class AdminDashboardController {
 
     private final DashboardService dashboardService;
 
-    @Operation(summary = "Get dashboard summary", description = "Returns aggregated KPIs including total orders, revenue, active customers, and pending items for today.")
+    @Operation(summary = "Get dashboard summary", description = "Returns aggregated KPIs for today such as order totals revenue active customers and pending work.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Dashboard summary returned"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)

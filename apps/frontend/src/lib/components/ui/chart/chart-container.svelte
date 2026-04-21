@@ -1,4 +1,9 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie - Layerchart shell for staff dashboard KPI and revenue series with shared context.
+// Assistance: Mason - Theme tokens and container sizing that keep charts aligned with storefront cards.
+
+
 	import { cn, type WithElementRef } from "$lib/utils.js";
 	import type { HTMLAttributes } from "svelte/elements";
 	import ChartStyle from "./chart-style.svelte";

@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Redis-backed rate limit for unauthenticated auth and password reset endpoints.
+
 package com.sait.peelin.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,7 +29,7 @@ import java.util.Map;
  * Redis/Valkey instance using an atomic INCR + EXPIRE-on-first-hit Lua script. Returns 429 with a
  * Retry-After header when the bucket is exhausted.
  *
- * Single-attacker brute-force only — credential-stuffing across botnets needs a WAF/Cloudflare layer.
+ * Targets single-IP brute force. Large-scale credential stuffing still needs WAF or edge rate limits.
  */
 @Component
 @Profile("!test & !local-no-redis")

@@ -1,5 +1,10 @@
+// Contributor(s): Robbie
+// Main: Robbie - SvelteKit fetch helpers for staff tools auth chat and shared API constants.
+
 import { ADMIN_CUSTOMERS_API } from '$lib/services/constants';
 import type { ApiId, CustomerRecord } from '$lib/services/types';
+
+/** Admin customers endpoints for search detail patch and photo moderation flows. */
 
 export async function listCustomers(search = ''): Promise<CustomerRecord[]> {
 	const url = search

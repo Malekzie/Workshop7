@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - JPA entity or embed for auth chat messaging or staff domain.
+
 package com.sait.peelin.model;
 
 import jakarta.persistence.AttributeConverter;
@@ -9,7 +12,7 @@ import jakarta.persistence.Converter;
  * Hibernate 6 {@code SqlTypes.NAMED_ENUM} maps the Java type to PG type {@code userrole}, which
  * does not exist ({@code user_role} is the real type). Plain strings are rejected (varchar vs enum).
  * We bind the driver's {@code PGobject} via reflection so this module compiles without a compile-time
- * dependency on {@code org.postgresql} (IDE + Maven stay aligned; driver remains on the runtime classpath).
+ * dependency on {@code org.postgresql}. IDE and Maven stay aligned and the driver remains on the runtime classpath.
  */
 @Converter(autoApply = false)
 public class UserRoleAttributeConverter implements AttributeConverter<UserRole, Object> {

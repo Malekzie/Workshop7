@@ -1,8 +1,12 @@
+// Contributor(s): Mason
+// Main: Mason - Client calls for menu products bakeries tags reviews profile and account.
+
 import { PRODUCTS_API } from '$lib/services/constants';
 import type { ApiId, ProductRecord } from '$lib/services/types';
 
 let cache: ProductRecord[] | null = null;
 
+/** GET products list. Uses in-memory cache for the session after first load. */
 export async function getProducts(): Promise<ProductRecord[]> {
 	if (cache) return cache;
 
@@ -16,7 +20,7 @@ export async function getProducts(): Promise<ProductRecord[]> {
 	return cache ?? [];
 }
 
-/** Single product for e.g. today's special card. */
+/** GET one product by id for detail views and featured cards. */
 export async function getProductById(id: ApiId): Promise<ProductRecord> {
 	const res = await fetch(`${PRODUCTS_API}/${id}`, {
 		credentials: 'include'

@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Maps entities to DTOs for catalog and bakery listing responses.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.*;

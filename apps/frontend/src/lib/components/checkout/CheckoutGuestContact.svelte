@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Guest checkout contact fields with validation helpers aligned to checkout service error keys.
+
 	import { resolve } from '$app/paths';
 	import { validateField, formatPhone, type ErrorKey } from '$lib/services/checkout';
 	import { FormValidationUtil } from '$lib/utils/formValidation';

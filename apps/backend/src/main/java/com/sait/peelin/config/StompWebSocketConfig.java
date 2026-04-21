@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - STOMP broker endpoint SockJS cookie handshake for JWT on WebSocket upgrade.
+
 package com.sait.peelin.config;
 
 import com.sait.peelin.security.StompChannelInterceptor;
@@ -18,6 +21,9 @@ import org.springframework.web.socket.server.HandshakeInterceptor;
 
 import java.util.Map;
 
+/**
+ * Registers {@code /ws} STOMP endpoint topic prefixes and {@link com.sait.peelin.security.StompChannelInterceptor} on channels.
+ */
 @Configuration
 @EnableWebSocketMessageBroker
 @RequiredArgsConstructor

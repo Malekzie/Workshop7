@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Order status timeline and line items from api client order fetch with guest email fallback for lookup.
+
 	import { resolve } from '$app/paths';
 	import { api } from '$lib/utils/apiClient';
 	import { getProducts } from '$lib/services/products';

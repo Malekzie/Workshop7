@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Bakery locations hours and catalog availability for maps and browse.
+
 package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.dto.v1.BakeryDto;
@@ -18,10 +21,13 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Bakery locations and hours under {@code /api/v1/bakeries}.
+ */
 @RestController
 @RequestMapping("/api/v1/bakeries")
 @RequiredArgsConstructor
-@Tag(name = "Bakeries", description = "Browse bakery locations and hours. Create/update/delete require ADMIN role.")
+@Tag(name = "Bakeries", description = "Browse bakery locations and hours. Create update and delete need ADMIN role.")
 public class BakeryController {
 
     private final BakeryService bakeryService;

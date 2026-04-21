@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Customer taste preferences persistence for recommendations and UI.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.CustomerPreferenceDto;

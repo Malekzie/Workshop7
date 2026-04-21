@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Redis-backed token denylist for production logout semantics.
+
 package com.sait.peelin.service;
 
 import lombok.RequiredArgsConstructor;

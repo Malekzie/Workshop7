@@ -1,5 +1,9 @@
+// Contributor(s): Robbie
+// Main: Robbie - SvelteKit fetch helpers for staff tools auth chat and shared API constants.
+
 import { AUTH_API, PASSWORD_RESET_API } from '$lib/services/constants';
 
+/** POST auth forgot-password. Returns ok flag without leaking mailbox existence. */
 export async function requestPasswordReset(email: string): Promise<{ ok: boolean }> {
 	const res = await fetch(`${AUTH_API}/forgot-password`, {
 		method: 'POST',
@@ -15,6 +19,7 @@ export async function validateResetToken(token: string): Promise<boolean> {
 	return res.ok;
 }
 
+/** POST reset-password with token and newPassword matching ResetPasswordRequest in OpenAPI. */
 export async function resetPassword(token: string, newPassword: string): Promise<void> {
 	const res = await fetch(PASSWORD_RESET_API, {
 		method: 'POST',

@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Horizontal category chips from GET tags deep linking into the menu with tag filters.
+
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { getTags } from '$lib/services/tags';

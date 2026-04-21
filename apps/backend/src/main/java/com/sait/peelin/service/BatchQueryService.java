@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Production batch queries per bakery for pickup windows.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.BatchDto;

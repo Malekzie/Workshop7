@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Product catalog rows search and tag joins.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.Product;

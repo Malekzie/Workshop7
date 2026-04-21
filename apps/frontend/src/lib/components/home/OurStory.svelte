@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Home story band with image and link into the full about page.
+
 	import { resolve } from '$app/paths';
 </script>
 

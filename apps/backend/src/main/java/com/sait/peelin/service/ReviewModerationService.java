@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - AI-assisted review moderation and status transitions.
+
 package com.sait.peelin.service;
 
 import com.google.gson.JsonObject;

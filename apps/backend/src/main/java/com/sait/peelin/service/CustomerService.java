@@ -1,3 +1,7 @@
+// Contributor(s): Mason, Owen
+// Main: Mason - Customer profile addresses bootstrap guest flow and photo upload.
+// Assistance: Owen - Employee-linked discount pricing when customer is tied to staff.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.AddressUpsertRequest;

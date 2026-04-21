@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Staff direct message bodies and read pointers.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.StaffMessage;

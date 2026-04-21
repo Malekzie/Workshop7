@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - UserDetailsService adapter backing form login with roles.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.model.User;
@@ -19,7 +22,7 @@ public class CustomerDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        // Login accepts username or email; principal may be either (case-insensitive).
+        // Login accepts username or email. The principal may be either form in any case.
         User user = userRepository
                 .findByUsernameIgnoreCaseOrUserEmailIgnoreCase(username.trim(), username.trim())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));

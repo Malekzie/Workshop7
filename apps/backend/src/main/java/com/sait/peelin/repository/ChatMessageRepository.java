@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Support chat message rows and thread-scoped queries.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.ChatMessage;

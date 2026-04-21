@@ -1,3 +1,8 @@
+// Contributor(s): Robbie, Mason, Samantha
+// Main: Robbie - Client hooks for Sentry browser init replay and error handling.
+// Assistance: Mason - Storefront UI trees covered by the same browser reporting.
+// Assistance: Samantha - Checkout and payment pages that rely on this client hook.
+
 import { env } from '$env/dynamic/public';
 import { handleErrorWithSentry, replayIntegration } from '@sentry/sveltekit';
 import * as Sentry from '@sentry/sveltekit';

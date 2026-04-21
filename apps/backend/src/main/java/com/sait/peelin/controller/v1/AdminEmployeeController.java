@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Admin CRUD and directory endpoints for employee accounts.
+
 package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.dto.v1.EmployeeDto;
@@ -17,16 +20,19 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+/**
+ * Admin employee directory and upsert under {@code /api/v1/admin/employees}.
+ */
 @RestController
 @RequestMapping("/api/v1/admin/employees")
 @RequiredArgsConstructor
-@Tag(name = "Admin employees", description = "Create and manage employee accounts. Requires ADMIN role.")
+@Tag(name = "Admin employees", description = "Create and manage employee accounts. Needs ADMIN role.")
 @SecurityRequirement(name = "bearer-jwt")
 public class AdminEmployeeController {
 
     private final EmployeeAdminService employeeAdminService;
 
-    @Operation(summary = "Create employee", description = "Create a new employee account and associate it with one or more bakeries.")
+    @Operation(summary = "Create employee", description = "Creates a new employee account and links it to one or more bakery ids.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Employee created"),
             @ApiResponse(responseCode = "400", description = "Validation error", content = @Content),

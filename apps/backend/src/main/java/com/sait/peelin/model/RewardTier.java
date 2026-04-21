@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - JPA entity for orders payments loyalty tax or Stripe idempotency.
+
 package com.sait.peelin.model;
 
 import jakarta.persistence.*;

@@ -1,4 +1,8 @@
 <script lang="ts">
+// Contributor(s): Mason, Owen
+// Main: Mason - Homepage testimonial grid loaded from top public reviews.
+// Assistance: Owen - Review row avatars when photos pass approval and initials when pending or absent.
+
 	import { onMount } from 'svelte';
 	import { getTopReviews } from '$lib/services/review';
 	import type { ReviewRecord } from '$lib/services/types';

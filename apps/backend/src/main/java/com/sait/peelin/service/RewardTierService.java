@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - Loyalty tier definitions and admin maintenance.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.RewardTierDto;

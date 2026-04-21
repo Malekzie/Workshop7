@@ -1,4 +1,10 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason, Samantha
+// Main: Mason - Action slot aligned with card headers for icon buttons and menus.
+// Assistance: Robbie - Staff overflow menus on inbox and dashboard cards.
+// Assistance: Samantha - Quick actions on cart and order preview cards before payment.
+
+
 	import { cn, type WithElementRef } from '$lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
 

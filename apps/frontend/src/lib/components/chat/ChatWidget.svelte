@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie
+// Main: Robbie - Floating customer chat launcher and thread quick access widget.
+
 	import { onDestroy } from 'svelte';
 	import { MessageCircle, X } from '@lucide/svelte';
 	import { user } from '$lib/stores/authStore';
@@ -102,8 +105,8 @@
 	async function handleOpen() {
 		open = true;
 		if (thread || loading) return;
-		// Load any existing open thread in background to offer resume option —
-		// but always show the category picker first (don't auto-enter the thread).
+		// Load any existing open thread in background to offer a resume option.
+		// Always show the category picker first instead of auto-entering the thread.
 		loading = true;
 		try {
 			const threads = await getThreads();
@@ -113,7 +116,7 @@
 				existingThread = recent;
 			}
 		} catch {
-			// no existing thread — show picker as normal
+			// No existing thread so show the picker as normal
 		} finally {
 			loading = false;
 		}

@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Pickup or delivery schedule picker using bakery hours helpers from the checkout service module.
+
 	import {
 		formatTimeHM,
 		getAsapEstimateLabel,

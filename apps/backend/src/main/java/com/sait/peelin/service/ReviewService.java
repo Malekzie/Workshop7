@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - Product and bakery reviews submission averages and moderation hooks.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.ReviewCreateRequest;
@@ -202,7 +205,7 @@ public class ReviewService {
     }
 
     /**
-     * Persists an AI-rejected review attempt; customers may submit again after adjusting wording.
+     * Persists an AI-rejected review attempt. Customers may submit again after adjusting wording.
      * The rejection reason is stored in {@code moderation_rejection_reason}.
      */
     private ReviewDto persistModerationRejectedReview(

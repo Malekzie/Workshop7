@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Signed-in order history with review overlays calling order and product review POST endpoints.
+
 	import { onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { getMyOrders } from '$lib/services/orders';

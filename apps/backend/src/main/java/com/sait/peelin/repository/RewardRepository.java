@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - Customer reward ledger entries.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.Reward;

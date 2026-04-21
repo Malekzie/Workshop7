@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Admin CRUD and directory queries for employee accounts.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.EmployeeDto;

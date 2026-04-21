@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Marketing about page: values hero, values list, and bakery locations block.
+
 	import AboutUsHero from '$lib/components/about/AboutUsHero.svelte';
 	import AboutUsValues from '$lib/components/about/AboutUsValues.svelte';
 	import BakeryLocations from '$lib/components/about/BakeryLocations.svelte';

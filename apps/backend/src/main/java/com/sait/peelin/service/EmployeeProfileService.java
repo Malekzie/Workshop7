@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Employee self-service profile directory access and address updates.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.EmployeeDto;

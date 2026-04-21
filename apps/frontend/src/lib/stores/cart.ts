@@ -1,5 +1,12 @@
+// Contributor(s): Robbie, Mason, Samantha
+// Main: Samantha - Shopping cart store and derived totals.
+// Assistance: Robbie - Route guards and session rules that affect cart visibility.
+// Assistance: Mason - Product catalog fields shown in each cart line.
+// Persists under localStorage keys prefixed with pg_cart, scoped by signed-in user id or guest.
+
 import { writable, derived } from 'svelte/store';
 
+/** One catalog line with quantity and a CAD lineTotal kept in sync with unitPrice. */
 export interface CartItem {
 	productId: number;
 	productName: string;
@@ -9,6 +16,7 @@ export interface CartItem {
 	lineTotal: number;
 }
 
+/** Full cart snapshot including subtotal discount total and aggregate item count. */
 export interface CartState {
 	items: CartItem[];
 	subtotal: number;
@@ -47,6 +55,7 @@ function recalc(items: CartItem[]): CartState {
 	return { items, subtotal, discount, total, itemCount };
 }
 
+/** Writable cart with add update remove clear and switchUser to reload the correct storage bucket. */
 function createCartStore() {
 	const { subscribe, set, update } = writable<CartState>(loadFromStorage());
 
@@ -119,6 +128,8 @@ function createCartStore() {
 	};
 }
 
+/** Shared cart store used by menu, cart page, and checkout. */
 export const cart = createCartStore();
 
+/** Derived total unit count for header badges. */
 export const cartCount = derived(cart, ($cart) => $cart.itemCount);

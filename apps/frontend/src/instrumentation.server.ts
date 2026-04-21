@@ -1,3 +1,6 @@
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Server Sentry instrumentation DSN trace sampling release env and sensitive field scrubbing.
+
 import * as Sentry from '@sentry/sveltekit';
 
 const dsn = process.env.SENTRY_DSN ?? '';

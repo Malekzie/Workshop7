@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Customer taste preference key-value storage.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.CustomerPreference;

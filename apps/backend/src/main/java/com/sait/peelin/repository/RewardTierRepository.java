@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - Loyalty tier configuration rows.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.RewardTier;

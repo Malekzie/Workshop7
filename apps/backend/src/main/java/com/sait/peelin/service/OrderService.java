@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Cart checkout pricing tax delivery Stripe handoff and order lifecycle.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.*;
@@ -137,7 +140,7 @@ public class OrderService {
 
         Address address = resolveCheckoutAddress(req, customer);
 
-        // pricingLocalDate is only honored for admin/employee callers — otherwise a customer could
+        // pricingLocalDate is only honored for admin/employee callers  -  otherwise a customer could
         // pick a past date when their cart's products had a larger product-special discount.
         LocalDate pricingDate = (staffCaller && req.getPricingLocalDate() != null)
                 ? req.getPricingLocalDate()
@@ -253,7 +256,7 @@ public class OrderService {
 
     /**
      * After Payment Sheet completes, verifies the PaymentIntent with Stripe and marks the order paid.
-     * Use when webhooks are unavailable (e.g. local dev without {@code stripe listen}); production may still rely on webhooks.
+     * Use when webhooks are unavailable for example local dev without {@code stripe listen}. Production may still rely on webhooks.
      */
     @Transactional
     @CacheEvict(value = {"orders", "analytics", "dashboard"}, allEntries = true)
@@ -399,7 +402,7 @@ public class OrderService {
         if (scheduledAt == null || bakeryId == null) return;
 
         List<BakeryHour> hours = bakeryHourRepository.findByBakery_IdOrderByDayOfWeekAsc(bakeryId);
-        if (hours.isEmpty()) return; // no hours configured — skip
+        if (hours.isEmpty()) return; // no hours configured so skip
 
         // Convert to bakery-local time zone for day-of-week + time comparison
         java.time.LocalDateTime local = scheduledAt.atZoneSameInstant(DEFAULT_PRICING_ZONE).toLocalDateTime();
@@ -530,7 +533,7 @@ public class OrderService {
     }
 
     private DiscountBreakdown computeDiscounts(DiscountInput in) {
-        // manualDiscount is a staff-only override; silently ignore it for customer/guest callers
+        // manualDiscount is a staff-only override. Silently ignore it for customer and guest callers
         // so a malicious client cannot zero out their grandTotal by posting a huge discount.
         BigDecimal effectiveManualDiscount = in.staffCaller() ? in.req().getManualDiscount() : null;
         if (effectiveManualDiscount != null) {

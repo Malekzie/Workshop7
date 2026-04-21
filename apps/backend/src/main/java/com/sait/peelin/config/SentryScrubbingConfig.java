@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Sentry event processor scrubbing tokens and PII before upload.
+
 package com.sait.peelin.config;
 
 import io.sentry.Breadcrumb;
@@ -21,7 +24,7 @@ import java.util.regex.Pattern;
  * attach request data / user email. Strip the highest-risk fields before transmission.
  *
  * <p>Logback's Sentry appender funnels {@code log.error}/{@code log.warn} through the same
- * {@link EventProcessor} pipeline as manual {@code Sentry.captureException} calls — so scrubbing
+ * {@link EventProcessor} pipeline as manual {@code Sentry.captureException} calls so scrubbing
  * {@link SentryEvent#getMessage()} and {@link SentryEvent#getBreadcrumbs()} here covers both
  * paths without needing a separate Logback filter (B6).
  */
@@ -48,7 +51,7 @@ public class SentryScrubbingConfig {
             Pattern.compile("(?<![A-Za-z0-9])[A-Za-z0-9_-]{32,}(?![A-Za-z0-9])"),
             // Email addresses
             Pattern.compile("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"),
-            // Credit-card-shaped sequences (13–19 digits with optional separators)
+            // Credit-card-shaped sequences (13-19 digits with optional separators)
             Pattern.compile("(?<!\\d)(?:\\d[ -]?){13,19}(?!\\d)")
     );
 
@@ -114,7 +117,7 @@ public class SentryScrubbingConfig {
         user.setEmail(null);
     }
 
-    // Sentry SDK drops most breadcrumb data already; this is belt-and-suspenders on custom fields.
+    // Sentry SDK drops most breadcrumb data already. This pass is belt-and-suspenders on custom fields.
     private static void scrubBreadcrumbs(List<Breadcrumb> breadcrumbs) {
         if (breadcrumbs == null) return;
         breadcrumbs.forEach(SentryScrubbingConfig::scrubBreadcrumbData);

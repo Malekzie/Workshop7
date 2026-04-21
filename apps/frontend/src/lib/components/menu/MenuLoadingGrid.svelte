@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Skeleton placeholder grid while menu catalog fetch is in flight.
+
 	import { Skeleton } from '$lib/components/ui/skeleton';
 
 	let { count = 6 } = $props();

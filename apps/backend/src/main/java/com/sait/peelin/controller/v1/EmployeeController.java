@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Employee self-service profile and staff directory for admins.
+
 package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.dto.v1.EmployeeDto;
@@ -17,10 +20,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Employee self profile and admin staff directory under {@code /api/v1/employee}.
+ */
 @RestController
 @RequestMapping("/api/v1/employee")
 @RequiredArgsConstructor
-@Tag(name = "Employee", description = "Employee self-service profile and staff directory. Directory endpoints require ADMIN role.")
+@Tag(name = "Employee", description = "Employee self-service profile and staff directory. Directory routes need ADMIN role.")
 @SecurityRequirement(name = "bearer-jwt")
 public class EmployeeController {
 

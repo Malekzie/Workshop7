@@ -1,5 +1,10 @@
+// Contributor(s): Robbie
+// Main: Robbie - SvelteKit fetch helpers for staff tools auth chat and shared API constants.
+
 import { STAFF_MESSAGES_API } from '$lib/services/constants';
 import type { StaffConversation, StaffMessage } from '$lib/services/types';
+
+/** Staff Messages REST client aligned with StaffMessageController OpenAPI paths. */
 
 export interface StaffRecipient {
     userId: string;

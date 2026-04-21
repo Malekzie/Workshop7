@@ -1,9 +1,14 @@
+// Contributor(s): Samantha
+// Main: Samantha - Money and order display helpers for checkout and history.
+
 /**
- * Helper utilities for order history page
+ * Order history and review UI helpers: map API order status strings to badge variants, format CAD dates,
+ * and build reviewable slots from order DTO fields returned by GET my orders style endpoints.
  */
 
 export type BadgeVariant = 'secondary' | 'destructive' | 'default' | 'outline';
 
+/** Maps backend order status values to shadcn-style badge variants on the orders list. */
 export function statusColor(status: string): BadgeVariant {
 	switch (status) {
 		case 'pending_payment':
@@ -33,6 +38,7 @@ export function formatDate(dateStr: string | null | undefined): string {
 	});
 }
 
+/** CAD currency string for history rows when amount is present. */
 export function formatPrice(amount: number | null | undefined): string {
 	if (amount == null) return '—';
 	return amount.toLocaleString('en-CA', {
@@ -60,6 +66,7 @@ export function orderHasAnyReviewableSlot(order: any): boolean {
 	return lineItems.some((i: any) => i.productReviewSubmitted !== true);
 }
 
+/** Flattens one order into review rows for the overlay including bakery experience and each product line. */
 export function buildReviewableItems(order: any): ReviewableItem[] {
 	return [
 		{

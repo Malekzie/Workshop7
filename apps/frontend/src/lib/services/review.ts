@@ -1,3 +1,7 @@
+// Contributor(s): Robbie, Mason, Samantha
+// Main: Mason - Product review fetch and submit helpers.
+// Assistance: Robbie - Staff review approval paths that reuse these endpoints.
+// Assistance: Samantha - Order completion flows that prompt for product reviews.
 import { apiFetch } from '$lib/utils/api';
 import { ORDERS_API, PRODUCTS_API, REVIEWS_API } from '$lib/services/constants';
 import type {
@@ -7,12 +11,14 @@ import type {
 	ErrorWithStatus
 } from '$lib/services/types';
 
+/** GET top reviews for home or marketing surfaces. */
 export async function getTopReviews(limit = 3): Promise<ReviewRecord[]> {
 	const res = await fetch(`${REVIEWS_API}/top?limit=${limit}`);
 	if (!res.ok) throw new Error(`Failed to fetch reviews: ${res.status}`);
 	return res.json();
 }
 
+/** POST product reviews with optional guestName and orderId fields like ReviewCreateRequest in OpenAPI. */
 export async function createProductReview(
 	productId: ApiId,
 	rating: number,
@@ -43,6 +49,7 @@ export async function createProductReview(
 	return res.json();
 }
 
+/** POST order linked review on orders id reviews path for signed-in flows. */
 export async function createOrderReview(
 	orderId: ApiId,
 	rating: number,
@@ -65,6 +72,7 @@ export async function createOrderReview(
 	return res.json();
 }
 
+/** GET approved reviews for one product id. */
 export async function getProductReviews(productId: ApiId): Promise<ReviewRecord[]> {
 	const res = await fetch(`${PRODUCTS_API}/${productId}/reviews`);
 

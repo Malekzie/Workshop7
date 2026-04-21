@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - SvelteKit fetch helpers for staff tools auth chat and shared API constants.
+
 import { clearAuth, setAuth } from '$lib/stores/authStore.js';
 import * as Sentry from '@sentry/sveltekit';
 import { AUTH_API } from '$lib/services/constants';
@@ -7,6 +10,7 @@ type LoginOptions = {
 	resolvedUsername?: string;
 };
 
+/** POST auth login. Sends email or username plus password. Handles 409 role choice like the Auth OpenAPI group. */
 export async function loginUser(
 	identifier: string,
 	password: string,
@@ -68,6 +72,7 @@ export async function loginUser(
 	}
 }
 
+/** POST auth logout then clears local session state even when the network call fails. */
 export async function logoutUser(): Promise<void> {
 	try {
 		await fetch(`${AUTH_API}/logout`, {
@@ -97,9 +102,7 @@ export type RegisterAvailabilityResult =
 	  }
 	| { ok: false; message: string };
 
-/**
- * Pre-check before step 2 of registration (matches Android / backend case-insensitive rules).
- */
+/** GET register availability. Matches backend case rules before the register POST. */
 export async function fetchRegisterAvailability(
 	username: string,
 	email: string
@@ -179,6 +182,7 @@ export async function registerUser(payload: Record<string, unknown>): Promise<Re
 	}
 }
 
+/** POST forgot-password. Never throws so callers avoid leaking whether the mailbox exists. */
 export async function forgotPassword(email: string): Promise<void> {
 	try {
 		await fetch(`${AUTH_API}/forgot-password`, {

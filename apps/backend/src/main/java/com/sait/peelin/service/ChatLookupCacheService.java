@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Cached thread access checks for STOMP subscribe authorization.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.repository.ChatThreadRepository;

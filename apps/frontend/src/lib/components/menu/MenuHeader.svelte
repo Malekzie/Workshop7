@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Menu title search input and mobile tag picker bound to searchQuery and activeTagId.
+
 	import { Input } from '$lib/components/ui/input';
 	import { Search, X } from '@lucide/svelte';
 

@@ -1,4 +1,8 @@
 <script lang="ts">
+// Contributor(s): Mason
+// Main: Mason - Subtitle region under sheet titles for helper copy and validation hints.
+
+
 	import { Dialog as SheetPrimitive } from 'bits-ui';
 	import { cn } from '$lib/utils.js';
 

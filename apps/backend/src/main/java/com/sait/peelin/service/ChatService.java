@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Support chat threads messages read state and STOMP fan-out.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.ChatMessageDto;
@@ -172,8 +175,8 @@ public class ChatService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Thread is closed");
         }
         User sender = currentUserService.requireUser();
-        // Customers may only post to their own thread. Staff must be the current assignee —
-        // unassigned threads must be claimed first to prevent stepping on another agent.
+        // Customers may only post to their own thread. Staff must be the current assignee.
+        // Unassigned threads must be claimed first to prevent stepping on another agent.
         if (sender.getUserRole() == UserRole.customer) {
             assertCanAccessThread(t);
         } else {
@@ -278,7 +281,7 @@ public class ChatService {
             return;
         }
         if (u.getUserRole() == UserRole.employee || u.getUserRole() == UserRole.admin) {
-            // Admin read-only audit access to closed threads; otherwise must be assignee.
+            // Admin read-only audit access to closed threads. Otherwise the viewer must be assignee.
             if (u.getUserRole() == UserRole.admin
                     && "closed".equalsIgnoreCase(t.getStatus())) {
                 return;
@@ -287,8 +290,8 @@ public class ChatService {
                     && t.getEmployeeUser().getUserId().equals(u.getUserId())) {
                 return;
             }
-            // Unassigned open threads remain claimable — allow read so the picker works,
-            // but postMessage still requires a concrete assignee (handled separately).
+            // Unassigned open threads remain claimable. Allow read access so the picker works.
+            // postMessage still requires a concrete assignee (handled separately).
             if (t.getEmployeeUser() == null && "open".equalsIgnoreCase(t.getStatus())) {
                 return;
             }
@@ -388,7 +391,7 @@ public class ChatService {
     private ChatThreadDto threadDto(ChatThread t) {
         User actor = currentUserService.currentUserOrNull();
         User customerUser = t.getCustomerUser();
-        // Customer hover/polling only needs thread identity; avoid extra customer-profile query in that path.
+        // Customer hover and polling only needs thread identity. Skip the extra customer-profile query in that path.
         Customer customer = (actor != null && actor.getUserRole() == UserRole.customer)
                 ? null
                 : customerLookupCacheService.findByUserId(customerUser.getUserId());
@@ -453,7 +456,7 @@ public class ChatService {
     private void postSystemMessage(ChatThread thread, String text, boolean staffOnly) {
         User system = userRepository.findById(systemUserId).orElse(null);
         if (system == null) {
-            return; // Migration not applied — fail quiet, thread still works.
+            return; // Migration not applied so skip quietly and the thread still works.
         }
         ChatMessage m = new ChatMessage();
         m.setThread(thread);

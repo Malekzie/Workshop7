@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Staff self profile: employee me GET plus photo upload using the same profile service helpers.
+
 	import { onMount } from 'svelte';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { Button } from '$lib/components/ui/button';
@@ -111,7 +114,7 @@
 				photoApprovalPending: true
 			};
 		} catch {
-			// silent — photo stays unchanged
+			// silent  -  photo stays unchanged
 		} finally {
 			uploadingPhoto = false;
 			fileInput.value = '';

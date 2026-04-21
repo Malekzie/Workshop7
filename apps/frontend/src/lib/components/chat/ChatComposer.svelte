@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Chat input row with send action typing callback and disabled state for staff or customer views.
+
 	import { SendHorizontal } from '@lucide/svelte';
 
 	let {

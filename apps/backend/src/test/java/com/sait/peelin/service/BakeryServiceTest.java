@@ -1,3 +1,6 @@
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Spring Boot API services and security.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.BakeryDto;

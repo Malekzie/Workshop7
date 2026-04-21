@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - Employee-customer one-to-one link used for staff discount eligibility.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.model.Customer;

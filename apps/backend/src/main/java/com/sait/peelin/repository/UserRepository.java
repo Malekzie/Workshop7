@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - JPA access for User accounts OAuth identities and admin queries.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.User;
@@ -61,7 +64,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     /**
      * Another customer or admin (not {@code excludeUserId}) already uses this email.
-     * Employee rows may share the same address for linking; they do not block here.
+     * Employee rows may share the same address for linking. They do not block here.
      */
     @Query(value = """
             SELECT EXISTS(

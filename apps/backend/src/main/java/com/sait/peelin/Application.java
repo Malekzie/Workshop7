@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Spring Boot entry point registers EnvValidator before context refresh.
+
 package com.sait.peelin;
 
 import com.sait.peelin.config.EnvValidator;

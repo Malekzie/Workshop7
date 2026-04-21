@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Admin user search activation toggles and staff tooling.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.UserCreateRequest;
@@ -51,7 +54,7 @@ public class AdminUserService {
     }
 
     /**
-     * Returns all admin and employee users — used for messaging recipient lists.
+     * Returns all admin and employee users for messaging recipient lists.
      * Does not include customers.
      */
     public List<UserSummaryDto> listStaff() {
@@ -64,7 +67,7 @@ public class AdminUserService {
 
     /**
      * User ids that already have an employee or customer profile (for admin UI pickers).
-     * Lightweight — does not load full customer/employee rows.
+     * Lightweight and does not load full customer or employee rows.
      */
     public List<String> listProfileLinkedUserIds() {
         currentUserService.requireUser();
@@ -138,7 +141,7 @@ public class AdminUserService {
         User saved = userRepository.save(user);
 
         // Customer-role accounts get their profile from self-registration, OAuth, or admin "New Customer"
-        // in the desktop app — not an empty stub row here.
+        // in the desktop app  -  not an empty stub row here.
 
         return toDto(saved);
     }

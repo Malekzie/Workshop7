@@ -1,4 +1,9 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Mason - Overlapping avatar stack for thread participants or small team lists.
+// Assistance: Robbie - Staff inbox rows that summarize everyone on a conversation.
+
+
 	import type { HTMLAttributes } from 'svelte/elements';
 	import { cn, type WithElementRef } from '$lib/utils.js';
 

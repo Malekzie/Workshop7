@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Product tag catalog for filters and category-style browse.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.TagCreateRequest;

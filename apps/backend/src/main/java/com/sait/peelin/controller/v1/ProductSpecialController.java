@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Daily specials and promotional product pricing for the catalog.
+
 package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.dto.v1.ProductSpecialDto;
@@ -20,6 +23,9 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Daily specials CRUD and today lookup under {@code /api/v1/product-specials}.
+ */
 @RestController
 @RequestMapping("/api/v1/product-specials")
 @RequiredArgsConstructor
@@ -28,11 +34,13 @@ public class ProductSpecialController {
 
     private final ProductSpecialService productSpecialService;
 
-    // ── Read ─────────────────────────────────────────────────────
+    // Public read endpoints for storefront specials.
 
     @Operation(
             summary = "Get today's special",
-            description = "Returns the featured product for the given calendar date. Pass the client's local date via `date` (ISO format, e.g. 2024-06-01); defaults to the server's current date. `productId` is null when no special is configured for that day."
+            description = "Returns the featured product for the given calendar date. "
+                    + "Pass the client local date as the date query in ISO yyyy-MM-dd form or omit to use the server clock. "
+                    + "productId is null when no special exists for that day."
     )
     @ApiResponse(responseCode = "200", description = "Today's special returned (productId may be null if none configured)")
     @GetMapping("/today")
@@ -51,7 +59,7 @@ public class ProductSpecialController {
         return productSpecialService.findAllSpecials();
     }
 
-    // ── Write ─────────────────────────────────────────────────────
+    // Admin-only write endpoints for specials.
 
     @Operation(summary = "Create a product special", description = "Creates a new product special entry. Requires ADMIN role.")
     @ApiResponses({

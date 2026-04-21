@@ -1,5 +1,10 @@
+// Contributor(s): Robbie
+// Main: Robbie - SvelteKit fetch helpers for staff tools auth chat and shared API constants.
+
 import { PRODUCTS_API } from '$lib/services/constants';
 import type { ApiId, ProductRecord } from '$lib/services/types';
+
+/** Staff product admin CRUD and image upload against Products OpenAPI group. */
 
 export async function listProducts(): Promise<ProductRecord[]> {
 	const res = await fetch(PRODUCTS_API, { credentials: 'include' });

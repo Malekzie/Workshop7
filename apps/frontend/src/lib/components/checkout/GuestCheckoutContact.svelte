@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Guest contact capture with FormValidationUtil for email and phone before order submit.
+
 	import { FormValidationUtil } from '$lib/utils/formValidation';
 
 	let {

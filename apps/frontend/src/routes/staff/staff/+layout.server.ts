@@ -1,3 +1,6 @@
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Staff roster admin pages require the admin role everyone else redirects to the staff dashboard.
+
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 

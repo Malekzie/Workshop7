@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Admin customer accounts search and moderation support endpoints.
+
 package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.dto.v1.CustomerAdminCreateRequest;
@@ -19,6 +22,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Staff admin customer tools under {@code /api/v1/admin/customers}.
+ */
 @RestController
 @RequestMapping("/api/v1/admin/customers")
 @RequiredArgsConstructor
@@ -28,7 +34,7 @@ public class AdminCustomerController {
 
     private final CustomerService customerService;
 
-    @Operation(summary = "List customers", description = "Returns all customers. Optionally filter by name or email using `search`.")
+    @Operation(summary = "List customers", description = "Returns all customers. Optional search matches name or email.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Customer list returned"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)

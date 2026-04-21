@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Production batch inventory per bakery and product.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.Batch;

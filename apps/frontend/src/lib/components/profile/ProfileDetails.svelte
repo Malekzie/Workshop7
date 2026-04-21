@@ -1,4 +1,9 @@
 <script>
+// Contributor(s): Mason, Owen
+// Main: Mason - Profile sections for account details reward tier and loyalty balance.
+// Assistance: Owen - Points balance and tier labels plus discount copy layout on the web profile.
+
+
 	import {
 		Card,
 		CardContent,
@@ -13,7 +18,7 @@
 
 	const tierLabel = $derived(profile.loyaltyTier ?? profile.rewardTierName ?? null);
 
-	/** API: rewardTierDiscountPercent — whole percent e.g. 5 for 5% */
+	/** API field rewardTierDiscountPercent as a whole percent where 5 means five percent off eligible orders. */
 	const tierDiscountLabel = $derived.by(() => {
 		const raw = profile.rewardTierDiscountPercent;
 		if (raw == null || raw === '') return null;

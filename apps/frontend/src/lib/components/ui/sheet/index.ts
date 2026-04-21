@@ -1,3 +1,8 @@
+// Contributor(s): Robbie, Mason, Samantha
+// Main: Mason - Re-exports sheet parts for filters staff tools and checkout slide-overs.
+// Assistance: Robbie - Staff routes that compose sheets from this barrel.
+// Assistance: Samantha - Cart and checkout flows that open sheets from this entry.
+
 import Root from './sheet.svelte';
 import Portal from './sheet-portal.svelte';
 import Trigger from './sheet-trigger.svelte';

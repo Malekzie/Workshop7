@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Modal to pick order versus line item targets before opening the review form.
+
 	/**
 	 * Modal for selecting which items to review
 	 * Displays order and product items with their review status

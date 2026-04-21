@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Product recommendations for signed-in customers.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.ProductRecommendationDto;

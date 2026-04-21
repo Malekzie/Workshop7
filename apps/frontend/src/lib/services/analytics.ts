@@ -1,5 +1,10 @@
+// Contributor(s): Robbie
+// Main: Robbie - SvelteKit fetch helpers for staff tools auth chat and shared API constants.
+
 import { ADMIN_ANALYTICS_API } from '$lib/services/constants';
 import type { AnalyticsPoint } from '$lib/services/types';
+
+/** Staff analytics client. Query params mirror Admin analytics OpenAPI date and bakerySelection fields. */
 
 function dateStr(date: Date | string): string {
 	return date instanceof Date ? date.toISOString().split('T')[0] : date;

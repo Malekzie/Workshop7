@@ -1,4 +1,10 @@
 <script lang="ts" module>
+// Contributor(s): Robbie, Mason, Samantha
+// Main: Mason - Scrollable body for long forms and lists inside a sheet overlay.
+// Assistance: Robbie - Staff data entry that must stay inside the sheet without navigating away.
+// Assistance: Samantha - Guest billing schedule and notes fields inside checkout sheets.
+
+
 	export type Side = 'top' | 'right' | 'bottom' | 'left';
 </script>
 

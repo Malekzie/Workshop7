@@ -1,4 +1,10 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason, Samantha
+// Main: Mason - Card frame for products specials profile blocks and marketing tiles.
+// Assistance: Robbie - Staff KPI review and order queue cards on employee dashboards.
+// Assistance: Samantha - Order review payment recap and confirmation summary cards.
+
+
 	import type { HTMLAttributes } from 'svelte/elements';
 	import { cn, type WithElementRef } from '$lib/utils.js';
 

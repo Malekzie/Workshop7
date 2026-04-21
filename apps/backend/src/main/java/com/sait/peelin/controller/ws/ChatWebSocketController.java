@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - STOMP chat typing and read-receipt handlers for customer support threads.
+
 package com.sait.peelin.controller.ws;
 
 import com.sait.peelin.dto.v1.TypingPayload;
@@ -9,6 +12,9 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
+/**
+ * STOMP message mappings under {@code /app/chat/...} for typing indicators and read state.
+ */
 @Controller
 @RequiredArgsConstructor
 public class ChatWebSocketController {

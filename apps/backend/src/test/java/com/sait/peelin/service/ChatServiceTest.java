@@ -1,3 +1,6 @@
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Spring Boot API services and security.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.ChatThreadDto;
@@ -84,9 +87,9 @@ class ChatServiceTest {
             return t;
         });
         when(currentUserService.currentUserOrNull()).thenReturn(customerUser);
-        // No staff available — exercises the "no staff" branch without extra setup.
+        // No staff available  -  exercises the "no staff" branch without extra setup.
         when(chatRoutingService.pickStaff(any())).thenReturn(Optional.empty());
-        // System user not found — postSystemMessage returns early (fail-quiet path).
+        // System user not found  -  postSystemMessage returns early (fail-quiet path).
         when(userRepository.findById(any())).thenReturn(Optional.empty());
 
         ChatThreadDto result = chatService.createThread("order_issue");

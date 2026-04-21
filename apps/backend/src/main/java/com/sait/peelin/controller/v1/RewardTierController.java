@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - Loyalty reward tier definitions exposed to storefront and account flows.
+
 package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.dto.v1.RewardTierDto;
@@ -17,10 +20,13 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Admin maintenance and public read of loyalty tiers under {@code /api/v1/reward-tiers}.
+ */
 @RestController
 @RequestMapping("/api/v1/reward-tiers")
 @RequiredArgsConstructor
-@Tag(name = "Reward tiers", description = "Loyalty program tier configuration. Create/update/delete require ADMIN role.")
+@Tag(name = "Reward tiers", description = "Loyalty program tier configuration. Create update and delete require ADMIN role.")
 public class RewardTierController {
 
     private final RewardTierService rewardTierService;

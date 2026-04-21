@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Support chat thread lifecycle and participant queries.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.ChatThread;

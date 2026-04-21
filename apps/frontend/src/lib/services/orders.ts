@@ -1,7 +1,13 @@
+// Contributor(s): Samantha
+// Main: Samantha - Client calls for cart checkout and order APIs.
+
 import { apiFetch } from '$lib/utils/api';
 import { ORDERS_API } from '$lib/services/constants';
 import type { OrderRecord } from '$lib/services/types';
 
+/** Order list and Stripe resume helpers aligned with Orders and Stripe tags in OpenAPI. */
+
+/** GET orders for the signed-in user. Returns undefined when fetch is skipped upstream. */
 export async function getMyOrders(): Promise<OrderRecord[] | undefined> {
 	const res = await apiFetch(ORDERS_API);
 
@@ -10,6 +16,7 @@ export async function getMyOrders(): Promise<OrderRecord[] | undefined> {
 	return res.json();
 }
 
+/** POST resume-stripe-payment. Shape matches ResumePaymentSessionResponse in OpenAPI. */
 export async function resumeStripePayment(orderId: string): Promise<{
 	orderId: string;
 	orderNumber: string;
@@ -25,6 +32,7 @@ export async function resumeStripePayment(orderId: string): Promise<{
 	return res.json();
 }
 
+/** GET stripe config publishableKey for Stripe.js on checkout pages. */
 export async function getStripePublishableKey(): Promise<string> {
 	const res = await fetch('/api/v1/stripe/config');
 	if (!res.ok) throw new Error('Failed to fetch Stripe config');

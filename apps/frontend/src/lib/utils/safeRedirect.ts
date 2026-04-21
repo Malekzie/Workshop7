@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Shared fetch redirect and legacy API helpers with credentials.
+
 /**
  * Returns `raw` only if it is a safe same-origin relative path.
  * Anything that could resolve to a different origin (`//evil.com`,

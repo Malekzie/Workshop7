@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Prod profile fail-fast check for required secrets and integration env vars.
+
 package com.sait.peelin.config;
 
 import org.springframework.boot.context.event.ApplicationEnvironmentPreparedEvent;
@@ -18,8 +21,8 @@ import java.util.Set;
  * has produced real incidents in the past.
  *
  * Registered in {@link com.sait.peelin.Application#main} so it fires on
- * {@code ApplicationEnvironmentPreparedEvent} — earlier than any @Value resolution.
- * Only enforced in the {@code prod} profile; dev/test see Spring's native placeholder errors.
+ * {@code ApplicationEnvironmentPreparedEvent} before most {@code @Value} injection.
+ * Only enforced in the {@code prod} profile. Dev and test profiles rely on Spring native placeholder errors instead.
  */
 public class EnvValidator implements ApplicationListener<ApplicationEnvironmentPreparedEvent> {
 
@@ -80,9 +83,9 @@ public class EnvValidator implements ApplicationListener<ApplicationEnvironmentP
         if (missing.isEmpty()) return;
 
         String banner = buildBanner(missing, active);
-        // Use stderr directly; the logger may not be wired yet at this stage.
+        // Use stderr directly because the logger may not be wired yet at this stage.
         System.err.println(banner);
-        System.err.println("Exiting with status 1 — refusing to boot with missing required env vars in profile=prod.");
+        System.err.println("Exiting with status 1. Refusing to boot with missing required env vars in profile=prod.");
         System.exit(1);
     }
 

@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Site footer with tag cloud from GET tags and quick links into menu and about routes.
+
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { getTags } from '$lib/services/tags';

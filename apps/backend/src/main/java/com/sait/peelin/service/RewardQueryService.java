@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - Reward ledger queries for customers and admins.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.RewardDto;

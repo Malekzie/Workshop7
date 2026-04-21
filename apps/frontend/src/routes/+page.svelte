@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Public home route: hero, specials, trust strip, categories, story, and testimonials sections.
+
 	import Hero from '$lib/components/home/Hero.svelte';
 	import TodaysSpecials from '$lib/components/home/TodaysSpecials.svelte';
 	import TrustBar from '$lib/components/home/TrustBar.svelte';

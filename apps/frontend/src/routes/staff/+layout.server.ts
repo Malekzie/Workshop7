@@ -1,3 +1,6 @@
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Staff subtree requires employee or admin roles everyone else redirects to the public home route.
+
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 

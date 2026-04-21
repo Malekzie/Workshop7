@@ -1,3 +1,8 @@
+// Contributor(s): Robbie, Mason, Samantha
+// Main: Robbie - Node adapter env validation and full-page missing-env HTML in production.
+// Assistance: Mason - Public storefront routes that read public env at runtime.
+// Assistance: Samantha - Cart and checkout server loads that must fail closed when secrets are absent.
+
 import { building } from '$app/environment';
 
 /**
@@ -6,8 +11,8 @@ import { building } from '$app/environment';
  * return a full-page red overlay listing the offenders so the deployment can never
  * silently run in a half-configured state.
  *
- * Profile gating follows NODE_ENV — dev starts in a degraded mode (warnings only) so
- * developers can iterate without the full env set; production refuses to serve traffic.
+ * Profile gating follows NODE_ENV. Dev starts in a degraded mode (warnings only) so
+ * developers can iterate without the full env set. Production refuses to serve traffic.
  */
 
 type RequiredVar = { name: string; description: string };

@@ -1,4 +1,10 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason, Samantha
+// Main: Mason - Horizontal and vertical rules between sections on profile and marketing pages.
+// Assistance: Robbie - Staff settings layouts that separate role blocks and tools.
+// Assistance: Samantha - Checkout summaries that separate subtotals fees delivery and tax rows.
+
+
 	import { Separator as SeparatorPrimitive } from 'bits-ui';
 	import { cn } from '$lib/utils.js';
 

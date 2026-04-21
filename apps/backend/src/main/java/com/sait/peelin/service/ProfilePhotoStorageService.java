@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Blob storage upload and URL resolution for profile photos.
+
 package com.sait.peelin.service;
 
 import org.springframework.beans.factory.annotation.Value;

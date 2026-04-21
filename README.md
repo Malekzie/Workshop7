@@ -54,6 +54,7 @@ Both apps are containerized with multi-stage Dockerfiles and deployed to Digital
 | [Contributing Guide](docs/contributing.md) | Branching strategy, PR workflow, CI/CD checks, CodeScene, and merge process |
 | [Database Design](docs/database-design.md) | Full entity/relationship breakdown and problem statement |
 | [ERD Diagram](docs/bakery_erd.pdf) | Visual entity-relationship diagram |
+| [Postman collection](docs/postman/Peelin-Good-current-state.postman_collection.json) | Importable requests for the current REST API surface |
 
 ---
 
@@ -66,8 +67,10 @@ Both apps are containerized with multi-stage Dockerfiles and deployed to Digital
 - **Database:** PostgreSQL
 - **Migrations:** Flyway
 - **Security:** Spring Security
+- **AI:** Spring AI (OpenAI-compatible client; used with OpenRouter for recommendations and related features)
 - **Build Tool:** Maven (wrapper included — no global install needed)
 - **Runtime Image:** Distroless Java 21
+- **API docs:** OpenAPI / Swagger UI (`/swagger-ui/index.html` when the server is running)
 
 ### Frontend
 
@@ -129,6 +132,7 @@ Both apps are containerized with multi-stage Dockerfiles and deployed to Digital
 │   ├── frontend.md                # Frontend setup, routing, styling, and development guide
 │   ├── contributing.md            # Branching, PR workflow, CI/CD, and merge process
 │   ├── database-design.md         # Full entity/relationship breakdown
+│   ├── postman/                   # Postman collection for the REST API
 │   └── bakery_erd.pdf             # Visual entity-relationship diagram
 ├── infra/                         # Infrastructure configuration
 ├── scripts/                       # Utility scripts
@@ -168,8 +172,10 @@ Use the following default passwords for seeded accounts by role:
 
 ```sh
 git clone <repository-url>
-cd Workshop7
+cd <your-clone-folder>   # the repository root: should contain apps/, docs/, and this README
 ```
+
+If you are using the threaded course monorepo, that folder is often `Workshop-7/Workshop7` relative to the parent project root.
 
 ### Backend
 
@@ -226,11 +232,11 @@ The app will start on **http://localhost:5173** (Vite default).
 When you open a PR targeting `main`, the following happens automatically:
 
 1. **GitHub Actions CI** runs the relevant pipeline(s) based on which files changed:
-   - Changes in `apps/backend/**` → Backend CI (build, test, Docker build)
-   - Changes in `apps/frontend/**` → Frontend CI (lint, type check, build, Docker build)
+   - Changes in `apps/backend/**` → Backend CI (`./mvnw verify -DskipTests`; on same-repo PRs a follow-up job runs a local `docker build` only—no preview URL comment)
+   - Changes in `apps/frontend/**` → Frontend CI (lint, type check, build, Docker image build; same-repo PRs can get a DigitalOcean preview deploy and a PR comment with the URL)
 2. **CodeScene Delta Analysis** analyzes your PR for code health, complexity trends, and potential risks.
-3. A **PR preview environment** is deployed to DigitalOcean, and a comment is posted on the PR with the preview URL.
-4. If any CI step fails, a comment is posted on the PR linking to the failed run's logs.
+3. **Frontend** PRs from this repository (not forks) can receive a **DigitalOcean PR preview**; the workflow posts a comment with the **live preview URL**. **Backend** PRs build a Docker image in CI but do **not** publish a separate preview app or preview URL comment.
+4. **Fork PRs:** preview jobs that would use repository secrets are skipped for safety.
 
 > ⚠️ **PRs that break the build cannot be merged.** The GitHub Actions workflows act as required status checks, so make sure your code passes all checks before requesting a review.
 
@@ -240,14 +246,14 @@ When you open a PR targeting `main`, the following happens automatically:
 
 | Trigger | Steps |
 | --- | --- |
-| **PR** to `main` | Checkout → JDK 21 setup → `mvnw verify` → Docker build → Deploy PR preview |
-| **Push** to `main` | Checkout → JDK 21 setup → `mvnw verify` → Docker build & push to GHCR → Deploy to production |
+| **PR** to `main` | Checkout → JDK 21 → `./mvnw verify -DskipTests` → on same-repo PRs, `pr-preview` runs `docker build` in `apps/backend` only (no App Platform deploy or preview URL comment) |
+| **Push** to `main` | Checkout → JDK 21 setup → `./mvnw verify -DskipTests` → Docker build & push to GHCR → Deploy to DigitalOcean production |
 
 #### Frontend CI (`frontend-build.yml`)
 
 | Trigger | Steps |
 | --- | --- |
-| **PR** to `main` | Checkout → Node 22 setup → `npm ci` → Lint → Type check → Build → Docker build → Deploy PR preview |
+| **PR** to `main` | Checkout → Node 22 setup → `npm ci` → Lint (includes Prettier) → Type check → Build → Docker build → DigitalOcean **PR preview** deploy + comment with URL (same-repo PRs only) |
 | **Push** to `main` | Checkout → Node 22 setup → `npm ci` → Lint → Type check → Build → Docker build & push to GHCR → Deploy to production |
 
 > Both pipelines are scoped by path — backend changes won't trigger the frontend pipeline and vice versa.
@@ -259,7 +265,7 @@ When you open a PR targeting `main`, the following happens automatically:
   - **ESLint 9** with TypeScript and Svelte plugins
   - **Prettier** with Svelte and Tailwind CSS plugins
 - **Frontend type checking** runs `svelte-check` in CI.
-- **Backend tests** run via `mvnw verify` (includes unit and integration tests).
+- **Backend tests:** run `./mvnw verify` locally for the full unit and integration test suite. The GitHub Actions workflow currently invokes `./mvnw verify -DskipTests` so CI focuses on compilation and Docker packaging.
 
 Before pushing, run these locally to catch issues early:
 
@@ -282,7 +288,7 @@ cd apps/backend
 The application is deployed on **DigitalOcean App Platform**.
 
 - **Production deploys** happen automatically when code is merged into `main`.
-- **Preview deploys** happen automatically on every PR.
+- **Preview deploys** apply to the **frontend** app on eligible pull requests (see workflow); backend PRs do not get a separate preview environment in CI.
 - Docker images are pushed to **GitHub Container Registry** (`ghcr.io`) on production deploys.
 
 The deployment flow:
@@ -297,15 +303,18 @@ PR Merge → GitHub Actions → Build & Test → Docker Image → Push to GHCR �
 
 ### Backend
 
-The backend uses Spring Boot's configuration via `application.yaml` and environment variables. At minimum, you'll need to configure your PostgreSQL connection for local development.
+The backend uses Spring Boot's configuration via `application.yaml` and environment variables. For a full, annotated list of keys (database, Valkey/Redis, Stripe, JWT, mail, OAuth, Spaces, OpenRouter, optional observability), copy [`apps/backend/.env.example`](apps/backend/.env.example) to `.env` or `.env.local` and adjust values—never commit real secrets.
 
-Common Spring Boot environment variables:
+At minimum for local development you typically need PostgreSQL (and Redis/Valkey if you use the `dev` profile defaults). Common variables:
 
 | Variable | Description |
 | --- | --- |
 | `SPRING_DATASOURCE_URL` | JDBC connection string (e.g., `jdbc:postgresql://localhost:5433/peelin`; see `intellij-local-postgres.txt`) |
 | `SPRING_DATASOURCE_USERNAME` | Database username |
 | `SPRING_DATASOURCE_PASSWORD` | Database password |
+| `SPRING_DATA_REDIS_URL` | Redis/Valkey URL when using the local cache profile |
+| `JWT_SECRET` | Signing secret for issued tokens (required) |
+| `STRIPE_*` | Stripe keys and webhook secret for payments (see example file) |
 
 ### Frontend
 
@@ -323,7 +332,7 @@ These are configured in the repository's GitHub Settings → Secrets:
 
 | Secret | Purpose |
 | --- | --- |
-| `DIGITALOCEAN_ACCESS_TOKEN_` | DigitalOcean API token for deployments |
+| `DIGITALOCEAN_ACCESS_TOKEN` | DigitalOcean API token for deployments (name must match your GitHub secret) |
 | `GITHUB_TOKEN` | Automatically provided by GitHub for GHCR access |
 
 ---

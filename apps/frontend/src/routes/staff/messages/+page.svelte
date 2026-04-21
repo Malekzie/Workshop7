@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Staff direct messages: conversation list, polling or fetch for messages, compose to customers.
+
     import { onMount, onDestroy } from 'svelte';
     import { user } from '$lib/stores/authStore';
     import {

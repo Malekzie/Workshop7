@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Admin search activation and management of user accounts.
+
 package com.sait.peelin.controller.v1;
 
 import com.sait.peelin.dto.v1.UserActivePatchRequest;
@@ -19,10 +22,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Admin user search and activation under {@code /api/v1/admin/users}.
+ */
 @RestController
 @RequestMapping("/api/v1/admin/users")
 @RequiredArgsConstructor
-@Tag(name = "Admin users", description = "User account management — view and toggle active status. Requires ADMIN or EMPLOYEE role.")
+@Tag(name = "Admin users", description = "User accounts for viewing and toggling active status. Needs ADMIN or EMPLOYEE role.")
 @SecurityRequirement(name = "bearer-jwt")
 public class AdminUserController {
 
@@ -61,9 +67,10 @@ public class AdminUserController {
         return adminUserService.listProfileLinkedUserIds();
     }
 
-    @Operation(summary = "Create user", description = "Create a new employee or customer account. Admin only.")
+    @Operation(summary = "Create user", description = "Creates a new employee or customer account. Admin only.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "User created"),
+            @ApiResponse(responseCode = "400", description = "Validation error", content = @Content),
             @ApiResponse(responseCode = "409", description = "Username or email already taken", content = @Content),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
     })

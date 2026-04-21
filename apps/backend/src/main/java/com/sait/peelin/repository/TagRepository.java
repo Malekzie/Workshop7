@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Product tag definitions for browse filters.
+
 package com.sait.peelin.repository;
 
 import com.sait.peelin.model.Tag;

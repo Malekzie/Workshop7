@@ -1,4 +1,10 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason, Samantha
+// Main: Mason - Inline label segment between grouped buttons for units or modes.
+// Assistance: Robbie - Staff toolbar labels on messaging and review tools.
+// Assistance: Samantha - Currency or interval labels next to checkout quantity groups.
+
+
 	import { cn, type WithElementRef } from '$lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
 	import type { Snippet } from 'svelte';

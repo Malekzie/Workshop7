@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Aggregated dashboard KPIs for admin and employee home views.
+
 package com.sait.peelin.service;
 
 import com.sait.peelin.dto.v1.DashboardSummaryDto;

@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie
+// Main: Robbie - Staff chat route wiring inbox selection and message compose behavior.
+
 	import { onMount, onDestroy } from 'svelte';
 	import { user } from '$lib/stores/authStore';
 	import {

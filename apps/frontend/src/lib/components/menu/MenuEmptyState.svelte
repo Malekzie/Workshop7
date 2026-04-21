@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Empty state when filters exclude every product with reset back to full menu action.
+
 	import { Search } from '@lucide/svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 

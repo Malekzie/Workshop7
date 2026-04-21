@@ -1,6 +1,10 @@
+// Contributor(s): Mason
+// Main: Mason - Client calls for menu products bakeries tags reviews profile and account.
+
 import { apiFetch } from '$lib/utils/api';
 import { PREFERENCES_API } from '$lib/services/constants';
 
+/** GET customers me preferences. Response rows align with CustomerPreferenceDto in OpenAPI. */
 export async function getMyPreferences(): Promise<Record<string, unknown> | undefined> {
 	const res = await apiFetch(PREFERENCES_API);
 
@@ -9,6 +13,7 @@ export async function getMyPreferences(): Promise<Record<string, unknown> | unde
 	return res.json();
 }
 
+/** PUT customers me preferences. Wraps entries in preferences key like CustomerPreferenceSaveRequest. */
 export async function saveMyPreferences(
 	preferences: unknown
 ): Promise<Record<string, unknown> | undefined> {

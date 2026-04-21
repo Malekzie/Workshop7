@@ -1,4 +1,9 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Mason - Hover labels for series points on staff dashboard charts.
+// Assistance: Robbie - Tooltip data binding from staff time-range and segment filters.
+
+
 	import { cn, type WithElementRef, type WithoutChildren } from "$lib/utils.js";
 	import type { HTMLAttributes } from "svelte/elements";
 	import { getPayloadConfigFromPayload, useChart, type TooltipPayload } from "./chart-utils.js";

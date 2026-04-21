@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - STOMP typing and read handlers for staff-to-staff conversations.
+
 package com.sait.peelin.controller.ws;
 
 import com.sait.peelin.dto.v1.TypingPayload;
@@ -8,6 +11,9 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
+/**
+ * STOMP endpoints under {@code /app/messages/conversation/...} for staff message presence.
+ */
 @Controller
 @RequiredArgsConstructor
 public class StaffMessageWebSocketController {

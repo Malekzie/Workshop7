@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Stripe Elements and cash tender branch for completing CheckoutRequest payment after order create.
+
 	import { onMount } from 'svelte';
 	import { api } from '$lib/utils/apiClient';
 	import { formatPriceCad, formatDiscountCad } from '$lib/utils/money';
@@ -50,7 +53,7 @@
 	const totalDisplay = $derived(Number(grandTotal ?? subtotal + deliveryAmount + taxAmountDisplay));
 
 	function buildAppearance() {
-		// Read resolved --background lightness — immune to whichever class/attribute
+		// Read resolved --background lightness  -  immune to whichever class/attribute
 		// the theme lib uses (mode-watcher, Tailwind dark variant, prefers-color-scheme).
 		const bgVar = getComputedStyle(document.documentElement)
 			.getPropertyValue('--background')

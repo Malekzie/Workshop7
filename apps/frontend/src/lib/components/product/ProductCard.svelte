@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Menu product tile with quantity stepper wired to the cart store and optional special pricing.
+
 	import { cart } from '$lib/stores/cart';
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
@@ -90,7 +93,7 @@
 			<p class="text-lg font-bold text-primary">{price}</p>
 		{/if}
 
-		<!-- Stepper + Add — clicks here don't open the sheet -->
+		<!-- Stepper and Add: clicks here do not open the sheet -->
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="flex items-center gap-2" onclick={stepperClick}>

@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Profile recommendations strip from GET recommendations and preference overlap for signed-in customers.
+
 	import { Button } from '$lib/components/ui/button';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { resolve } from '$app/paths';
@@ -29,7 +32,7 @@
 	});
 </script>
 
-<!-- Green “AI zone” — distinct from warm bakery chrome; suggestions stacked vertically -->
+<!-- Green AI zone card distinct from warm bakery chrome with suggestions stacked vertically -->
 <div class="min-w-0 md:col-span-4">
 	<div
 		class="h-full min-w-0 overflow-hidden rounded-2xl border-2 border-emerald-600 bg-emerald-100 shadow-md dark:border-emerald-500 dark:bg-emerald-950/45"

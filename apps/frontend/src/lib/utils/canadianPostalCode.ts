@@ -1,6 +1,9 @@
+// Contributor(s): Mason
+// Main: Mason - Form and postal helpers for registration profile and addresses.
+
 /**
- * Canadian postal code display/input: A1A 1A1 — max 6 alphanumeric + space (7 chars total).
- * Strips non-alphanumeric input; uppercases letters.
+ * Canadian postal code display and input in A1A 1A1 shape with at most six letters or digits plus one space.
+ * Strips non-alphanumeric input then uppercases letters.
  */
 export function formatCanadianPostalInput(raw: string): string {
 	const alnum = raw.toUpperCase().replace(/[^A-Z0-9]/g, '');

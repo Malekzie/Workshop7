@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Orders index layout with skeleton empty and error states around each OrderCard and details panel.
+
 	/**
 	 * Main orders list container with loading, error, and empty states
 	 * Composes OrderCard and OrderDetailsPanel components for each order

@@ -1,4 +1,7 @@
 <script>
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Star rating and comment form wired to create order or product review service calls.
+
 	/**
 	 * Modal form for submitting a review with star rating and comment
 	 * Handles the review submission flow including moderation feedback

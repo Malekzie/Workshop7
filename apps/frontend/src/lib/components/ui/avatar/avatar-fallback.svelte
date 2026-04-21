@@ -1,4 +1,9 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Mason - Initials and placeholder fill when profile or review images fail to load.
+// Assistance: Robbie - Chat and staff lists that must never show a broken image slot.
+
+
 	import { Avatar as AvatarPrimitive } from 'bits-ui';
 	import { cn } from '$lib/utils.js';
 

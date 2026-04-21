@@ -1,4 +1,7 @@
 <script lang="ts">
+// Contributor(s): Robbie, Mason
+// Main: Robbie, Mason - Cart page: editable lines from the cart store with CAD formatting and checkout navigation.
+
 	import { resolve } from '$app/paths';
 	import { cart } from '$lib/stores/cart';
 	import { formatDiscountCad, formatPriceCad } from '$lib/utils/money';

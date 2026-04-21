@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Normalizes stored phone strings to NANP display form for profiles and orders.
+
 package com.sait.peelin.support;
 
 import org.springframework.util.StringUtils;
