@@ -117,7 +117,8 @@ services:
     value: EV[1:RKhfxd2bQMO/HJwWZa6AO4/B//nwHFoy:B7Gab7aXuj6jkugo0equsWXoNmoBtU9UfjGxMDq+ydbBu8jPWBMLEVKRYm8S4eS5ZaOFZ3pY]
   - key: STRIPE_PUBLISHABLE_KEY
     scope: RUN_AND_BUILD_TIME
-    value: pk_test_51TH7knIYLyM3vBcTLNFSh57XxoqZKcFBa16Ond9JpHrOTKTmX7kQaDipKHYWH63ourcgZhv2LD2fxQv2flvKxsoR00XHp6ayLK
+    # Placeholder only. Configure the real key in DigitalOcean App Platform env vars.
+    value: YOUR_STRIPE_PUBLISHABLE_KEY
   - key: JWT_SECRET
     scope: RUN_AND_BUILD_TIME
     type: SECRET
