@@ -65,7 +65,7 @@ services:
     value: ${dev-db-430284.DATABASE_URL}
   github:
     branch: main
-    repo: Malekzie/Workshop7
+    repo: Malekzie/Peelin-Good
   http_port: 3000
   instance_count: 1
   instance_size_slug: apps-s-1vcpu-1gb
@@ -189,7 +189,7 @@ services:
     value: EV[1:QNJIbJLiFLTco6Emt0M/XpEKl7a2FRJr:xOhQbuIhip+zf+0iW3J7LpGpcxXBApKfEvLJFSTKeZnu3w9i3LYtOSDxIYAXsgtS1oM6rof8igKKg2n+pi5rRoGRjB0kiDB9zMvtgidG/NwqQ/oakAoqk/8=]
   github:
     branch: main
-    repo: Malekzie/Workshop7
+    repo: Malekzie/Peelin-Good
   health_check:
     failure_threshold: 24
     http_path: /actuator/health/liveness
